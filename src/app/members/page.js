@@ -25,17 +25,17 @@ export default function MembersPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-10">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 pb-10">
         <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">
+              <p className="text-base font-semibold uppercase tracking-[0.35em] text-cyan-300">
                 Household members
               </p>
-              <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-3 text-2xl font-semibold tracking-tight md:text-4xl">
                 Invite people and manage access.
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300 ">
                 Keep the daily dashboard focused on finance work while this route handles
                 family invitations, viewing roles, and future permissions.
               </p>
@@ -49,7 +49,7 @@ export default function MembersPage() {
           </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
           <HouseholdMembersPanel
             inviteEmail={inviteEmail}
             setInviteEmail={setInviteEmail}

@@ -64,18 +64,18 @@ export default function BudgetPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-10">
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur md:p-8">
+    <div className="h-full overflow-y-auto px-3 py-3 text-white sm:px-4 sm:py-4 lg:px-6">
+      <main className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4">
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20 backdrop-blur md:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">
+              <p className="text-base font-semibold uppercase tracking-[0.35em] text-cyan-300">
                 Income & monthly baseline
               </p>
-              <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-3 text-2xl font-semibold tracking-tight md:text-4xl">
                 Set up your salary, side income, and fixed bills.
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
                 Define the financial foundation before tracking daily spending.
                 This data feeds the hero summary on the dashboard.
               </p>

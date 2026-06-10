@@ -85,8 +85,8 @@ export default function Home() {
 
   return (
     <>
-      <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 pb-10">
+      <div className="h-full overflow-y-auto px-3 py-3 text-white sm:px-4 sm:py-4 lg:px-6">
+      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-4">
         <HeroSection
           monthlyIncome={totalIncome}
           totalExpenses={totals.totalExpenses}
@@ -96,8 +96,8 @@ export default function Home() {
           formatCurrency={formatCurrency}
         />
 
-        <section className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
-          <div className="space-y-6">
+        <section className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.4fr_0.9fr]">
+          <div className="min-h-0 space-y-4">
             <ExpenseTrackerPanel
               expenseForm={expenseForm}
               setExpenseForm={setExpenseForm}
@@ -106,21 +106,12 @@ export default function Home() {
               members={finance.members}
               onOpenBreakdown={() => setBreakdownOpen(true)}
             />
-
-            <FinancialNewsPanel news={finance.marketNews} />
           </div>
 
-          <div className="space-y-6">
+          <div className="min-h-0 space-y-4">
             <GoalsRemindersPanel goals={finance.goals} />
 
-            <section className="rounded-3xl border border-cyan-400/10 bg-cyan-400/10 p-6 text-sm leading-6 text-cyan-50">
-              <p className="font-medium text-white">Other views</p>
-              <p className="mt-2 text-cyan-50/90">
-                Use <strong className="text-white">Budget</strong> to set up income and bills.
-                Use <strong className="text-white">Goals</strong> to register and track targets.
-                Use <strong className="text-white">Members</strong> to manage access.
-              </p>
-            </section>
+            <FinancialNewsPanel news={finance.marketNews} />
           </div>
         </section>
       </main>
