@@ -1,7 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  monthlyIncome: 4200,
+  incomeSources: [
+    { id: 1, source: "Salary", label: "Main salary", amount: 4200 },
+    { id: 2, source: "Freelance", label: "Design projects", amount: 650 },
+  ],
+  recurringExpenses: [
+    { id: 1, title: "Rent", category: "Housing", amount: 1450 },
+    { id: 2, title: "Internet", category: "Utilities", amount: 45 },
+    { id: 3, title: "Streaming", category: "Subscriptions", amount: 32 },
+  ],
   expenses: [
     { id: 1, title: "Groceries", category: "Groceries", amount: 146, paidBy: "Alex" },
     { id: 2, title: "Electricity bill", category: "Bills", amount: 92, paidBy: "Maria" },
@@ -48,6 +56,22 @@ const financeSlice = createSlice({
   name: "finance",
   initialState,
   reducers: {
+    addIncomeSource: (state, action) => {
+      state.incomeSources.unshift({
+        id: Date.now(),
+        source: action.payload.source,
+        label: action.payload.label,
+        amount: action.payload.amount,
+      });
+    },
+    addRecurringExpense: (state, action) => {
+      state.recurringExpenses.unshift({
+        id: Date.now(),
+        title: action.payload.title,
+        category: action.payload.category,
+        amount: action.payload.amount,
+      });
+    },
     addExpense: (state, action) => {
       state.expenses.unshift({
         id: Date.now(),
@@ -60,8 +84,22 @@ const financeSlice = createSlice({
     inviteMember: (state, action) => {
       state.invites.unshift(action.payload);
     },
+    addGoal: (state, action) => {
+      state.goals.unshift({
+        id: Date.now(),
+        name: action.payload.name,
+        progress: action.payload.progress ?? 0,
+        note: action.payload.note,
+      });
+    },
+    updateGoalProgress: (state, action) => {
+      const goal = state.goals.find((g) => g.name === action.payload.name);
+      if (goal) {
+        goal.progress = Math.min(100, Math.max(0, action.payload.progress));
+      }
+    },
   },
 });
 
-export const { addExpense, inviteMember } = financeSlice.actions;
+export const { addIncomeSource, addRecurringExpense, addExpense, inviteMember, addGoal, updateGoalProgress } = financeSlice.actions;
 export default financeSlice.reducer;
