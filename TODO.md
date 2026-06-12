@@ -75,6 +75,6 @@
 - [ ] Add metadata, OG images, sitemap, robots.
 - [ ] Add analytics and error monitoring.
 
-- currency per profile 
+- preferences per profile currency/language/theme 
 - sign in / sign up 
 - setup profile 
