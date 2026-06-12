@@ -1,4 +1,4 @@
-﻿import Panel from "@/components/home/Panel";
+import Panel from "@/components/Panel";
 
 export default function ExpenseTrackerPanel({
   expenseForm,

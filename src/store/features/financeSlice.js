@@ -28,6 +28,11 @@ const initialState = {
     { name: "Nikos", email: "nikos@home.com", role: "Viewer" },
   ],
   invites: ["sophia@home.com"],
+  currentUser: {
+    name: "Alex Papadopoulos",
+    jobTitle: "Software Engineer",
+    avatarUrl: null,
+  },
   goals: [
     { name: "Emergency fund", progress: 72, note: "Save three months of household expenses." },
     { name: "School trip budget", progress: 44, note: "Reserve funds for the spring class excursion." },
@@ -98,8 +103,11 @@ const financeSlice = createSlice({
         goal.progress = Math.min(100, Math.max(0, action.payload.progress));
       }
     },
+    updateCurrentUser: (state, action) => {
+      state.currentUser = { ...state.currentUser, ...action.payload };
+    },
   },
 });
 
-export const { addIncomeSource, addRecurringExpense, addExpense, inviteMember, addGoal, updateGoalProgress } = financeSlice.actions;
+export const { addIncomeSource, addRecurringExpense, addExpense, inviteMember, addGoal, updateGoalProgress, updateCurrentUser } = financeSlice.actions;
 export default financeSlice.reducer;

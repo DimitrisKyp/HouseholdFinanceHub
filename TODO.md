@@ -74,3 +74,7 @@
 - [ ] Measure bundle size and optimize client components.
 - [ ] Add metadata, OG images, sitemap, robots.
 - [ ] Add analytics and error monitoring.
+
+- currency per profile 
+- sign in / sign up 
+- setup profile 

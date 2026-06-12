@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addExpense } from "@/lib/features/financeSlice";
-import HeroSection from "@/components/home/HeroSection";
-import ExpenseTrackerPanel from "@/components/home/ExpenseTrackerPanel";
-import FinancialNewsPanel from "@/components/home/FinancialNewsPanel";
-import GoalsRemindersPanel from "@/components/home/GoalsRemindersPanel";
-import ExpenseBreakdownDrawer from "@/components/home/ExpenseBreakdownDrawer";
+import { addExpense } from "@/store/features/financeSlice";
+import TopBar from "@/components/TopBar";
+import HeroSection from "@/components/Dashboard/HeroSection";
+import ExpenseTrackerPanel from "@/components/Dashboard/ExpenseTrackerPanel";
+import FinancialNewsPanel from "@/components/Dashboard/FinancialNewsPanel";
+import GoalsRemindersPanel from "@/components/Dashboard/GoalsRemindersPanel";
+import ExpenseBreakdownDrawer from "@/components/Dashboard/ExpenseBreakdownDrawer";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -85,8 +86,13 @@ export default function Home() {
 
   return (
     <>
-      <div className="h-full overflow-y-auto px-3 py-3 text-white sm:px-4 sm:py-4 lg:px-6">
-      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-4">
+      <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
+      <main className="mx-auto flex h-full w-full flex-col gap-4">
+        <TopBar
+          availableBalance={totals.savings}
+          currentUser={finance.currentUser}
+          formatCurrency={formatCurrency}
+        />
         <HeroSection
           monthlyIncome={totalIncome}
           totalExpenses={totals.totalExpenses}

@@ -9,7 +9,6 @@ export default function ExpenseBreakdownDrawer({
 }) {
   return (
     <>
-      {/* Backdrop */}
       <div
         className={`fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -17,7 +16,6 @@ export default function ExpenseBreakdownDrawer({
         onClick={onClose}
       />
 
-      {/* Drawer */}
       <aside
         className={`fixed right-0 top-0 z-50 h-full w-full max-w-lg overflow-y-auto border-l border-white/10 bg-slate-900 shadow-2xl transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
@@ -41,7 +39,6 @@ export default function ExpenseBreakdownDrawer({
         </div>
 
         <div className="space-y-6 p-6">
-          {/* Budget categories */}
           <section>
             <h3 className="font-medium text-white">Budget categories</h3>
             <div className="mt-4 space-y-4">
@@ -72,7 +69,6 @@ export default function ExpenseBreakdownDrawer({
 
           <hr className="border-white/10" />
 
-          {/* Recent transactions */}
           <section>
             <h3 className="font-medium text-white">Recent transactions</h3>
             <div className="mt-4 space-y-3">

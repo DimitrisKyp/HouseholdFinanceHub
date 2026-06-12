@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Link from "next/link";
-import BudgetSetupPanel from "@/components/home/BudgetSetupPanel";
-import { addIncomeSource, addRecurringExpense } from "@/lib/features/financeSlice";
+import BudgetSetupPanel from "@/components/Budget/BudgetSetupPanel";
+import { addIncomeSource, addRecurringExpense } from "@/store/features/financeSlice";
 
 export default function BudgetPage() {
   const dispatch = useDispatch();
@@ -64,7 +64,7 @@ export default function BudgetPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto px-3 py-3 text-white sm:px-4 sm:py-4 lg:px-6">
+    <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
       <main className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4">
         <section className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20 backdrop-blur md:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

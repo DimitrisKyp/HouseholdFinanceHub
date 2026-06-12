@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Link from "next/link";
-import { addGoal, updateGoalProgress } from "@/lib/features/financeSlice";
-import Panel from "@/components/home/Panel";
+import { addGoal, updateGoalProgress } from "@/store/features/financeSlice";
+import Panel from "@/components/Panel";
 
 export default function GoalsPage() {
   const dispatch = useDispatch();
