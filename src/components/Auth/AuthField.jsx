@@ -40,6 +40,15 @@ export function FormError({ message }) {
   );
 }
 
+export function FormSuccess({ message }) {
+  if (!message) return null;
+  return (
+    <p role="status" className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+      {message}
+    </p>
+  );
+}
+
 export function SubmitButton({ pending, children, pendingText }) {
   return (
     <button

@@ -117,7 +117,8 @@ Things that work locally but must be done or changed on the real server
 
 ### Fine for one server, revisit if the app grows
 
-- [ ] The limit of one email per address per minute (`src/lib/throttle.js`) is kept in server
+- [ ] The limit of one email per address per minute (confirmation, password reset and
+      invitation emails; `src/lib/throttle.js`) is kept in server
       memory. It resets on restart and isn't shared if the app ever runs on more than one server.
       Move it to Redis or the database then.
 

@@ -31,6 +31,7 @@ export const getMembership = cache(async userId => {
       householdId: household.id,
       householdName: household.name,
       currency: household.currency,
+      timezone: household.timezone,
       role: householdMember.role,
     })
     .from(householdMember)

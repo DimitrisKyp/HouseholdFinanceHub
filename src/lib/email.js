@@ -124,3 +124,20 @@ export function sendPasswordChangedEmail({ to, name, url }) {
 export function siteUrl(path) {
   return new URL(path, process.env.BETTER_AUTH_URL).toString();
 }
+
+export function sendInviteEmail({ to, inviterName, householdName, roleLabel, url, expiresInDays }) {
+  return sendEmail({
+    to,
+    subject: `${inviterName} invited you to "${householdName}" on ${APP_NAME}`,
+    ...linkEmail({
+      greeting: "Hi,",
+      lines: [
+        `${inviterName} invited you to join the household "${householdName}" as ${roleLabel === "Viewer" ? "a" : "an"} ${roleLabel}, to share budgets, expenses and savings goals.`,
+        `Open the link to choose your password and join. It works for ${expiresInDays} days.`,
+      ],
+      buttonLabel: "Accept invitation",
+      url,
+      footer: "If you weren't expecting this, you can ignore this email. Nothing happens unless you accept.",
+    }),
+  });
+}

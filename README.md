@@ -50,6 +50,9 @@ added aren't confirmed yet. Sign in once, and a fresh link appears in the termin
 - **Forgot your password?** Use the link on the sign-in page. The reset link (in the terminal
   locally) works once, for 1 hour, and signs you out on every device.
 - **Change your password** on the **Account** page (side menu, or click your name).
+- **Invite household members** on the **Members** page (owner only). They get an email link
+  (7 days, single use), choose their own password and join as **Editor** or **Viewer**.
+  Locally, the invite link appears in the terminal.
 
 ## Email
 
