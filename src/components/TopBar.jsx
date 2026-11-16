@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { signOutAction } from "@/lib/actions/auth";
+import { ROLE_LABELS } from "@/lib/permissions";
 
 function InitialsAvatar({ name, avatarUrl }) {
   const initials = name
@@ -51,18 +53,30 @@ export default function TopBar({ availableBalance, currentUser, formatCurrency }
 
       <p className="hidden shrink-0 text-sm text-slate-400 sm:block">{dateStr}</p>
 
-      <Link
-        href="/members"
-        className="group flex shrink-0 items-center gap-3 px-4 rounded-2xl py-2 transition hover:border-cyan-400/30 hover:bg-white/10"
-      >
-        <div className="text-right">
-          <p className="text-sm font-semibold leading-tight text-white group-hover:text-cyan-300 transition-colors">
-            {currentUser.name}
-          </p>
-          <p className="text-xs text-slate-400">{currentUser.jobTitle}</p>
-        </div>
-        <InitialsAvatar name={currentUser.name} avatarUrl={currentUser.avatarUrl} />
-      </Link>
+      <div className="flex shrink-0 items-center gap-2">
+        <Link
+          href="/members"
+          className="group flex items-center gap-3 px-4 rounded-2xl py-2 transition hover:border-cyan-400/30 hover:bg-white/10"
+        >
+          <div className="text-right">
+            <p className="text-sm font-semibold leading-tight text-white group-hover:text-cyan-300 transition-colors">
+              {currentUser.name}
+            </p>
+            <p className="text-xs text-slate-400">
+              {[currentUser.householdName, ROLE_LABELS[currentUser.role]].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          <InitialsAvatar name={currentUser.name} avatarUrl={currentUser.avatarUrl} />
+        </Link>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-rose-400/40 hover:text-white"
+          >
+            Sign out
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

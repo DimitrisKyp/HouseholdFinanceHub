@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = {
+export const initialState = {
   incomeSources: [
     { id: 1, source: "Salary", label: "Main salary", amount: 4200 },
     { id: 2, source: "Freelance", label: "Design projects", amount: 650 },
@@ -109,5 +109,13 @@ const financeSlice = createSlice({
   },
 });
 
-export const { addIncomeSource, addRecurringExpense, addExpense, inviteMember, addGoal, updateGoalProgress, updateCurrentUser } = financeSlice.actions;
+export const {
+  addIncomeSource,
+  addRecurringExpense,
+  addExpense,
+  inviteMember,
+  addGoal,
+  updateGoalProgress,
+  updateCurrentUser,
+} = financeSlice.actions;
 export default financeSlice.reducer;

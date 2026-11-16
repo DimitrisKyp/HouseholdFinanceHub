@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Household Finance Hub
 
-## Getting Started
+A household finance app: track expenses, budgets and savings goals, and share them with the
+people you live with. Built with [Next.js](https://nextjs.org), PostgreSQL and
+[Drizzle ORM](https://orm.drizzle.team).
 
-First, run the development server:
+## Requirements
+
+- [Node.js](https://nodejs.org) 22 or 24 (LTS)
+- [PostgreSQL 17](https://www.postgresql.org/download/) installed (only its programs are used;
+  the project runs its own private database server, so no admin password is needed)
+- Optional: [pgAdmin 4](https://www.pgadmin.org) to browse the database
+
+The scripts expect PostgreSQL in `C:\Program Files\PostgreSQL\17\bin`. If yours is elsewhere,
+set the `PG_BIN` environment variable to its `bin` folder.
+
+## First-time setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # install dependencies
+npm run db:init      # create the local database server, user and database (once per computer)
+npm run db:migrate   # create the tables
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`db:init` does the following:
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- Creates a PostgreSQL server for this project in
+  `%LOCALAPPDATA%\household-finance-hub\pgdata`, listening on **localhost:5433**.
+- Generates passwords and writes `DATABASE_URL` to `.env.local`, which is never committed.
+- Saves the database admin (`postgres`) password in
+  `%LOCALAPPDATA%\household-finance-hub\postgres-superuser-password.txt`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Starting the app (every day)
 
-## Learn More
+```bash
+npm run db:start     # start the database (needed after every computer restart)
+npm run dev          # start the website
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The first time, choose **Create an account**. Signing up creates your household and makes you
+its **owner**. Every page except sign-in and sign-up requires you to be signed in.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`.env.local` also holds `BETTER_AUTH_SECRET` (signs login sessions; keep it secret, and use a
+different one in production) and `BETTER_AUTH_URL` (the site's address, `http://localhost:3000`
+locally).
 
-## Deploy on Vercel
+If the app shows `ECONNREFUSED ... 5433` errors, the database isn't running. Run
+`npm run db:start`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Database commands
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command               | What it does                                                |
+| --------------------- | ----------------------------------------------------------- |
+| `npm run db:start`    | Start the local database server                             |
+| `npm run db:stop`     | Stop it                                                     |
+| `npm run db:status`   | Show whether it is running                                  |
+| `npm run db:migrate`  | Apply new migrations (run after pulling schema changes)     |
+| `npm run db:generate` | After editing `src/db/schema/`, create a new migration file |
+| `npm run db:studio`   | Browse and edit data in the browser (Drizzle Studio)        |
+
+See [schema.md](schema.md) for the tables and the permission rules.
+
+## Viewing the database in pgAdmin 4
+
+1. Make sure the database is running: `npm run db:status`. If it isn't, run `npm run db:start`.
+2. In pgAdmin, right-click **Servers** → **Register** → **Server...**
+3. **General** tab: **Name** `Household Finance Hub (local)`
+4. **Connection** tab:
+   | Field | Value |
+   | -------------------- | ------------------------------------------------------------------ |
+   | Host name/address | `localhost` |
+   | Port | `5433` |
+   | Maintenance database | `postgres` |
+   | Username | `postgres` |
+   | Password | contents of `%LOCALAPPDATA%\household-finance-hub\postgres-superuser-password.txt` |
+   | Save password? | on |
+5. Click **Save**.
+6. Browse to **Household Finance Hub (local)** → **Databases** → **household_finance_hub** →
+   **Schemas** → **public** → **Tables**.
+   - To see rows, right-click a table → **View/Edit Data** → **All Rows**.
+   - To write SQL, select the database, then **Tools** → **Query Tool**.
+
+Notes:
+
+- Port **5433** is this project's server. A PostgreSQL on port 5432 is a different server
+  (for example one installed by IT) and doesn't contain this project's data.
+- `postgres` is the admin account, so pgAdmin lets you change anything. Be careful when editing
+  or deleting rows by hand.
+- Change tables through Drizzle (`src/db/schema/` → `db:generate` → `db:migrate`), not in
+  pgAdmin. Otherwise the migration history and the real database drift apart.
+- The `drizzle` schema holds the migration history. Don't edit it.
