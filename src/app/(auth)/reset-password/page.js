@@ -1,0 +1,36 @@
+import Link from "next/link";
+import ResetPasswordForm from "@/components/Auth/ResetPasswordForm";
+
+// The token is in the URL: don't leak it to other sites through the Referer header.
+export const metadata = { title: "Choose a new password · Household Finance Hub", referrer: "no-referrer" };
+
+// The emailed link goes to Better Auth first, which checks it and forwards here with
+// ?token=... (valid) or ?error=INVALID_TOKEN (expired, used or tampered with).
+export default async function ResetPasswordPage({ searchParams }) {
+  const { token, error } = await searchParams;
+
+  if (error || typeof token !== "string" || !token) {
+    return (
+      <>
+        <h1 className="text-2xl font-semibold">Link didn’t work</h1>
+        <p className="mt-3 mb-6 text-sm leading-6 text-slate-300">
+          This reset link has expired or has already been used. Reset links work once, for 1 hour.
+        </p>
+        <Link
+          href="/forgot-password"
+          className="block w-full rounded-xl bg-cyan-500 px-4 py-3 text-center font-medium text-slate-950 transition hover:bg-cyan-400"
+        >
+          Get a new link
+        </Link>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <h1 className="text-2xl font-semibold">Choose a new password</h1>
+      <p className="mt-1 mb-6 text-sm text-slate-400">You’ll be signed out everywhere, then you can sign in with it.</p>
+      <ResetPasswordForm token={token} />
+    </>
+  );
+}

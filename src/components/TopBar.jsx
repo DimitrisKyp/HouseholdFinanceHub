@@ -55,7 +55,8 @@ export default function TopBar({ availableBalance, currentUser, formatCurrency }
 
       <div className="flex shrink-0 items-center gap-2">
         <Link
-          href="/members"
+          href="/account"
+          title="Your account"
           className="group flex items-center gap-3 px-4 rounded-2xl py-2 transition hover:border-cyan-400/30 hover:bg-white/10"
         >
           <div className="text-right">

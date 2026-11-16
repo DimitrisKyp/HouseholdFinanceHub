@@ -87,3 +87,40 @@ export function sendAccountExistsEmail({ to, name, url }) {
     }),
   });
 }
+
+export function sendPasswordResetEmail({ to, name, url }) {
+  return sendEmail({
+    to,
+    subject: `Reset your ${APP_NAME} password`,
+    ...linkEmail({
+      greeting: `Hi ${name},`,
+      lines: ["We received a request to reset your password. The link works for 1 hour and can be used once."],
+      buttonLabel: "Choose a new password",
+      url,
+      footer: "If you didn't ask for this, you can ignore this email. Your password stays the same.",
+    }),
+  });
+}
+
+/** Security notice after a password change or reset. */
+export function sendPasswordChangedEmail({ to, name, url }) {
+  return sendEmail({
+    to,
+    subject: `Your ${APP_NAME} password was changed`,
+    ...linkEmail({
+      greeting: `Hi ${name},`,
+      lines: [
+        "The password for your account was just changed.",
+        "If this was you, there's nothing else to do. If it wasn't, reset your password now: that signs everyone else out.",
+      ],
+      buttonLabel: "Reset password",
+      url,
+      footer: "You're receiving this because of a security change to your account.",
+    }),
+  });
+}
+
+/** Absolute URL on this site, for links inside emails. */
+export function siteUrl(path) {
+  return new URL(path, process.env.BETTER_AUTH_URL).toString();
+}

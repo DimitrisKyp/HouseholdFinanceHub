@@ -4,9 +4,16 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { account, session, user, verification } from "@/db/schema";
-import { sendAccountExistsEmail, sendVerificationEmail } from "@/lib/email";
+import {
+  sendAccountExistsEmail,
+  sendPasswordChangedEmail,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+  siteUrl,
+} from "@/lib/email";
 
 export const auth = betterAuth({
   // Reads BETTER_AUTH_SECRET and BETTER_AUTH_URL from the environment.
@@ -22,11 +29,27 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     // Tell the real owner of an email that someone tried to sign up with it.
     onExistingUserSignUp: async ({ user: existing }) => {
-      await sendAccountExistsEmail({
-        to: existing.email,
-        name: existing.name,
-        url: new URL("/sign-in", process.env.BETTER_AUTH_URL).toString(),
-      });
+      await sendAccountExistsEmail({ to: existing.email, name: existing.name, url: siteUrl("/sign-in") });
+    },
+
+    // Forgot password: emails a single-use link, valid for 1 hour.
+    sendResetPassword: async ({ user: recipient, url }) => {
+      await sendPasswordResetEmail({ to: recipient.email, name: recipient.name, url });
+    },
+    resetPasswordTokenExpiresIn: 60 * 60,
+    // A reset signs out every device, in case someone else had access.
+    revokeSessionsOnPasswordReset: true,
+    onPasswordReset: async ({ user: resetUser }) => {
+      try {
+        // The reset link reached their inbox, which proves they own the address.
+        if (!resetUser.emailVerified) {
+          await db.update(user).set({ emailVerified: true, updatedAt: new Date() }).where(eq(user.id, resetUser.id));
+        }
+        await sendPasswordChangedEmail({ to: resetUser.email, name: resetUser.name, url: siteUrl("/forgot-password") });
+      } catch (error) {
+        // The password is already changed; don't report the reset as failed.
+        console.error("After-reset steps failed", error);
+      }
     },
   },
   emailVerification: {

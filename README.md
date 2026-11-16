@@ -47,6 +47,10 @@ sent: the email, including the confirmation link, is printed in the terminal run
 `npm run dev`. Ctrl+click the link to open it. Accounts created before email confirmation was
 added aren't confirmed yet. Sign in once, and a fresh link appears in the terminal.
 
+- **Forgot your password?** Use the link on the sign-in page. The reset link (in the terminal
+  locally) works once, for 1 hour, and signs you out on every device.
+- **Change your password** on the **Account** page (side menu, or click your name).
+
 ## Email
 
 | Variable     | What it does                                                                        |

@@ -10,16 +10,12 @@ import { db } from "@/db";
 import { user as userTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getMembership, requireUser } from "@/lib/dal";
+import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, newPasswordErrors, passwordField } from "@/lib/forms";
 import { createHouseholdWithOwner } from "@/lib/households";
 import { checkEmailPath, safeRedirectPath, verificationCallbackPath } from "@/lib/redirects";
+import { isTooSoon, withMinimumDuration } from "@/lib/throttle";
 
-const MIN_PASSWORD_LENGTH = 8;
 const MAX_NAME_LENGTH = 100;
-
-const field = (formData, key) => String(formData.get(key) ?? "").trim();
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const RESEND_COOLDOWN_MS = 60 * 1000;
 
 function validateHouseholdName(name) {
   if (!name) return 'Give your household a name, e.g. "Our home".';
@@ -33,17 +29,13 @@ export async function signUpAction(_previousState, formData) {
     email: field(formData, "email").toLowerCase(),
     householdName: field(formData, "householdName"),
   };
-  const password = String(formData.get("password") ?? "");
-  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const password = passwordField(formData, "password");
+  const confirmPassword = passwordField(formData, "confirmPassword");
 
-  const errors = {};
+  const errors = newPasswordErrors(password, confirmPassword);
   if (!values.name) errors.name = "Enter your name.";
   else if (values.name.length > MAX_NAME_LENGTH) errors.name = "That name is too long.";
   if (!EMAIL_PATTERN.test(values.email)) errors.email = "Enter a valid email address.";
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
-  }
-  if (password !== confirmPassword) errors.confirmPassword = "The passwords don't match.";
   const householdError = validateHouseholdName(values.householdName);
   if (householdError) errors.householdName = householdError;
   if (Object.keys(errors).length) return { errors, values };
@@ -79,7 +71,7 @@ export async function signUpAction(_previousState, formData) {
 
 export async function signInAction(_previousState, formData) {
   const values = { email: field(formData, "email").toLowerCase() };
-  const password = String(formData.get("password") ?? "");
+  const password = passwordField(formData, "password");
 
   if (!values.email || !password) {
     return { values, error: "Enter your email and password." };
@@ -109,22 +101,20 @@ export async function signInAction(_previousState, formData) {
   redirect(next);
 }
 
-// When each address last asked for a confirmation email (kept in this server process only).
-const lastResendAt = new Map();
-
 export async function resendVerificationAction(_previousState, formData) {
   const email = field(formData, "email").toLowerCase();
   if (!EMAIL_PATTERN.test(email)) return { error: "Enter a valid email address." };
 
-  const now = Date.now();
-  if (now - (lastResendAt.get(email) ?? 0) < RESEND_COOLDOWN_MS) {
+  if (isTooSoon(`verify:${email}`, EMAIL_COOLDOWN_MS)) {
     return { error: "We just sent one. Please wait a minute before asking again." };
   }
-  lastResendAt.set(email, now);
 
   try {
-    // Sends only if the account exists and isn't confirmed yet, but always answers the same way.
-    await auth.api.sendVerificationEmail({ body: { email, callbackURL: verificationCallbackPath() } });
+    // Sends only if the account exists and isn't confirmed yet, but always answers the same way
+    // and takes the same time.
+    await withMinimumDuration(1500, () =>
+      auth.api.sendVerificationEmail({ body: { email, callbackURL: verificationCallbackPath() } }),
+    );
   } catch (error) {
     console.error("Resending verification email failed", error);
     return { error: "We couldn't send the email. Please try again later." };

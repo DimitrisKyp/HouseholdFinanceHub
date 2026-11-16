@@ -13,7 +13,12 @@ export default function SignInForm({ next }) {
       <input type="hidden" name="next" value={next ?? "/"} />
       <FormError message={state.error} />
       <AuthField id="email" label="Email" type="email" autoComplete="email" required defaultValue={state.values?.email} />
-      <AuthField id="password" label="Password" type="password" autoComplete="current-password" required />
+      <div>
+        <AuthField id="password" label="Password" type="password" autoComplete="current-password" required />
+        <Link href="/forgot-password" className="mt-1 inline-block text-xs text-cyan-300 hover:text-cyan-200">
+          Forgot password?
+        </Link>
+      </div>
       <SubmitButton pending={pending} pendingText="Signing in…">
         Sign in
       </SubmitButton>
