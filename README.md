@@ -42,6 +42,27 @@ Open [http://localhost:3000](http://localhost:3000).
 The first time, choose **Create an account**. Signing up creates your household and makes you
 its **owner**. Every page except sign-in and sign-up requires you to be signed in.
 
+New accounts must **confirm their email** before they can sign in. Locally, no email is really
+sent: the email, including the confirmation link, is printed in the terminal running
+`npm run dev`. Ctrl+click the link to open it. Accounts created before email confirmation was
+added aren't confirmed yet. Sign in once, and a fresh link appears in the terminal.
+
+## Email
+
+| Variable     | What it does                                                                        |
+| ------------ | ----------------------------------------------------------------------------------- |
+| `SMTP_URL`   | Mail server to send through, e.g. `smtps://user:password@smtp.example.com:465`      |
+| `EMAIL_FROM` | Sender shown to recipients, e.g. `Household Finance Hub <no-reply@yourdomain.com>` |
+
+- **Without `SMTP_URL`** (local development): emails are printed in the `npm run dev` terminal.
+- **In production `SMTP_URL` is required.** The app refuses to print emails there, so links
+  never end up in server logs. Any SMTP provider works (Resend, Brevo, Postmark, your mail host).
+  Most providers have a free tier, but they need you to verify your domain first.
+- To see emails as a real inbox locally, run [Mailpit](https://mailpit.axllent.org) (one
+  program, no install or admin rights needed). Then add `SMTP_URL=smtp://localhost:1025` to
+  `.env.local` and open http://localhost:8025.
+- If a password in `SMTP_URL` contains special characters (`@`, `:`, `/`, `#`), URL-encode them.
+
 `.env.local` also holds `BETTER_AUTH_SECRET` (signs login sessions; keep it secret, and use a
 different one in production) and `BETTER_AUTH_URL` (the site's address, `http://localhost:3000`
 locally).
