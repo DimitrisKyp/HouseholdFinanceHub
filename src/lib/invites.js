@@ -7,6 +7,8 @@ import { and, asc, eq, gt, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { account, household, householdMember, invite, user } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { memberJoinedMessage, welcomeMessage } from "@/lib/notification-messages";
+import { memberIds, notify } from "@/lib/notifications";
 
 export const INVITE_TTL_DAYS = 7;
 export const INVITABLE_ROLES = ["editor", "viewer"];
@@ -97,6 +99,29 @@ async function lockPendingInvite(tx, token) {
 async function joinHousehold(tx, pending, userId) {
   await tx.insert(householdMember).values({ householdId: pending.householdId, userId, role: pending.role });
   await tx.update(invite).set({ acceptedAt: new Date(), acceptedByUserId: userId }).where(eq(invite.id, pending.id));
+
+  // Tell the owner and whoever sent the invite, and welcome the new member.
+  const [[joined], [inviter], [home]] = await Promise.all([
+    tx.select({ name: user.name }).from(user).where(eq(user.id, userId)),
+    tx.select({ name: user.name }).from(user).where(eq(user.id, pending.invitedByUserId)),
+    tx.select({ name: household.name }).from(household).where(eq(household.id, pending.householdId)),
+  ]);
+  const owners = await memberIds(tx, pending.householdId, { roles: ["owner"] });
+  const recipients = [...new Set([...owners, pending.invitedByUserId])].filter(id => id && id !== userId);
+  await notify(tx, {
+    householdId: pending.householdId,
+    userIds: recipients,
+    type: "member",
+    ...memberJoinedMessage({ memberName: joined.name, role: pending.role, householdName: home.name }),
+    link: "/members",
+  });
+  await notify(tx, {
+    householdId: pending.householdId,
+    userIds: [userId],
+    type: "member",
+    ...welcomeMessage({ householdName: home.name, role: pending.role, inviterName: inviter?.name ?? "Someone" }),
+    link: "/",
+  });
 }
 
 /**

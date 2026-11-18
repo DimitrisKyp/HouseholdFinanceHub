@@ -1,7 +1,7 @@
 import { authFile, expect, test } from "./fixtures.mjs";
 import { resetHousehold } from "./helpers/db.mjs";
 
-const PAGES = ["/", "/budget", "/goals", "/transactions", "/insights", "/members", "/account"];
+const PAGES = ["/", "/budget", "/goals", "/transactions", "/insights", "/members", "/notifications", "/account"];
 
 test.beforeAll(async () => {
   await resetHousehold();

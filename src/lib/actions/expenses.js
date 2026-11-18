@@ -9,6 +9,7 @@ import { category, expense, householdMember } from "@/db/schema";
 import { requirePermission } from "@/lib/dal";
 import { formatMoney, todayIn } from "@/lib/format";
 import { field, parseAmount, parseDate, UUID_PATTERN } from "@/lib/forms";
+import { checkBudgetAlert } from "@/lib/notifications";
 
 const MAX_TITLE_LENGTH = 120;
 
@@ -61,6 +62,18 @@ export async function addExpenseAction(_previousState, formData) {
     paidByUserId,
     createdByUserId: context.user.id,
   });
+  try {
+    await checkBudgetAlert({
+      householdId: context.householdId,
+      categoryId: foundCategory.id,
+      spentOn,
+      today,
+      currency: context.currency,
+    });
+  } catch (error) {
+    // The expense is saved either way; a missed alert isn't worth failing the form for.
+    console.error("Budget alert check failed", error);
+  }
   revalidatePath("/");
   revalidatePath("/transactions");
   // Keep category, payer and date for the next entry (people often log several at once).

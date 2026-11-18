@@ -4,6 +4,10 @@
 import { useActionState } from "react";
 import { InlineMessage } from "@/components/Auth/AuthField";
 import { addContributionAction, deleteGoalAction, setGoalStatusAction } from "@/lib/actions/goals";
+import { withUnreadSignal } from "@/lib/unread-signal";
+
+// Money that takes a goal to its target creates a "goal reached" notification.
+const addContribution = withUnreadSignal(addContributionAction);
 
 const smallButton =
   "rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:text-white disabled:opacity-60";
@@ -15,7 +19,7 @@ const STATUS_BADGES = {
 };
 
 function ContributionForm({ goal }) {
-  const [state, formAction, pending] = useActionState(addContributionAction, {});
+  const [state, formAction, pending] = useActionState(addContribution, {});
   const errorId = `contribution-${goal.id}-error`;
 
   return (

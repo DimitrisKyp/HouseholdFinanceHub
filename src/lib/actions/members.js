@@ -22,6 +22,8 @@ import {
   inviteExpiry,
   newInviteToken,
 } from "@/lib/invites";
+import { roleChangedMessage } from "@/lib/notification-messages";
+import { notify } from "@/lib/notifications";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { isTooSoon } from "@/lib/throttle";
 
@@ -138,8 +140,15 @@ export async function changeMemberRoleAction(_previousState, formData) {
     .update(householdMember)
     .set({ role })
     .where(nonOwnerMemberOf(context.householdId, memberId))
-    .returning({ id: householdMember.id });
+    .returning({ id: householdMember.id, userId: householdMember.userId });
   if (!updated.length) return { error: "This member can't be changed." };
+  await notify(db, {
+    householdId: context.householdId,
+    userIds: [updated[0].userId],
+    type: "member",
+    ...roleChangedMessage({ role, householdName: context.householdName }),
+    link: "/members",
+  });
   revalidatePath("/members");
   return { success: `Role changed to ${ROLE_LABELS[role]}.` };
 }

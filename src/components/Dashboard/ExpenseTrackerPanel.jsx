@@ -5,9 +5,13 @@ import { useActionState } from "react";
 import AuthField, { FormError, FormSuccess, SelectField } from "@/components/Auth/AuthField";
 import Panel from "@/components/Panel";
 import { addExpenseAction } from "@/lib/actions/expenses";
+import { withUnreadSignal } from "@/lib/unread-signal";
+
+// A new expense can push a category over its limit, which creates a budget alert.
+const addExpense = withUnreadSignal(addExpenseAction);
 
 function AddExpenseForm({ categories, members, currentUserId, today }) {
-  const [state, formAction, pending] = useActionState(addExpenseAction, { values: { paidByUserId: currentUserId } });
+  const [state, formAction, pending] = useActionState(addExpense, { values: { paidByUserId: currentUserId } });
   const values = state.values ?? {};
 
   return (

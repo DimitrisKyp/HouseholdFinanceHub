@@ -10,6 +10,8 @@ import { requirePermission } from "@/lib/dal";
 import { GOAL_STATUSES } from "@/lib/finance";
 import { formatMoney, todayIn } from "@/lib/format";
 import { field, parseAmount, parseDate, UUID_PATTERN } from "@/lib/forms";
+import { goalReachedMessage } from "@/lib/notification-messages";
+import { memberIds, notify } from "@/lib/notifications";
 
 const MAX_NAME_LENGTH = 120;
 const MAX_NOTE_LENGTH = 500;
@@ -87,6 +89,28 @@ export async function addGoalAction(_previousState, formData) {
   return { success: `${values.name} added.`, values: {} };
 }
 
+// Tells every member when a deposit takes a goal to its target (once per goal). Returns true if sent.
+async function notifyIfGoalReached(tx, { context, goal: found, amount }) {
+  const [{ saved }] = await tx
+    .select({ saved: sql`coalesce(sum(${goalContribution.amount}), 0)`.mapWith(Number) })
+    .from(goalContribution)
+    .where(eq(goalContribution.goalId, found.id));
+  if (saved + 0.001 < found.targetAmount || saved - amount + 0.001 >= found.targetAmount) return false;
+  return notify(tx, {
+    householdId: context.householdId,
+    userIds: await memberIds(tx, context.householdId),
+    type: "goal",
+    ...goalReachedMessage({
+      goalName: found.name,
+      saved: Math.round(saved * 100) / 100,
+      targetAmount: found.targetAmount,
+      currency: context.currency,
+    }),
+    link: "/goals",
+    dedupeKey: `goal:${found.id}:reached`,
+  });
+}
+
 /** Adds money to a goal, or takes it out ("withdraw"), never below zero. */
 export async function addContributionAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
@@ -104,7 +128,7 @@ export async function addContributionAction(_previousState, formData) {
   const result = await db.transaction(async tx => {
     // Lock the goal so two withdrawals at the same moment can't both pass the balance check.
     const [found] = await tx
-      .select({ id: goal.id, name: goal.name })
+      .select({ id: goal.id, name: goal.name, targetAmount: goal.targetAmount })
       .from(goal)
       .where(and(eq(goal.id, goalId), eq(goal.householdId, context.householdId)))
       .for("update");
@@ -127,6 +151,7 @@ export async function addContributionAction(_previousState, formData) {
       note: values.note || null,
       userId: context.user.id,
     });
+    if (direction > 0) await notifyIfGoalReached(tx, { context, goal: found, amount });
     const verb = direction > 0 ? "added to" : "taken from";
     return { success: `${formatMoney(amount, context.currency)} ${verb} ${found.name}.`, values: {} };
   });

@@ -60,7 +60,7 @@
 ## 7 Real-time and collaboration
 
 - [ ] Add live expense updates (WebSocket or polling).
-- [ ] Add notification center for invites and budget alerts.
+- [x] Add notification center for invites and budget alerts (/notifications, with an unread badge in the navigation): budget alerts at 80%/100% of a category limit, goals reached, members joining, role changes.
 - [ ] Add optimistic UI for invite and expense creation.
 
 ## 8 Testing and quality gates
@@ -126,7 +126,8 @@ Things that work locally but must be done or changed on the real server
 
 ### Later features that depend on deployment
 
-- [ ] Budget alerts and reminder emails (roadmap step 5) need a scheduled job, e.g. a cron
-      task in Coolify calling a protected route.
+- [ ] In-app budget alerts are sent when an expense is added, so they need no scheduled job.
+      Reminder emails (e.g. a weekly summary, or a goal falling behind) would: a cron task in
+      Coolify calling a protected route.
 - [ ] If profile pictures from other sites are allowed, add their hosts to `images.remotePatterns`
       in `next.config.mjs` (otherwise `next/image` throws an error).
