@@ -4,6 +4,9 @@ import SideNav from "@/components/SideNav";
 import { requireHousehold } from "@/lib/dal";
 import { unreadNotificationCount } from "@/lib/notifications";
 
+// Signed-in pages are private: keep them out of search results.
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function AppLayout({ children }) {
   // Redirects to /sign-in (no valid session) or /onboarding (no household).
   const { user, householdId } = await requireHousehold();

@@ -67,6 +67,8 @@ export default defineConfig({
         RATES_API_URL: `${MARKET_STUB_URL}/rates`,
         // Short, so the tests can see a refresh fail and stale data being shown.
         MARKET_CACHE_SECONDS: "2",
+        // Every test request comes from one address; don't let the telemetry rate limit get in the way.
+        TELEMETRY_MAX_PER_MINUTE: "100000",
       },
     },
   ],

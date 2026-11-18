@@ -1,7 +1,7 @@
 import Link from "next/link";
 import CategoryBars from "@/components/Insights/CategoryBars";
 import SavingsForecast from "@/components/Goals/SavingsForecast";
-import ColumnChart from "@/components/Insights/ColumnChart";
+import ColumnChart from "@/components/Insights/LazyColumnChart";
 import Panel from "@/components/Panel";
 import { requireHousehold } from "@/lib/dal";
 import {

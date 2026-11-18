@@ -4,7 +4,20 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/sign-in", "/sign-up", "/check-email", "/email-verified", "/forgot-password", "/reset-password", "/invite"];
+const PUBLIC_PATHS = [
+  "/sign-in",
+  "/sign-up",
+  "/check-email",
+  "/email-verified",
+  "/forgot-password",
+  "/reset-password",
+  "/invite",
+  // Files for search engines, share previews and "add to home screen".
+  "/robots.txt",
+  "/sitemap.xml",
+  "/manifest.webmanifest",
+  "/opengraph-image",
+];
 
 export function proxy(request) {
   const { pathname, search } = request.nextUrl;

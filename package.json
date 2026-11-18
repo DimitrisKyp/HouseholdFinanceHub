@@ -21,7 +21,8 @@
     "db:init-test": "node scripts/local-db.mjs init-test",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "analyze": "next experimental-analyze"
   },
   "dependencies": {
     "@next/env": "^16.2.7",

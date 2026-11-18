@@ -73,10 +73,10 @@
 
 ## 9 Performance and production readiness
 
-- [ ] Use dynamic imports for heavy charts.
-- [ ] Measure bundle size and optimize client components.
-- [ ] Add metadata, OG images, sitemap, robots.
-- [ ] Add analytics and error monitoring.
+- [x] Use dynamic imports: the Insights charts load in their own chunk (`LazyColumnChart`, `next/dynamic`), and the dashboard's breakdown drawer only downloads when first opened.
+- [x] Measure bundle size: `npm run analyze` (Turbopack bundle analyzer) and a budget test (`e2e/performance.spec.mjs`) that fails if a page downloads more than 200 KB of compressed JavaScript on a first visit (now about 165–175 KB, mostly React and Next.js). Data loading and formatting stay in Server Components.
+- [x] Add metadata (description, Open Graph, Twitter card, theme colour, noindex for signed-in pages), a generated OG image, `sitemap.xml`, `robots.txt`, an app icon and a web app manifest.
+- [x] Add analytics and error monitoring, self-hosted: server errors (`instrumentation.js` onRequestError), browser errors, page views and Core Web Vitals (`instrumentation-client.js`, `/api/telemetry`) are written to the server log as JSON lines. No cookies, user ids or query strings.
 
 - [x] Preferences: theme per user; currency, timezone and name per household (owner, Account page).
 - [ ] Language: the UI is English only. Translating it needs a message catalogue for every string (e.g. next-intl); amounts and dates already follow the household currency and timezone.
@@ -124,6 +124,12 @@ Things that work locally but must be done or changed on the real server
 - [ ] **Don't buffer `/api/events`** in the reverse proxy (Server-Sent Events). Coolify's Traefik
       streams by default; the route also sends `X-Accel-Buffering: no` for nginx. If a proxy
       closes idle connections sooner than every 25 s (the heartbeat), raise its timeout.
+
+- [ ] **Outbound HTTPS** from the server to `api.frankfurter.dev` and `feeds.bbci.co.uk` (Markets &
+      news panel). If the server can't reach them, the panel says so and the rest of the dashboard works.
+- [ ] **Logs:** analytics and errors are JSON lines in the app's output (`"event":"server_error"`,
+      `"page_view"`, `"web_vital"`, `"client_error"`). Keep Coolify's log retention long enough to
+      look back, or forward them (e.g. to Sentry for errors, Plausible for visits) from `src/lib/telemetry.js`.
 
 ### Fine for one server, revisit if the app grows
 

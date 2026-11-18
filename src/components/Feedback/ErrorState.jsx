@@ -5,10 +5,13 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { buttonClasses } from "@/components/ui/Button";
+import { reportClientError } from "@/lib/telemetry-client";
 
 export default function ErrorState({ error, onRetry, homeHref = "/" }) {
   useEffect(() => {
     console.error(error);
+    // Errors caught by an error boundary never reach window.onerror, so report them here.
+    reportClientError(error?.digest ? `${error.message} (digest ${error.digest})` : error?.message, "boundary");
   }, [error]);
 
   return (
