@@ -14,7 +14,7 @@ function Tile({ label, value, detail }) {
 }
 
 /**
- * forecast: null, or { monthlyLabel, monthlyNegative, horizons: [{ months, totalLabel }], breakdown, basisNote,
+ * forecast: null, or { monthlyLabel, monthlyNegative, horizons: [{ months, valueLabel, detail }], breakdown, basisNote,
  *   goals: { neededLabel, verdict } | null }
  */
 export default function SavingsForecast({ forecast }) {
@@ -39,12 +39,7 @@ export default function SavingsForecast({ forecast }) {
           detail={forecast.monthlyNegative ? "More goes out than comes in" : "Expected, before saving"}
         />
         {forecast.horizons.map(horizon => (
-          <Tile
-            key={horizon.months}
-            label={`In ${horizon.months} months`}
-            value={horizon.totalLabel}
-            detail={forecast.monthlyNegative ? "Shortfall if nothing changes" : "If you put it all aside"}
-          />
+          <Tile key={horizon.months} label={`In ${horizon.months} months`} value={horizon.valueLabel} detail={horizon.detail} />
         ))}
         <Tile
           label="Your goals need"

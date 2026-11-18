@@ -3,7 +3,7 @@
 // Recurring income (salary, side income) or recurring bills (rent, subscriptions) for the budget page.
 import { useActionState } from "react";
 import AuthField, { FormError, FormSuccess, InlineMessage, SelectField } from "@/components/Auth/AuthField";
-import { addRecurringItemAction, deleteRecurringItemAction } from "@/lib/actions/budget";
+import { addRecurringItemAction, deleteRecurringItemAction, updateBillCategoryAction } from "@/lib/actions/budget";
 
 const FREQUENCY_OPTIONS = [
   ["monthly", "Monthly"],
@@ -123,8 +123,49 @@ function AddItemForm({ type, categories, members }) {
   );
 }
 
-function ItemRow({ item, canEdit, amountColor }) {
+const smallButton =
+  "rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-cyan-400/50 hover:text-white disabled:opacity-60";
+
+// Change which category a bill belongs to: logged expenses in that category count against it.
+function BillCategoryForm({ item, categories, formAction, pending }) {
+  // An archived category isn't in the list; keep it selectable so the form shows the truth.
+  const options =
+    categories.some(category => category.id === item.categoryId) || !item.categoryId
+      ? categories
+      : [...categories, { id: item.categoryId, name: item.categoryName ?? "Archived category" }];
+  return (
+    <form action={formAction} className="mt-2 flex items-center gap-2">
+      <input type="hidden" name="itemId" value={item.id} />
+      <label className="text-xs text-slate-400" htmlFor={`bill-category-${item.id}`}>
+        Category<span className="sr-only"> for {item.title}</span>
+      </label>
+      <select
+        id={`bill-category-${item.id}`}
+        name="categoryId"
+        defaultValue={item.categoryId ?? ""}
+        className="rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
+      >
+        {item.categoryId ? null : (
+          <option value="" disabled>
+            Choose…
+          </option>
+        )}
+        {options.map(category => (
+          <option key={category.id} value={category.id}>
+            {category.name}
+          </option>
+        ))}
+      </select>
+      <button type="submit" disabled={pending} aria-label={`Save category for ${item.title}`} className={smallButton}>
+        {pending ? "…" : "Save"}
+      </button>
+    </form>
+  );
+}
+
+function ItemRow({ item, canEdit, amountColor, categories }) {
   const [state, formAction, pending] = useActionState(deleteRecurringItemAction, {});
+  const [categoryState, categoryAction, categoryPending] = useActionState(updateBillCategoryAction, {});
 
   return (
     <li className="rounded-xl border border-white/5 bg-white/5 px-4 py-3">
@@ -158,7 +199,10 @@ function ItemRow({ item, canEdit, amountColor }) {
           ) : null}
         </div>
       </div>
-      <InlineMessage state={state.error ? state : null} />
+      {canEdit && categories ? (
+        <BillCategoryForm item={item} categories={categories} formAction={categoryAction} pending={categoryPending} />
+      ) : null}
+      <InlineMessage state={state.error ? state : categoryState.error || categoryState.success ? categoryState : null} />
     </li>
   );
 }
@@ -188,7 +232,13 @@ export default function RecurringItemsPanel({ type, title, subtitle, totalLabel,
       {items.length ? (
         <ul className="mt-4 space-y-2">
           {items.map(item => (
-            <ItemRow key={item.id} item={item} canEdit={canEdit} amountColor={copy.amountColor} />
+            <ItemRow
+              key={item.id}
+              item={item}
+              canEdit={canEdit}
+              amountColor={copy.amountColor}
+              categories={type === "expense" ? categories : null}
+            />
           ))}
         </ul>
       ) : (

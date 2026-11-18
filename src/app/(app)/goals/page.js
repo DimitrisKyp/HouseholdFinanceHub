@@ -4,20 +4,8 @@ import GoalCard from "@/components/Goals/GoalCard";
 import SavingsForecast from "@/components/Goals/SavingsForecast";
 import Panel from "@/components/Panel";
 import { requireHousehold } from "@/lib/dal";
-import {
-  billsByCategory,
-  firstExpenseDate,
-  goalContributionsByMonth,
-  goalView,
-  listCategories,
-  listGoals,
-  listRecurringItems,
-  monthlyNeeded,
-  monthlySpending,
-  recurringTotals,
-  spendingBeyondBills,
-} from "@/lib/finance";
-import { forecastView, goalPace, LOOKBACK_MONTHS, monthStart, savingsForecast, typicalSpending } from "@/lib/forecast";
+import { goalView } from "@/lib/finance";
+import { loadSavingsForecast } from "@/lib/forecast-data";
 import { formatMoney, todayIn } from "@/lib/format";
 import { can } from "@/lib/permissions";
 
@@ -28,47 +16,8 @@ export default async function GoalsPage() {
   const canEdit = can(role, "finance:write");
   const today = todayIn(timezone);
 
-  // The forecast looks at the last few full months (not the current one, which is still in progress).
-  const history = { from: monthStart(today, -LOOKBACK_MONTHS), to: monthStart(today) };
-  const [goals, recurring, categories, spending, firstExpenseOn, contributions] = await Promise.all([
-    listGoals(householdId, { timezone }),
-    listRecurringItems(householdId),
-    listCategories(householdId),
-    monthlySpending(householdId, history),
-    firstExpenseDate(householdId),
-    goalContributionsByMonth(householdId, history),
-  ]);
-
-  const views = goals.map(item =>
-    goalView(item, {
-      currency,
-      today,
-      pace: goalPace({ createdOn: item.createdOn, byMonth: contributions.get(item.id) ?? new Map(), today }),
-    }),
-  );
-
-  const totals = recurringTotals(recurring);
-  // Fixed bills are already subtracted, so only spending (or planned spending) above them counts.
-  const bills = billsByCategory(recurring);
-  const limitsTotal = spendingBeyondBills(
-    categories.map(item => ({ categoryId: item.id, total: item.monthlyLimit ?? 0 })),
-    bills,
-  );
-  const typical = typicalSpending({
-    spending: spending.map(row => ({ ...row, beyondBills: spendingBeyondBills(row.byCategory, bills) })),
-    firstExpenseOn,
-    today,
-    limitsTotal,
-  });
-  const needed = goals.map(item => monthlyNeeded(item, today)).filter(amount => amount !== null);
-  const forecast = forecastView({
-    forecast: savingsForecast({ income: totals.income, bills: totals.expenses, spending: typical }),
-    income: totals.income,
-    bills: totals.expenses,
-    spending: typical,
-    goalsNeeded: needed.length ? Math.round(needed.reduce((sum, amount) => sum + amount * 100, 0)) / 100 : null,
-    currency,
-  });
+  const { forecast, goals, paces } = await loadSavingsForecast(householdId, { today, timezone, currency });
+  const views = goals.map(item => goalView(item, { currency, today, pace: paces.get(item.id) }));
   const open = views.filter(item => item.status !== "completed");
   const completed = views.filter(item => item.status === "completed");
   const totalSaved = goals.filter(item => item.status !== "completed").reduce((sum, item) => sum + item.saved, 0);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { goalView, monthlyNeeded } from "@/lib/calculations";
-import { forecastView, goalPace, goalProjection, monthStart, savingsForecast, typicalSpending } from "@/lib/forecast";
+import { formatMoney } from "@/lib/format";
+import { forecastView, goalPace, goalProjection, goalsOutlook, monthStart, savingsForecast, typicalSpending } from "@/lib/forecast";
 
 const TODAY = "2026-11-18";
 
@@ -141,6 +142,26 @@ describe("goal labels", () => {
   });
 });
 
+describe("goalsOutlook", () => {
+  const goals = [
+    { status: "active", saved: 1000, targetAmount: 5000, pace: { monthly: 200, months: 3 } },
+    { status: "active", saved: 900, targetAmount: 1000, pace: { monthly: 50, months: 3 } }, // reaches its target
+    { status: "active", saved: 300, targetAmount: 900, pace: null }, // new: stays as it is
+    { status: "paused", saved: 400, targetAmount: 2000, pace: { monthly: 100, months: 3 } }, // paused: stays
+    { status: "completed", saved: 700, targetAmount: 700, pace: null }, // not counted
+  ];
+
+  it("grows each active goal at its pace, never past its target", () => {
+    // 1000 + 1200, 1000 (capped), 300, 400
+    expect(goalsOutlook(goals, 6)).toEqual({ later: 3900, monthly: 250 });
+  });
+
+  it("is null when no active goal has a pace yet", () => {
+    expect(goalsOutlook(goals.slice(2), 6)).toBeNull();
+    expect(goalsOutlook([], 6)).toBeNull();
+  });
+});
+
 describe("forecastView", () => {
   const forecast = savingsForecast({ income: 3000, bills: 1000, spending: { amount: 1810, basis: "history", months: 3 } });
   const base = { forecast, income: 3000, bills: 1000, spending: { amount: 1810, basis: "history", months: 3 }, currency: "EUR" };
@@ -148,15 +169,32 @@ describe("forecastView", () => {
   it("explains the numbers and compares them with what the goals need", () => {
     const view = forecastView({ ...base, goalsNeeded: 150 });
     expect(view.monthlyLabel).toBe("€190");
+    // Without goals that have a pace, the tiles show the left-over total.
     expect(view.horizons).toEqual([
-      { months: 6, totalLabel: "€1,140" },
-      { months: 12, totalLabel: "€2,280" },
+      { months: 6, valueLabel: "€1,140", detail: "If you put all that's left over aside" },
+      { months: 12, valueLabel: "€2,280", detail: "If you put all that's left over aside" },
     ]);
     expect(view.breakdown).toBe("Income €3,000 − fixed bills €1,000 − typical spending €1,810 = €190 a month.");
     expect(view.basisNote).toContain("last 3 full months");
     expect(view.goals).toEqual({ neededLabel: "€150", verdict: "Covered, with €40 a month to spare" });
     expect(forecastView({ ...base, goalsNeeded: 400 }).goals.verdict).toBe("€210 a month more than is left over");
     expect(forecastView({ ...base, goalsNeeded: null }).goals).toBeNull();
+  });
+
+  it("shows what the goals would realistically hold, and what saving everything would add", () => {
+    const goalList = [{ status: "active", saved: 500, targetAmount: 5000, pace: { monthly: 100, months: 3 } }];
+    expect(forecastView({ ...base, goalsNeeded: null, goalList }).horizons[0]).toEqual({
+      months: 6,
+      valueLabel: "€1,100",
+      detail: "In your goals at your recent pace of €100 a month. Saving all that's left over would add €1,140.",
+    });
+  });
+
+  it("keeps a shortfall a shortfall", () => {
+    const short = savingsForecast({ income: 2000, bills: 1500, spending: { amount: 700, basis: "limits" } });
+    const goalList = [{ status: "active", saved: 500, targetAmount: 5000, pace: { monthly: 100, months: 3 } }];
+    const view = forecastView({ ...base, forecast: short, goalsNeeded: null, goalList });
+    expect(view.horizons[0]).toMatchObject({ valueLabel: formatMoney(-1200), detail: "Shortfall if nothing changes" });
   });
 
   it("is null without a forecast", () => {

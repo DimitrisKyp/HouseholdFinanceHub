@@ -95,6 +95,24 @@ export async function addRecurringItemAction(_previousState, formData) {
   };
 }
 
+// A bill's category decides which logged expenses it covers (see spendingBeyondBills), so it can be changed.
+export async function updateBillCategoryAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const itemId = field(formData, "itemId");
+  if (!UUID_PATTERN.test(itemId)) return { error: "This bill no longer exists." };
+  const found = await findCategory(context.householdId, field(formData, "categoryId"));
+  if (!found) return { error: "Choose a category." };
+
+  const updated = await db
+    .update(recurringItem)
+    .set({ categoryId: found.id })
+    .where(and(eq(recurringItem.id, itemId), eq(recurringItem.householdId, context.householdId), eq(recurringItem.type, "expense")))
+    .returning({ id: recurringItem.id });
+  if (!updated.length) return { error: "This bill no longer exists." };
+  refreshBudgetPages();
+  return { success: `Now in ${found.name}.` };
+}
+
 export async function deleteRecurringItemAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
   const itemId = field(formData, "itemId");

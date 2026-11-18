@@ -85,8 +85,11 @@ test.describe("with a budget, spending history and goals", () => {
     const panel = forecastPanel(page);
     // 3000 − 1000 − 1500 = 500 a month.
     await expect(panel.getByRole("article").filter({ hasText: "Left over each month" })).toContainText("€500");
-    await expect(panel.getByRole("article").filter({ hasText: "In 6 months" })).toContainText("€3,000");
-    await expect(panel.getByRole("article").filter({ hasText: "In 12 months" })).toContainText("€6,000");
+    // The goals at their recent pace: Car €1,600 + €200 a month, Trip (no pace yet) stays at €300.
+    const sixMonths = panel.getByRole("article").filter({ hasText: "In 6 months" });
+    await expect(sixMonths).toContainText("€3,100"); // 1,600 + 1,200 + 300
+    await expect(sixMonths).toContainText("recent pace of €200 a month. Saving all that's left over would add €3,000.");
+    await expect(panel.getByRole("article").filter({ hasText: "In 12 months" })).toContainText("€4,300"); // 1,600 + 2,400 + 300
     // Car needs €3,400 over 10 months = €340; 500 − 340 = 160 spare.
     const goalsTile = panel.getByRole("article").filter({ hasText: "Your goals need" });
     await expect(goalsTile).toContainText("€340 / month");
@@ -109,6 +112,13 @@ test.describe("with a budget, spending history and goals", () => {
     await sql("UPDATE recurring_item SET amount = 3600 WHERE household_id = $1 AND type = 'income'", [household.householdId]);
     await page.goto("/goals");
     await expect(forecastPanel(page).getByRole("article").filter({ hasText: "Left over each month" })).toContainText("€1,100");
+  });
+
+  test("also appears on Insights, whatever the period", async ({ page }) => {
+    await page.goto("/insights?range=12m");
+    const panel = forecastPanel(page);
+    await expect(panel).toContainText("whatever period is chosen above");
+    await expect(panel.getByRole("article").filter({ hasText: "Left over each month" })).toContainText("€1,100");
   });
 
   test.describe("viewer", () => {

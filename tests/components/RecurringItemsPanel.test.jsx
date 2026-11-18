@@ -3,17 +3,18 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import RecurringItemsPanel from "@/components/Budget/RecurringItemsPanel";
-import { addRecurringItemAction } from "@/lib/actions/budget";
+import { addRecurringItemAction, updateBillCategoryAction } from "@/lib/actions/budget";
 
 // The real actions talk to the database; the component only needs their (state, formData) contract.
 vi.mock("@/lib/actions/budget", () => ({
   addRecurringItemAction: vi.fn(),
   deleteRecurringItemAction: vi.fn(async () => ({ success: "Removed." })),
+  updateBillCategoryAction: vi.fn(async () => ({ success: "Now in Bills." })),
 }));
 
 const items = [
-  { id: "1", title: "Rent", detail: "Monthly · Housing", amountLabel: "€850", monthlyLabel: null },
-  { id: "2", title: "Car insurance", detail: "Yearly · Bills", amountLabel: "€480", monthlyLabel: "€40" },
+  { id: "1", title: "Rent", categoryId: "c-housing", detail: "Monthly · Housing", amountLabel: "€850", monthlyLabel: null },
+  { id: "2", title: "Car insurance", categoryId: "c-bills", detail: "Yearly · Bills", amountLabel: "€480", monthlyLabel: "€40" },
 ];
 const categories = [
   { id: "c-housing", name: "Housing" },
@@ -51,6 +52,7 @@ describe("RecurringItemsPanel", () => {
     renderBills({ canEdit: false });
     expect(screen.queryByRole("button", { name: "Add bill" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Remove/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Category for Rent")).not.toBeInTheDocument();
   });
 
   it("shows an empty state", () => {
@@ -101,5 +103,18 @@ describe("RecurringItemsPanel", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Internet added.");
     expect(screen.getByLabelText("Bill")).toHaveValue("");
     expect(screen.getByLabelText("Category")).toHaveValue("c-bills");
+  });
+
+  it("moves a bill to another category", async () => {
+    const user = userEvent.setup();
+    renderBills();
+
+    expect(screen.getByLabelText("Category for Rent")).toHaveValue("c-housing");
+    await user.selectOptions(screen.getByLabelText("Category for Rent"), "Bills");
+    await user.click(screen.getByRole("button", { name: "Save category for Rent" }));
+
+    expect(await screen.findByText("Now in Bills.")).toBeInTheDocument();
+    const formData = vi.mocked(updateBillCategoryAction).mock.calls[0][1];
+    expect(Object.fromEntries(formData)).toEqual({ itemId: "1", categoryId: "c-bills" });
   });
 });

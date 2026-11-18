@@ -95,14 +95,49 @@ export function goalProjection({ saved, targetAmount, targetDate, pace, today })
   return { status: "projected", reachMonth, monthsLate };
 }
 
+/**
+ * What the open goals would hold after `months` at their recent pace. Each active goal grows by its
+ * own pace but never past its target; paused goals stay as they are. Returns { later, monthly }
+ * (monthly = the combined recent pace of the goals still growing), or null when no active goal
+ * has a pace yet, so there's nothing to base it on.
+ * goals: [{ status, saved, targetAmount, pace }] with pace from goalPace (or null).
+ */
+export function goalsOutlook(goals, months) {
+  const open = goals.filter(goal => goal.status !== "completed");
+  if (!open.some(goal => goal.status === "active" && goal.pace)) return null;
+  let later = 0;
+  let monthly = 0;
+  for (const goal of open) {
+    const growing = goal.status === "active" && goal.pace && goal.pace.monthly > 0 && goal.saved < goal.targetAmount;
+    if (growing) monthly += goal.pace.monthly;
+    later += growing ? Math.min(goal.targetAmount, goal.saved + goal.pace.monthly * months) : goal.saved;
+  }
+  return { later: cents(later), monthly: cents(monthly) };
+}
+
 /** "1 month", "3 months". */
 export const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
 /**
+ * One "In N months" tile. With goals that have a recent pace, it shows what they'd realistically hold,
+ * and what saving everything left over would add; otherwise the left-over total. A shortfall stays a shortfall.
+ */
+function horizonView(horizon, outlook, money) {
+  if (horizon.total < 0) return { months: horizon.months, valueLabel: money(horizon.total), detail: "Shortfall if nothing changes" };
+  if (!outlook) return { months: horizon.months, valueLabel: money(horizon.total), detail: "If you put all that's left over aside" };
+  return {
+    months: horizon.months,
+    valueLabel: money(outlook.later),
+    detail: `In your goals at your recent pace of ${money(outlook.monthly)} a month. Saving all that's left over would add ${money(horizon.total)}.`,
+  };
+}
+
+/**
  * Display labels for the forecast panel, or null when there's no forecast.
  * goalsNeeded: total a month the active goals with a target date need (null if there are none).
+ * goalList: the goals with their pace (see goalsOutlook), for the "In N months" tiles.
  */
-export function forecastView({ forecast, income, bills, spending, goalsNeeded, currency }) {
+export function forecastView({ forecast, income, bills, spending, goalsNeeded, currency, goalList = [] }) {
   if (!forecast) return null;
   const money = amount => formatMoney(amount, currency);
   const spendingLabel = spending.basis === "history" ? "typical spending" : "planned spending";
@@ -119,7 +154,9 @@ export function forecastView({ forecast, income, bills, spending, goalsNeeded, c
   return {
     monthlyLabel: money(forecast.monthly),
     monthlyNegative: forecast.monthly < 0,
-    horizons: forecast.horizons.map(horizon => ({ months: horizon.months, totalLabel: money(horizon.total) })),
+    horizons: forecast.horizons.map(horizon =>
+      horizonView(horizon, forecast.monthly < 0 ? null : goalsOutlook(goalList, horizon.months), money),
+    ),
     breakdown: `Income ${money(income)} − fixed bills ${money(bills)} − ${spendingLabel} ${money(spending.amount)} = ${money(forecast.monthly)} a month.`,
     basisNote:
       spending.basis === "history"

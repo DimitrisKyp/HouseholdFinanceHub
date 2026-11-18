@@ -25,6 +25,8 @@ export default async function BudgetPage() {
   const toRow = item => ({
     id: item.id,
     title: item.title,
+    categoryId: item.categoryId,
+    categoryName: item.categoryName,
     detail: [FREQUENCY_LABELS[item.frequency], item.type === "income" ? item.memberName : item.categoryName].filter(Boolean).join(" · "),
     amountLabel: money(item.amount),
     monthlyLabel: item.frequency === "monthly" ? null : money(item.monthlyAmount),

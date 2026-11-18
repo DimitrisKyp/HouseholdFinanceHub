@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CategoryBars from "@/components/Insights/CategoryBars";
+import SavingsForecast from "@/components/Goals/SavingsForecast";
 import ColumnChart from "@/components/Insights/ColumnChart";
 import Panel from "@/components/Panel";
 import { requireHousehold } from "@/lib/dal";
@@ -11,6 +12,7 @@ import {
   spendingBeyondBills,
   spendingByCategory,
 } from "@/lib/finance";
+import { loadSavingsForecast } from "@/lib/forecast-data";
 import { formatMoney, formatMonth, todayIn } from "@/lib/format";
 import { INSIGHT_RANGES, monthlySeries, parseInsightRange, rangeMonths, topCategories } from "@/lib/insights";
 
@@ -40,10 +42,11 @@ export default async function InsightsPage({ searchParams }) {
   const rangeKey = parseInsightRange((await searchParams)?.range);
   const { months, from, to } = rangeMonths(rangeKey, today);
 
-  const [spending, categories, recurring] = await Promise.all([
+  const [spending, categories, recurring, { forecast }] = await Promise.all([
     monthlySpending(householdId, { from, to }),
     spendingByCategory(householdId, { from, to }),
     listRecurringItems(householdId),
+    loadSavingsForecast(householdId, { today, timezone, currency }),
   ]);
   const totals = recurringTotals(recurring);
   const bills = billsByCategory(recurring);
@@ -170,6 +173,13 @@ export default async function InsightsPage({ searchParams }) {
 
         <Panel title="Spending by category" subtitle={`Largest first, ${rangeLabel}. Smaller categories are grouped as “Other”.`}>
           <CategoryBars rows={ranked} />
+        </Panel>
+
+        <Panel
+          title="Savings forecast"
+          subtitle="Looking ahead from the last 3 full months, whatever period is chosen above. Your goals and what they need are on the Goals page."
+        >
+          <SavingsForecast forecast={forecast} />
         </Panel>
       </main>
     </div>

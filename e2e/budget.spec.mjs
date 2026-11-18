@@ -1,6 +1,14 @@
 import { acceptNextDialog, authFile, expect, test } from "./fixtures.mjs";
 import { resetHousehold } from "./helpers/db.mjs";
 
+// Category rows, inside the "Categories and monthly limits" panel (bill rows list category names too).
+const categoryRow = (page, name) =>
+  page
+    .getByRole("heading", { name: "Categories and monthly limits" })
+    .locator("xpath=ancestor::section[1]")
+    .locator("li", { hasText: name })
+    .first();
+
 // The tests in this file build on each other's data.
 test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
@@ -64,7 +72,7 @@ test("owner manages categories and limits", async ({ page }) => {
   await page.click('form:has(#category-name) button[type="submit"]');
   await expect(page.getByText("A category with this name already exists")).toBeVisible();
 
-  const transport = page.locator("li", { hasText: "Transport" }).first();
+  const transport = categoryRow(page, "Transport");
   await transport.locator('input[name="monthlyLimit"]').fill("abc");
   await transport.getByRole("button", { name: "Save" }).click();
   await expect(transport.getByText("Enter an amount")).toBeVisible();
@@ -72,11 +80,27 @@ test("owner manages categories and limits", async ({ page }) => {
   await transport.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Limit €240 / month")).toBeVisible();
 
-  await page.locator("li", { hasText: "Pets" }).first().getByRole("button", { name: "Archive" }).click();
+  await categoryRow(page, "Pets").getByRole("button", { name: "Archive" }).click();
   await expect(page.getByText("Archived categories (1)")).toBeVisible();
   await page.getByText("Archived categories (1)").click();
   await page.locator("details li", { hasText: "Pets" }).getByRole("button", { name: "Restore" }).click();
   await expect(page.locator("li", { hasText: "Limit €75 / month" })).toBeVisible();
+});
+
+test("owner moves a bill to another category", async ({ page }) => {
+  await page.goto("/budget");
+  const rent = page.locator("li", { has: page.getByText("Rent", { exact: true }) });
+  await expect(rent).toContainText("Monthly · Housing");
+  await rent.getByLabel("Category for Rent", { exact: true }).selectOption({ label: "Bills" });
+  await rent.getByRole("button", { name: "Save category for Rent" }).click();
+  await expect(rent).toContainText("Now in Bills.");
+  await expect(rent).toContainText("Monthly · Bills");
+
+  await page.reload();
+  await expect(rent.getByLabel("Category for Rent", { exact: true }).locator("option:checked")).toHaveText("Bills");
+  await rent.getByLabel("Category for Rent", { exact: true }).selectOption({ label: "Housing" });
+  await rent.getByRole("button", { name: "Save category for Rent" }).click();
+  await expect(rent).toContainText("Monthly · Housing");
 });
 
 test("owner removes a bill", async ({ page }) => {
