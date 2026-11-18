@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { UNREAD_CHANGED_EVENT } from "@/lib/unread-signal";
 
 const NOTIFICATIONS_HREF = "/notifications";
 const UNREAD_POLL_MS = 60_000;
+
+// On phones only the everyday pages fit in the bar; the others (setup and settings) go under "More".
+const PHONE_BAR = new Set(["/", "/transactions", "/insights", "/goals", NOTIFICATIONS_HREF]);
 
 const navItems = [
   {
@@ -147,15 +150,110 @@ function useUnreadCount(initial, pathname) {
   return unread;
 }
 
+const isActivePath = (pathname, href) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+function NavIcon({ icon, active, badge }) {
+  return (
+    <span
+      className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-all ${
+        active ? "border-cyan-300/60 bg-cyan-400/10" : "border-white/10 bg-white/0 group-hover:border-white/30"
+      }`}
+    >
+      {icon}
+      {badge ? (
+        <span
+          aria-hidden="true"
+          className="absolute -top-1.5 -right-1.5 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] leading-4 font-semibold text-white"
+        >
+          {badge}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+const MORE_ICON = (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01" />
+  </svg>
+);
+
+/** Phones only: the pages that don't fit in the bar, in a menu. Closes on navigation, Escape or a click outside. */
+function MoreMenu({ items, pathname }) {
+  const [open, setOpen] = useState(false);
+  const [openedAt, setOpenedAt] = useState(pathname);
+  const menuId = useId();
+  const wrapper = useRef(null);
+  if (open && openedAt !== pathname) setOpen(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = event => event.key === "Escape" && setOpen(false);
+    const onClick = event => wrapper.current && !wrapper.current.contains(event.target) && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onClick);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onClick);
+    };
+  }, [open]);
+
+  const active = items.some(item => isActivePath(pathname, item.href));
+  return (
+    <div ref={wrapper} className="relative md:hidden">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={menuId}
+        onClick={() => {
+          setOpenedAt(pathname);
+          setOpen(value => !value);
+        }}
+        className={`group flex flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-all ${
+          active || open ? "text-cyan-300" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+        }`}
+      >
+        <NavIcon icon={MORE_ICON} active={active} />
+        <span className="text-[10px] leading-none font-medium">More</span>
+      </button>
+      {open ? (
+        <ul
+          id={menuId}
+          className="absolute top-full right-0 z-30 mt-2 w-44 rounded-lg border border-white/10 bg-slate-900 p-1 shadow-2xl shadow-black/50"
+        >
+          {items.map(({ href, label, icon }) => {
+            const itemActive = isActivePath(pathname, href);
+            return (
+              <li key={href}>
+                <Link
+                  href={href}
+                  aria-current={itemActive ? "page" : undefined}
+                  onClick={() => setOpen(false)}
+                  className={`group flex items-center gap-3 rounded-md px-2 py-1.5 text-sm transition ${
+                    itemActive ? "text-cyan-300" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <NavIcon icon={icon} active={itemActive} />
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 export default function SideNav({ unreadCount = 0 }) {
   const pathname = usePathname();
   const unread = useUnreadCount(unreadCount, pathname);
 
   return (
     <nav className="relative h-full rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl shadow-black/30">
-      <div className="relative z-10 flex h-full flex-row items-center justify-center gap-2 md:flex-col md:justify-center md:gap-3">
+      <div className="relative z-10 flex h-full flex-row items-center justify-around gap-1 md:flex-col md:justify-center md:gap-3">
         {navItems.map(({ href, label, icon }) => {
-          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const isActive = isActivePath(pathname, href);
           const badge = href === NOTIFICATIONS_HREF && unread > 0 ? (unread > 99 ? "99+" : String(unread)) : null;
           return (
             <Link
@@ -163,29 +261,17 @@ export default function SideNav({ unreadCount = 0 }) {
               href={href}
               title={badge ? `${label}: ${unread} unread` : label}
               aria-label={badge ? `${label}, ${unread} unread` : undefined}
-              className={`group flex min-w-0 flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-all ${
-                isActive ? "text-cyan-300" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
-              }`}
+              aria-current={isActive ? "page" : undefined}
+              className={`group min-w-0 flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-all ${
+                PHONE_BAR.has(href) ? "flex" : "hidden md:flex"
+              } ${isActive ? "text-cyan-300" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"}`}
             >
-              <span
-                className={`relative flex h-8 w-8 items-center justify-center rounded-md border transition-all ${
-                  isActive ? "border-cyan-300/60 bg-cyan-400/10" : "border-white/10 bg-white/0 group-hover:border-white/30"
-                }`}
-              >
-                {icon}
-                {badge ? (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -top-1.5 -right-1.5 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] leading-4 font-semibold text-white"
-                  >
-                    {badge}
-                  </span>
-                ) : null}
-              </span>
+              <NavIcon icon={icon} active={isActive} badge={badge} />
               <span className="text-[10px] leading-none font-medium md:text-[11px]">{label}</span>
             </Link>
           );
         })}
+        <MoreMenu items={navItems.filter(item => !PHONE_BAR.has(item.href))} pathname={pathname} />
       </div>
     </nav>
   );

@@ -37,3 +37,31 @@ for (const role of ["owner", "editor", "viewer"]) {
     });
   });
 }
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  test("everyday pages are in the bar, the rest under More", async ({ page }) => {
+    await page.goto("/");
+    const nav = page.getByRole("navigation");
+    for (const name of ["Dashboard", "Transactions", "Insights", "Goals", "Alerts"]) {
+      await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
+    }
+    await expect(nav.getByRole("link", { name: "Budget", exact: true })).toBeHidden();
+    // Nothing sticks out sideways, even on a narrow phone.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+
+    const more = nav.getByRole("button", { name: "More" });
+    await more.click();
+    await expect(more).toHaveAttribute("aria-expanded", "true");
+    await page.keyboard.press("Escape");
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+
+    await more.click();
+    await nav.getByRole("link", { name: "Budget", exact: true }).click();
+    await expect(page).toHaveURL(/\/budget$/);
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+    await more.click();
+    await expect(nav.getByRole("link", { name: "Budget", exact: true })).toHaveAttribute("aria-current", "page");
+  });
+});
