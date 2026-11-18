@@ -102,8 +102,10 @@ marked as not up to date. To use other sources, set `RATES_API_URL`, `NEWS_FEED_
 `NEWS_SOURCE_NAME`. The browser tests use a local stand-in (`e2e/market-stub.mjs`) instead.
 
 On a network that inspects HTTPS with its own certificate (common on company networks), Node.js
-rejects the connection and the panel says it couldn't load. Point Node at that certificate with
-`NODE_EXTRA_CA_CERTS=C:path	ocompany-root.pem` in `.env.local`'s environment, or check it at home.
+rejects the connection and the panel says it couldn't load. Node has to be told to trust Windows'
+certificates **before it starts**, so this goes in your Windows user environment, not in `.env.local`:
+with Node.js 22.15 or newer, run `setx NODE_OPTIONS "--use-system-ca"` once and open a new terminal.
+(On older Node.js, export the company root certificate and point `NODE_EXTRA_CA_CERTS` at the file instead.)
 
 ## Database commands
 
