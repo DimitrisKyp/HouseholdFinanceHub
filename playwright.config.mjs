@@ -12,7 +12,8 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: CI,
   retries: CI ? 1 : 0,
-  reporter: [["list"], ["html", { open: "never" }]],
+  // In CI, the github reporter also annotates each failing test (with its error) on the run and PR.
+  reporter: [["list"], ["html", { open: "never" }], ...(CI ? [["github"]] : [])],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   globalSetup: "./e2e/global-setup.mjs",
