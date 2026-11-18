@@ -43,22 +43,25 @@ function MemberRow({ member, canManage, isYou, removeAction, removePending }) {
 
         {editable ? (
           <div className="flex items-center gap-2">
-            <form action={roleAction}>
+            {/* A Save button rather than saving on change: a plain form submit also works before the
+                page's JavaScript has loaded, so a quick change can't get lost. */}
+            <form action={roleAction} className="flex items-center gap-2">
               <input type="hidden" name="memberId" value={member.memberId} />
               <label className="sr-only" htmlFor={`role-${member.memberId}`}>
                 Role for {member.name}
               </label>
-              <select
-                id={`role-${member.memberId}`}
-                name="role"
-                defaultValue={member.role}
-                disabled={rolePending}
-                onChange={event => event.currentTarget.form.requestSubmit()}
-                className={selectClass}
-              >
+              <select id={`role-${member.memberId}`} name="role" defaultValue={member.role} className={selectClass}>
                 <option value="editor">Editor</option>
                 <option value="viewer">Viewer</option>
               </select>
+              <button
+                type="submit"
+                disabled={rolePending}
+                aria-label={`Save role for ${member.name}`}
+                className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-cyan-400/50 hover:text-white disabled:opacity-60"
+              >
+                {rolePending ? "…" : "Save"}
+              </button>
             </form>
             <form
               action={removeAction}

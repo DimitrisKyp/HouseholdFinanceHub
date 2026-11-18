@@ -105,9 +105,8 @@ test("everyone hears when a goal reaches its target", async ({ page, browser }) 
 
 test("a member hears when their role changes", async ({ page, browser }) => {
   await page.goto("/members");
-  // The role menu submits on change, which needs the page's JavaScript: wait until it's running.
-  await expect(page.locator('[data-live="open"]')).toHaveCount(1);
-  await page.getByLabel("Role for Test Editor").selectOption("viewer");
+  await page.getByLabel("Role for Test Editor", { exact: true }).selectOption("viewer");
+  await page.getByRole("button", { name: "Save role for Test Editor" }).click();
   await expect(page.getByText("Role changed to Viewer.")).toBeVisible();
 
   const editor = await browser.newContext({ storageState: authFile("editor") });
@@ -116,7 +115,8 @@ test("a member hears when their role changes", async ({ page, browser }) => {
   await expect(notificationList(editorPage)).toContainText("You're now a Viewer in Test Household");
   await editor.close();
 
-  await page.getByLabel("Role for Test Editor").selectOption("editor");
+  await page.getByLabel("Role for Test Editor", { exact: true }).selectOption("editor");
+  await page.getByRole("button", { name: "Save role for Test Editor" }).click();
   await expect(page.getByText("Role changed to Editor.")).toBeVisible();
 });
 
