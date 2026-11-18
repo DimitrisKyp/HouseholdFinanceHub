@@ -30,10 +30,10 @@
 
 ## 3 Dashboard depth (showcase UI and state skills)
 
-- [ ] Add filters: date range, category, household member.
-- [ ] Add searchable and sortable transactions table.
+- [x] Add filters: date range, category, household member.
+- [x] Add searchable and sortable transactions table.
 - [ ] Add charts (monthly trend, category pie, savings forecast).
-- [ ] Add pagination or virtualized list for transactions.
+- [x] Add pagination or virtualized list for transactions.
 
 ## 4 Design system and UX polish
 

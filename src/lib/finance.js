@@ -1,7 +1,7 @@
 // Read queries for household finance data. Callers pass the householdId from the DAL
 // (requireHousehold), so every query is scoped to the household the user belongs to.
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, lt, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { formatDay, formatMoney } from "@/lib/format";
 import { category, expense, goal, goalContribution, recurringItem, user } from "@/db/schema";
@@ -203,4 +203,58 @@ export function categorySpending(categories, expenses) {
       return { id, name, spent: amount, limit, percent: limit ? Math.round((amount / limit) * 100) : null };
     })
     .sort((a, b) => (b.percent ?? -1) - (a.percent ?? -1) || b.spent - a.spent);
+}
+
+// ── Transactions (filtered, sorted, paginated expenses) ──────────────────────
+
+export const TRANSACTIONS_PAGE_SIZE = 25;
+
+const TRANSACTION_SORTS = {
+  date: [expense.spentOn, expense.createdAt],
+  amount: [expense.amount, expense.createdAt],
+  title: [sql`lower(${expense.title})`, expense.spentOn],
+  category: [sql`lower(${category.name})`, expense.spentOn],
+};
+
+/**
+ * One page of expenses matching the filters, plus the count and total of ALL matches.
+ * filters: { from, to (inclusive "YYYY-MM-DD" or null), categoryId, paidByUserId, q, sort, dir, page }
+ */
+export async function searchExpenses(householdId, filters) {
+  const conditions = [eq(expense.householdId, householdId)];
+  if (filters.from) conditions.push(gte(expense.spentOn, filters.from));
+  if (filters.to) conditions.push(lte(expense.spentOn, filters.to));
+  if (filters.categoryId) conditions.push(eq(expense.categoryId, filters.categoryId));
+  if (filters.paidByUserId) conditions.push(eq(expense.paidByUserId, filters.paidByUserId));
+  if (filters.q) {
+    // Escape LIKE wildcards so "50%" matches literally.
+    const pattern = `%${filters.q.replace(/[\\%_]/g, "\\$&")}%`;
+    conditions.push(ilike(expense.title, pattern));
+  }
+  const where = and(...conditions);
+
+  const [summary] = await db
+    .select({ count: sql`count(*)`.mapWith(Number), total: sql`coalesce(sum(${expense.amount}), 0)`.mapWith(Number) })
+    .from(expense)
+    .where(where);
+
+  const direction = filters.dir === "asc" ? asc : desc;
+  const rows = await db
+    .select({
+      id: expense.id,
+      title: expense.title,
+      amount: expense.amount,
+      spentOn: expense.spentOn,
+      categoryName: category.name,
+      paidByName: user.name,
+    })
+    .from(expense)
+    .innerJoin(category, eq(category.id, expense.categoryId))
+    .leftJoin(user, eq(user.id, expense.paidByUserId))
+    .where(where)
+    .orderBy(...TRANSACTION_SORTS[filters.sort].map(column => direction(column)), desc(expense.id))
+    .limit(TRANSACTIONS_PAGE_SIZE)
+    .offset((filters.page - 1) * TRANSACTIONS_PAGE_SIZE);
+
+  return { rows, count: summary.count, total: Math.round(summary.total * 100) / 100 };
 }

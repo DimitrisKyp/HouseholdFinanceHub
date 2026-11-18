@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { InlineMessage } from "@/components/Auth/AuthField";
 import { deleteExpenseAction } from "@/lib/actions/expenses";
@@ -144,6 +145,12 @@ export default function ExpenseBreakdownDrawer({ isOpen, onClose, monthLabel, ca
             ) : (
               <p className="mt-3 text-sm text-slate-500">No transactions this month yet.</p>
             )}
+            <Link
+              href="/transactions"
+              className="mt-4 block rounded-xl border border-white/10 px-4 py-2.5 text-center text-sm font-medium text-slate-300 transition hover:border-cyan-400/40 hover:text-white"
+            >
+              Search all transactions →
+            </Link>
           </section>
         </div>
       </aside>

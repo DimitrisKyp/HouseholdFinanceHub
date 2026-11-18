@@ -62,6 +62,7 @@ export async function addExpenseAction(_previousState, formData) {
     createdByUserId: context.user.id,
   });
   revalidatePath("/");
+  revalidatePath("/transactions");
   // Keep category, payer and date for the next entry (people often log several at once).
   return {
     success: `${values.title} (${formatMoney(amount, context.currency)}) added.`,
@@ -80,5 +81,6 @@ export async function deleteExpenseAction(_previousState, formData) {
     .returning({ id: expense.id });
   if (!removed.length) return { error: "This expense no longer exists." };
   revalidatePath("/");
+  revalidatePath("/transactions");
   return { success: "Expense deleted." };
 }
