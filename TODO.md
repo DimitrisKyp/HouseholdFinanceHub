@@ -65,10 +65,11 @@
 
 ## 8 Testing and quality gates
 
-- [ ] Add unit tests for reducers and utility formatters.
-- [ ] Add component tests for forms and list rendering.
-- [ ] Add integration tests for key user flows.
-- [ ] Add CI checks: lint, test, build.
+- [x] Add unit tests for utility formatters and calculations (Vitest, `npm test`).
+- [x] Add component tests for forms and list rendering (Testing Library).
+- [ ] Add integration tests for key user flows (Playwright against a test database; run in CI with a Postgres service).
+- [x] Add CI checks: lint, test, build (`.github/workflows/ci.yml`).
+- [ ] Add `npm run format:check` to CI once the remaining files are formatted with Prettier.
 
 ## 9 Performance and production readiness
 

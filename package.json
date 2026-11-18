@@ -17,7 +17,9 @@
     "db:init": "node scripts/local-db.mjs init",
     "db:start": "node scripts/local-db.mjs start",
     "db:stop": "node scripts/local-db.mjs stop",
-    "db:status": "node scripts/local-db.mjs status"
+    "db:status": "node scripts/local-db.mjs status",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@next/env": "^16.2.7",
@@ -32,12 +34,18 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.12",
+    "@vitejs/plugin-react": "^6.3.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^29.1.1",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.7.1",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "vitest": "^4.1.12"
   }
 }
