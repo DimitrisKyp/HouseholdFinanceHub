@@ -29,12 +29,13 @@ const monthsBetween = (fromIso, toIso) => {
 /**
  * Typical monthly day-to-day spending, from the last LOOKBACK_MONTHS full months, counting only
  * months since the first logged expense (so a new household isn't averaged with empty months).
+ * Rows may carry `beyondBills` (spending not already covered by fixed bills), which is used if present.
  * Without a full month of history, the category limits are used as a plan, if there are any.
  * Returns { amount, basis: "history", months } | { amount, basis: "limits" } | { amount: null, basis: "none" }.
  */
 export function typicalSpending({ spending, firstExpenseOn, today, limitsTotal = 0 }) {
   const firstMonth = firstExpenseOn ? monthStart(firstExpenseOn) : null;
-  const spentByMonth = new Map(spending.map(row => [row.month, row.total]));
+  const spentByMonth = new Map(spending.map(row => [row.month, row.beyondBills ?? row.total]));
   const months = [];
   for (let back = 1; back <= LOOKBACK_MONTHS; back++) {
     const month = monthStart(today, -back);
@@ -122,8 +123,8 @@ export function forecastView({ forecast, income, bills, spending, goalsNeeded, c
     breakdown: `Income ${money(income)} − fixed bills ${money(bills)} − ${spendingLabel} ${money(spending.amount)} = ${money(forecast.monthly)} a month.`,
     basisNote:
       spending.basis === "history"
-        ? `Typical spending is the average of the last ${plural(spending.months, "full month")} of logged expenses.`
-        : "No full month of expenses is logged yet, so your category limits stand in for spending.",
+        ? `Typical spending is the average of the last ${plural(spending.months, "full month")} of logged expenses. In a category with a fixed bill, only spending above the bill counts, so a bill you also log as an expense isn't counted twice.`
+        : "No full month of expenses is logged yet, so your category limits stand in for spending (above any fixed bill in the same category).",
     goals,
   };
 }

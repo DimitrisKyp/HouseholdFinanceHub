@@ -37,17 +37,21 @@ export function rangeMonths(rangeKey, today) {
 /**
  * One row per month: spending (from expenses) and the net result after the household's
  * recurring income and fixed bills. The Budget page holds the current amounts only, so the
- * same monthly baseline ({ income, bills }) is applied to every month.
+ * same monthly baseline ({ income, bills }) is applied to every month. Spending rows may carry
+ * `beyondBills` (the part not already covered by fixed bills), which is then used for the net.
  * The current month is marked as in progress.
  */
 export function monthlySeries({ months, spending, baseline, today }) {
-  const spentByMonth = new Map(spending.map(row => [row.month, row.total]));
+  const byMonth = new Map(spending.map(row => [row.month, row]));
   return months.map(month => {
-    const spent = spentByMonth.get(month.start) ?? 0;
+    const row = byMonth.get(month.start);
+    const spent = row?.total ?? 0;
+    // Spending already covered by a fixed bill isn't subtracted twice (see spendingBeyondBills).
+    const extra = row?.beyondBills ?? spent;
     return {
       month: month.start,
       spent,
-      net: cents(baseline.income - baseline.bills - spent),
+      net: cents(baseline.income - baseline.bills - extra),
       current: today >= month.start && today <= month.end,
     };
   });

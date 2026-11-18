@@ -87,7 +87,7 @@ export default async function BudgetPage() {
             <RecurringItemsPanel
               type="expense"
               title="Fixed bills"
-              subtitle="Rent, utilities, subscriptions: costs you expect every time."
+              subtitle="Rent, utilities, subscriptions: costs you expect every time. Pick the category you'd log the payment under, so logging it too doesn't count it twice."
               totalLabel={money(totals.expenses)}
               items={bills}
               categories={categories.map(({ id, name }) => ({ id, name }))}

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { categorySpending, goalView, monthlyAmount, monthsUntil, recurringTotals } from "@/lib/calculations";
+import {
+  billsByCategory,
+  categorySpending,
+  goalView,
+  monthlyAmount,
+  monthsUntil,
+  recurringTotals,
+  spendingBeyondBills,
+} from "@/lib/calculations";
 import { can } from "@/lib/permissions";
 
 describe("recurring items", () => {
@@ -17,6 +25,50 @@ describe("recurring items", () => {
       { type: "expense", monthlyAmount: 0.2 },
     ];
     expect(recurringTotals(items)).toEqual({ income: 2662.17, expenses: 0.3 });
+  });
+});
+
+describe("spending beyond fixed bills", () => {
+  const recurring = [
+    { type: "expense", categoryId: "housing", monthlyAmount: 1000 }, // rent
+    { type: "expense", categoryId: "bills", monthlyAmount: 60 }, // internet
+    { type: "expense", categoryId: "bills", monthlyAmount: 25.5 }, // phone
+    { type: "expense", categoryId: null, monthlyAmount: 40 }, // no category: can't be matched
+    { type: "income", categoryId: null, monthlyAmount: 3000 },
+  ];
+  const bills = billsByCategory(recurring);
+
+  it("adds up fixed bills per category", () => {
+    expect(bills).toEqual(
+      new Map([
+        ["housing", 1000],
+        ["bills", 85.5],
+      ]),
+    );
+  });
+
+  it("only counts spending above a category's fixed bills, so a logged bill isn't counted twice", () => {
+    const rows = [
+      { categoryId: "groceries", total: 400 },
+      { categoryId: "housing", total: 1000 }, // rent, also logged as an expense
+      { categoryId: "bills", total: 50 },
+      { categoryId: "bills", total: 60 }, // 110 in total: 24.50 above the bills
+    ];
+    expect(spendingBeyondBills(rows, bills)).toBe(424.5);
+  });
+
+  it("gives the same result whether a bill is logged or not", () => {
+    expect(spendingBeyondBills([{ categoryId: "groceries", total: 400 }], bills)).toBe(400);
+    expect(
+      spendingBeyondBills(
+        [
+          { categoryId: "groceries", total: 400 },
+          { categoryId: "housing", total: 1000 },
+        ],
+        bills,
+      ),
+    ).toBe(400);
+    expect(spendingBeyondBills([], bills)).toBe(0);
   });
 });
 

@@ -3,7 +3,14 @@ import CategoryBars from "@/components/Insights/CategoryBars";
 import ColumnChart from "@/components/Insights/ColumnChart";
 import Panel from "@/components/Panel";
 import { requireHousehold } from "@/lib/dal";
-import { listRecurringItems, monthlySpending, recurringTotals, spendingByCategory } from "@/lib/finance";
+import {
+  billsByCategory,
+  listRecurringItems,
+  monthlySpending,
+  recurringTotals,
+  spendingBeyondBills,
+  spendingByCategory,
+} from "@/lib/finance";
 import { formatMoney, formatMonth, todayIn } from "@/lib/format";
 import { INSIGHT_RANGES, monthlySeries, parseInsightRange, rangeMonths, topCategories } from "@/lib/insights";
 
@@ -39,7 +46,13 @@ export default async function InsightsPage({ searchParams }) {
     listRecurringItems(householdId),
   ]);
   const totals = recurringTotals(recurring);
-  const series = monthlySeries({ months, spending, baseline: { income: totals.income, bills: totals.expenses }, today });
+  const bills = billsByCategory(recurring);
+  const series = monthlySeries({
+    months,
+    spending: spending.map(row => ({ ...row, beyondBills: spendingBeyondBills(row.byCategory, bills) })),
+    baseline: { income: totals.income, bills: totals.expenses },
+    today,
+  });
 
   const totalSpent = Math.round(series.reduce((sum, row) => sum + row.spent * 100, 0)) / 100;
   const completed = series.filter(row => !row.current);
@@ -142,7 +155,7 @@ export default async function InsightsPage({ searchParams }) {
           </Panel>
           <Panel
             title="Left over each month"
-            subtitle="Income minus fixed bills (both from your current Budget) minus spending. Red means more went out than came in. The current month is still in progress."
+            subtitle="Income minus fixed bills (both from your current Budget) minus other spending. Expenses in a bill's category only count above that bill, so nothing is subtracted twice. Red means more went out than came in. The current month is still in progress."
           >
             <ColumnChart
               title="Left over each month"

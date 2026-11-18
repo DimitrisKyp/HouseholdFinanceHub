@@ -38,6 +38,17 @@ describe("monthlySeries", () => {
     expect(series[1]).toMatchObject({ spent: 0, net: 2000 }); // no expenses that month
     expect(series.at(-1)).toMatchObject({ spent: 640, net: 1360, current: true });
   });
+
+  it("subtracts only the spending beyond fixed bills, but still shows everything spent", () => {
+    const { months } = rangeMonths("6m", "2026-11-18");
+    const series = monthlySeries({
+      months,
+      spending: [{ month: "2026-10-01", total: 1600, beyondBills: 600 }], // includes rent, which is a fixed bill
+      baseline: { income: 3000, bills: 1000 },
+      today: "2026-11-18",
+    });
+    expect(series.at(-2)).toMatchObject({ spent: 1600, net: 1400 });
+  });
 });
 
 describe("topCategories", () => {

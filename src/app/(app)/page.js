@@ -4,7 +4,17 @@ import GoalsRemindersPanel from "@/components/Dashboard/GoalsRemindersPanel";
 import HeroSection from "@/components/Dashboard/HeroSection";
 import TopBar from "@/components/TopBar";
 import { requireHousehold } from "@/lib/dal";
-import { categorySpending, goalView, listCategories, listExpenses, listGoals, listRecurringItems, recurringTotals } from "@/lib/finance";
+import {
+  billsByCategory,
+  categorySpending,
+  goalView,
+  listCategories,
+  listExpenses,
+  listGoals,
+  listRecurringItems,
+  recurringTotals,
+  spendingBeyondBills,
+} from "@/lib/finance";
 import { currentMonthRange, formatDay, formatMoney, formatMonth, todayIn } from "@/lib/format";
 import { listMembers } from "@/lib/invites";
 import { MARKET_NEWS } from "@/lib/news";
@@ -27,10 +37,15 @@ export default async function DashboardPage() {
     canEdit ? listMembers(householdId) : [],
   ]);
 
-  // This month: recurring income minus fixed bills minus what was actually spent.
+  // This month: recurring income minus fixed bills minus what was spent on top of them (expenses
+  // in a bill's category only count above that bill, so a bill logged as an expense isn't counted twice).
   const totals = recurringTotals(recurring);
   const spent = Math.round(expenses.reduce((sum, item) => sum + item.amount * 100, 0)) / 100;
-  const net = Math.round((totals.income - totals.expenses - spent) * 100) / 100;
+  const extra = spendingBeyondBills(
+    expenses.map(item => ({ categoryId: item.categoryId, total: item.amount })),
+    billsByCategory(recurring),
+  );
+  const net = Math.round((totals.income - totals.expenses - extra) * 100) / 100;
   const savingsRate = totals.income ? Math.max(0, Math.round((net / totals.income) * 100)) : 0;
 
   const categoryTotals = categorySpending(categories, expenses).map(item => ({

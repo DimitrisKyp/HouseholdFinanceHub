@@ -26,15 +26,16 @@ test.describe("with a budget, spending history and goals", () => {
 
   test.beforeAll(async () => {
     const { householdId, categoryIds } = household;
-    // Income €3,000, bills €1,000; the last 3 full months spent €1,500, €1,200, €1,800 (typical €1,500).
+    // Income €3,000, bills €1,000 (rent, in Housing); the last 3 full months spent €1,500, €1,200, €1,800
+    // on shopping (typical €1,500), plus the rent, logged as an expense too: it mustn't count twice.
     await sql(`INSERT INTO recurring_item (household_id, type, title, amount, starts_on) VALUES ($1, 'income', 'Salary', 3000, $2)`, [
       householdId,
       today(),
     ]);
-    await sql(`INSERT INTO recurring_item (household_id, type, title, amount, starts_on) VALUES ($1, 'expense', 'Rent', 1000, $2)`, [
-      householdId,
-      today(),
-    ]);
+    await sql(
+      `INSERT INTO recurring_item (household_id, type, title, amount, category_id, starts_on) VALUES ($1, 'expense', 'Rent', 1000, $2, $3)`,
+      [householdId, categoryIds.Housing, today()],
+    );
     for (const [offset, amount] of [
       [-3, 1500],
       [-2, 1200],
@@ -45,6 +46,13 @@ test.describe("with a budget, spending history and goals", () => {
         householdId,
         categoryIds.Groceries,
         amount,
+        month(offset),
+      ]);
+    }
+    for (const offset of [-3, -2, -1]) {
+      await sql("INSERT INTO expense (household_id, category_id, title, amount, spent_on) VALUES ($1, $2, 'Rent', 1000, $3)", [
+        householdId,
+        categoryIds.Housing,
         month(offset),
       ]);
     }

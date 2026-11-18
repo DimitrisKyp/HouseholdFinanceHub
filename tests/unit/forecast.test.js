@@ -29,6 +29,11 @@ describe("typicalSpending", () => {
     });
   });
 
+  it("uses the spending beyond fixed bills when it's given", () => {
+    const withBills = spending.map(row => ({ ...row, total: row.total + 1000, beyondBills: row.total }));
+    expect(typicalSpending({ spending: withBills, firstExpenseOn: "2026-01-04", today: TODAY })).toMatchObject({ amount: 1500 });
+  });
+
   it("counts a month with no expenses as zero, but not months before the first expense", () => {
     const sparse = [{ month: "2026-10-01", total: 900 }];
     expect(typicalSpending({ spending: sparse, firstExpenseOn: "2026-08-20", today: TODAY })).toMatchObject({ amount: 300, months: 3 });

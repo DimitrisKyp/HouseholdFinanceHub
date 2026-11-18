@@ -20,6 +20,30 @@ export function recurringTotals(items) {
   return { income: sum("income"), expenses: sum("expense") };
 }
 
+/** Monthly fixed bills per category id, for bills that have a category. */
+export function billsByCategory(items) {
+  const bills = new Map();
+  for (const item of items) {
+    if (item.type !== "expense" || !item.categoryId) continue;
+    bills.set(item.categoryId, (bills.get(item.categoryId) ?? 0) + Math.round(item.monthlyAmount * 100));
+  }
+  return new Map([...bills].map(([id, amount]) => [id, amount / 100]));
+}
+
+/**
+ * Spending on top of the fixed bills. Fixed bills are already subtracted from income, so in a
+ * category that has fixed bills, only spending above them counts. Paying rent from the Budget
+ * and also logging it as an expense then isn't counted twice, and logging it or not gives the
+ * same result. rows: [{ categoryId, total }] (several rows per category are fine).
+ */
+export function spendingBeyondBills(rows, bills) {
+  const spent = new Map();
+  for (const row of rows) spent.set(row.categoryId, (spent.get(row.categoryId) ?? 0) + Math.round(row.total * 100));
+  let total = 0;
+  for (const [id, amount] of spent) total += Math.max(0, amount - Math.round((bills.get(id) ?? 0) * 100));
+  return total / 100;
+}
+
 export const GOAL_STATUSES = ["active", "paused", "completed"];
 
 /** Whole months from `today` until `targetDate` ("YYYY-MM-DD"), at least 1; null if no date or it has passed. */

@@ -8,6 +8,7 @@ import { GOAL_STATUSES, monthlyAmount } from "@/lib/calculations";
 import { category, expense, goal, goalContribution, recurringItem, user } from "@/db/schema";
 
 export {
+  billsByCategory,
   categorySpending,
   FREQUENCIES,
   FREQUENCY_LABELS,
@@ -17,6 +18,7 @@ export {
   monthlyNeeded,
   monthsUntil,
   recurringTotals,
+  spendingBeyondBills,
 } from "@/lib/calculations";
 
 /** Categories in alphabetical order. Archived ones are only included when asked for. */
@@ -39,6 +41,7 @@ export async function listRecurringItems(householdId) {
       title: recurringItem.title,
       amount: recurringItem.amount,
       frequency: recurringItem.frequency,
+      categoryId: recurringItem.categoryId,
       categoryName: category.name,
       memberName: user.name,
     })
@@ -218,15 +221,26 @@ export async function searchExpenses(householdId, filters) {
 
 // ── Insights (aggregates for charts) ─────────────────────────────────────────
 
-/** Total spending per calendar month for spent_on in [from, to): [{ month: "YYYY-MM-01", total }]. */
+/**
+ * Spending per month for spent_on in [from, to): [{ month: "YYYY-MM-01", total, byCategory: [{ categoryId, total }] }].
+ * Months without expenses are left out.
+ */
 export async function monthlySpending(householdId, { from, to }) {
   const month = sql`to_char(date_trunc('month', ${expense.spentOn}), 'YYYY-MM-01')`;
   const rows = await db
-    .select({ month, total: sql`sum(${expense.amount})`.mapWith(Number) })
+    .select({ month, categoryId: expense.categoryId, total: sql`sum(${expense.amount})`.mapWith(Number) })
     .from(expense)
     .where(and(eq(expense.householdId, householdId), gte(expense.spentOn, from), lt(expense.spentOn, to)))
-    .groupBy(month);
-  return rows.map(row => ({ month: row.month, total: Math.round(row.total * 100) / 100 }));
+    .groupBy(month, expense.categoryId);
+  const months = new Map();
+  for (const row of rows) {
+    const entry = months.get(row.month) ?? { month: row.month, cents: 0, byCategory: [] };
+    const total = Math.round(row.total * 100);
+    entry.cents += total;
+    entry.byCategory.push({ categoryId: row.categoryId, total: total / 100 });
+    months.set(row.month, entry);
+  }
+  return [...months.values()].map(({ cents, ...entry }) => ({ ...entry, total: cents / 100 }));
 }
 
 /** Total spending per category for spent_on in [from, to), largest first. */

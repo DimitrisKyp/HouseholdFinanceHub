@@ -5,6 +5,7 @@ import SavingsForecast from "@/components/Goals/SavingsForecast";
 import Panel from "@/components/Panel";
 import { requireHousehold } from "@/lib/dal";
 import {
+  billsByCategory,
   firstExpenseDate,
   goalContributionsByMonth,
   goalView,
@@ -14,6 +15,7 @@ import {
   monthlyNeeded,
   monthlySpending,
   recurringTotals,
+  spendingBeyondBills,
 } from "@/lib/finance";
 import { forecastView, goalPace, LOOKBACK_MONTHS, monthStart, savingsForecast, typicalSpending } from "@/lib/forecast";
 import { formatMoney, todayIn } from "@/lib/format";
@@ -46,8 +48,18 @@ export default async function GoalsPage() {
   );
 
   const totals = recurringTotals(recurring);
-  const limitsTotal = categories.reduce((sum, item) => sum + (item.monthlyLimit ?? 0), 0);
-  const typical = typicalSpending({ spending, firstExpenseOn, today, limitsTotal });
+  // Fixed bills are already subtracted, so only spending (or planned spending) above them counts.
+  const bills = billsByCategory(recurring);
+  const limitsTotal = spendingBeyondBills(
+    categories.map(item => ({ categoryId: item.id, total: item.monthlyLimit ?? 0 })),
+    bills,
+  );
+  const typical = typicalSpending({
+    spending: spending.map(row => ({ ...row, beyondBills: spendingBeyondBills(row.byCategory, bills) })),
+    firstExpenseOn,
+    today,
+    limitsTotal,
+  });
   const needed = goals.map(item => monthlyNeeded(item, today)).filter(amount => amount !== null);
   const forecast = forecastView({
     forecast: savingsForecast({ income: totals.income, bills: totals.expenses, spending: typical }),
