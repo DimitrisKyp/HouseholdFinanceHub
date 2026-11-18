@@ -19,3 +19,25 @@ export function newPasswordErrors(password, confirmPassword, passwordKey = "pass
   if (password !== confirmPassword) errors.confirmPassword = "The passwords don't match.";
   return errors;
 }
+
+export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** True for a Postgres unique-constraint error (also when wrapped by Drizzle). */
+export const isUniqueViolation = error => (error?.cause?.code ?? error?.code) === "23505";
+
+/**
+ * A money amount typed by a person ("12", "12.5", "1,250.00" or "12,50") as a number with at most
+ * 2 decimals, or null if it isn't one. Fits the numeric(12,2) columns. Zero and negatives are
+ * rejected unless allowed.
+ */
+export function parseAmount(raw, { allowZero = false, allowNegative = false } = {}) {
+  let text = String(raw ?? "").replace(/\s/g, "");
+  // "1,250.00" → thousands separator; "12,50" → decimal comma.
+  text = text.includes(".") ? text.replace(/,/g, "") : text.replace(",", ".");
+  const match = /^(-?)(\d{1,10})(\.\d{1,2})?$/.exec(text);
+  if (!match) return null;
+  const value = Number(text);
+  if (value < 0 && !allowNegative) return null;
+  if (value === 0 && !allowZero) return null;
+  return value;
+}

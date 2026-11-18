@@ -60,3 +60,48 @@ export function SubmitButton({ pending, children, pendingText }) {
     </button>
   );
 }
+
+/** Labelled <select> with an inline error message, styled like AuthField. */
+export function SelectField({ id, label, error, children, ...selectProps }) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-sm text-slate-300">
+        {label}
+      </label>
+      <select
+        id={id}
+        name={id}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={`w-full rounded-xl border bg-slate-950/60 px-4 py-3 text-white transition outline-none focus:border-cyan-400 ${
+          error ? "border-rose-400/70" : "border-white/10"
+        }`}
+        {...selectProps}
+      >
+        {children}
+      </select>
+      {error ? (
+        <p id={`${id}-error`} className="mt-1 text-xs text-rose-300">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** One-line result message under a small inline form (role change, delete, save). */
+export function InlineMessage({ state }) {
+  if (state?.error)
+    return (
+      <p role="alert" className="mt-2 text-xs text-rose-300">
+        {state.error}
+      </p>
+    );
+  if (state?.success)
+    return (
+      <p role="status" className="mt-2 text-xs text-emerald-300">
+        {state.success}
+      </p>
+    );
+  return null;
+}

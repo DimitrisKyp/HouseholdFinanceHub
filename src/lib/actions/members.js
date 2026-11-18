@@ -11,7 +11,7 @@ import { householdMember, invite, user } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { requirePermission, requireUser } from "@/lib/dal";
 import { sendInviteEmail, siteUrl } from "@/lib/email";
-import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, newPasswordErrors, passwordField } from "@/lib/forms";
+import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, isUniqueViolation, newPasswordErrors, passwordField, UUID_PATTERN } from "@/lib/forms";
 import {
   acceptInviteAsExistingUser,
   acceptInviteAsNewUser,
@@ -26,8 +26,6 @@ import { ROLE_LABELS } from "@/lib/permissions";
 import { isTooSoon } from "@/lib/throttle";
 
 const MAX_NAME_LENGTH = 100;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const isUniqueViolation = error => (error?.cause?.code ?? error?.code) === "23505";
 
 // Creates the invite (or refreshes the open one for that email with a new link and expiry)
 // and emails it. Returns a message for the form.
