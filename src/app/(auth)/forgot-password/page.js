@@ -7,7 +7,7 @@ export default async function ForgotPasswordPage({ searchParams }) {
 
   return (
     <>
-      <h1 className="text-2xl text-slate-300 font-semibold">Forgot your password?</h1>
+      <h1 className="text-2xl font-semibold text-slate-300">Forgot your password?</h1>
       <p className="mt-1 mb-6 text-sm text-slate-400">Enter your email and we’ll send you a link to choose a new one.</p>
       <ForgotPasswordForm email={typeof email === "string" ? email : ""} />
     </>

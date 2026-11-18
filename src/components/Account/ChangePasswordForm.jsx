@@ -48,12 +48,7 @@ export default function ChangePasswordForm() {
         error={state.errors?.confirmPassword}
       />
       <label className="flex items-start gap-3 text-sm text-slate-300">
-        <input
-          type="checkbox"
-          name="signOutOthers"
-          defaultChecked={state.signOutOthers}
-          className="mt-0.5 h-4 w-4 accent-cyan-400"
-        />
+        <input type="checkbox" name="signOutOthers" defaultChecked={state.signOutOthers} className="mt-0.5 h-4 w-4 accent-cyan-400" />
         <span>
           Sign out of all other devices
           <span className="block text-xs text-slate-500">Recommended if you think someone else knows your password.</span>

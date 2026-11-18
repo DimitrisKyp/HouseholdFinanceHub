@@ -7,12 +7,12 @@ PostgreSQL 17, managed with [Drizzle ORM](https://orm.drizzle.team).
 
 ## Commands
 
-| Command               | What it does                                                    |
-| --------------------- | --------------------------------------------------------------- |
-| `npm run db:generate` | After editing `src/db/schema/`, writes a new migration file     |
-| `npm run db:migrate`  | Applies pending migrations to the database in `DATABASE_URL`    |
-| `npm run db:studio`   | Opens Drizzle Studio (browse and edit data in the browser)      |
-| `npm run db:check`    | Checks the migration files are consistent                       |
+| Command               | What it does                                                 |
+| --------------------- | ------------------------------------------------------------ |
+| `npm run db:generate` | After editing `src/db/schema/`, writes a new migration file  |
+| `npm run db:migrate`  | Applies pending migrations to the database in `DATABASE_URL` |
+| `npm run db:studio`   | Opens Drizzle Studio (browse and edit data in the browser)   |
+| `npm run db:check`    | Checks the migration files are consistent                    |
 
 `DATABASE_URL` is read from `.env.local` (never committed).
 
@@ -29,22 +29,22 @@ PostgreSQL 17, managed with [Drizzle ORM](https://orm.drizzle.team).
 
 ### Households and access
 
-| Table              | Purpose                                                                        |
-| ------------------ | ------------------------------------------------------------------------------ |
-| `household`        | The shared space: name, currency, timezone                                     |
-| `household_member` | Who belongs to which household, with role `owner`, `editor` or `viewer`        |
-| `invite`           | Pending invitations by email; stores only a hash of the emailed token          |
+| Table              | Purpose                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| `household`        | The shared space: name, currency, timezone                              |
+| `household_member` | Who belongs to which household, with role `owner`, `editor` or `viewer` |
+| `invite`           | Pending invitations by email; stores only a hash of the emailed token   |
 
 ### Finance
 
-| Table               | Purpose                                                                          |
-| ------------------- | -------------------------------------------------------------------------------- |
+| Table               | Purpose                                                                           |
+| ------------------- | --------------------------------------------------------------------------------- |
 | `category`          | One shared list for expenses, recurring bills and budgets; optional monthly limit |
-| `expense`           | Day-to-day spending: amount, date, category, who paid                            |
-| `recurring_item`    | Repeating income (salary) or expenses (rent, subscriptions)                      |
-| `goal`              | Savings goal with target amount and optional target date                         |
-| `goal_contribution` | Money added to (or withdrawn from) a goal; progress is calculated from these     |
-| `notification`      | In-app messages: budget alerts, goal reminders, invite updates                   |
+| `expense`           | Day-to-day spending: amount, date, category, who paid                             |
+| `recurring_item`    | Repeating income (salary) or expenses (rent, subscriptions)                       |
+| `goal`              | Savings goal with target amount and optional target date                          |
+| `goal_contribution` | Money added to (or withdrawn from) a goal; progress is calculated from these      |
+| `notification`      | In-app messages: budget alerts, goal reminders, invite updates                    |
 
 ## Rules enforced by the database
 
@@ -67,13 +67,13 @@ PostgreSQL 17, managed with [Drizzle ORM](https://orm.drizzle.team).
 The database can't know who is logged in, so permissions are checked in server code before
 every read or write:
 
-| Action                                          | owner | editor | viewer |
-| ----------------------------------------------- | :---: | :----: | :----: |
-| View household data                             |  ✓   |   ✓   |   ✓   |
-| Add / edit expenses, recurring items, goals     |  ✓   |   ✓   |        |
-| Manage categories and budget limits             |  ✓   |   ✓   |        |
-| Invite / remove members, change roles           |  ✓   |        |        |
-| Edit household settings, delete household       |  ✓   |        |        |
+| Action                                      | owner | editor | viewer |
+| ------------------------------------------- | :---: | :----: | :----: |
+| View household data                         |   ✓   |   ✓    |   ✓    |
+| Add / edit expenses, recurring items, goals |   ✓   |   ✓    |        |
+| Manage categories and budget limits         |   ✓   |   ✓    |        |
+| Invite / remove members, change roles       |   ✓   |        |        |
+| Edit household settings, delete household   |   ✓   |        |        |
 
 ## Design notes
 

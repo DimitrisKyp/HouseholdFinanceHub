@@ -61,7 +61,7 @@ export default async function InvitePage({ params }) {
 
   const intro = (
     <>
-      <h1 className="text-2xl text-slate-300 font-semibold">Join {invite.householdName}</h1>
+      <h1 className="text-2xl font-semibold text-slate-300">Join {invite.householdName}</h1>
       <p className="mt-1 mb-6 text-sm leading-6 text-slate-400">
         {invite.inviterName} invited you as {invite.role === "viewer" ? "a" : "an"}{" "}
         <span className="font-medium text-slate-200">{ROLE_LABELS[invite.role]}</span>. {ROLE_SUMMARY[invite.role]}

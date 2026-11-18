@@ -10,7 +10,7 @@ export default async function CheckEmailPage({ searchParams }) {
 
   return (
     <>
-      <h1 className="text-2xl text-slate-300 font-semibold">{fromSignIn ? "Confirm your email first" : "Check your email"}</h1>
+      <h1 className="text-2xl font-semibold text-slate-300">{fromSignIn ? "Confirm your email first" : "Check your email"}</h1>
       <p className="mt-3 text-sm leading-6 text-slate-300">
         {fromSignIn ? "Your account isn’t confirmed yet. We’ve sent a new confirmation link" : "We’ve sent a confirmation link"}
         {email ? (

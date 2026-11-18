@@ -56,9 +56,9 @@ added aren't confirmed yet. Sign in once, and a fresh link appears in the termin
 
 ## Email
 
-| Variable     | What it does                                                                        |
-| ------------ | ----------------------------------------------------------------------------------- |
-| `SMTP_URL`   | Mail server to send through, e.g. `smtps://user:password@smtp.example.com:465`      |
+| Variable     | What it does                                                                       |
+| ------------ | ---------------------------------------------------------------------------------- |
+| `SMTP_URL`   | Mail server to send through, e.g. `smtps://user:password@smtp.example.com:465`     |
 | `EMAIL_FROM` | Sender shown to recipients, e.g. `Household Finance Hub <no-reply@yourdomain.com>` |
 
 - **Without `SMTP_URL`** (local development): emails are printed in the `npm run dev` terminal.
@@ -79,15 +79,15 @@ If the app shows `ECONNREFUSED ... 5433` errors, the database isn't running. Run
 
 ## Database commands
 
-| Command               | What it does                                                |
-| --------------------- | ----------------------------------------------------------- |
-| `npm run db:start`    | Start the local database server                             |
-| `npm run db:stop`     | Stop it                                                     |
-| `npm run db:status`   | Show whether it is running                                  |
-| `npm run db:migrate`  | Apply new migrations (run after pulling schema changes)     |
-| `npm run db:generate` | After editing `src/db/schema/`, create a new migration file |
-| `npm run db:studio`   | Browse and edit data in the browser (Drizzle Studio)        |
-| `npm run db:init-test` | Create the separate database the browser tests use (once)  |
+| Command                | What it does                                                |
+| ---------------------- | ----------------------------------------------------------- |
+| `npm run db:start`     | Start the local database server                             |
+| `npm run db:stop`      | Stop it                                                     |
+| `npm run db:status`    | Show whether it is running                                  |
+| `npm run db:migrate`   | Apply new migrations (run after pulling schema changes)     |
+| `npm run db:generate`  | After editing `src/db/schema/`, create a new migration file |
+| `npm run db:studio`    | Browse and edit data in the browser (Drizzle Studio)        |
+| `npm run db:init-test` | Create the separate database the browser tests use (once)   |
 
 See [schema.md](schema.md) for the tables and the permission rules.
 

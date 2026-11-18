@@ -13,8 +13,8 @@ export default function ForgotPasswordForm({ email }) {
       <FormError message={state.error} />
       {state.sent ? (
         <p role="status" className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
-          If there’s an account for <span className="font-medium">{state.values.email}</span>, we’ve sent it a reset link. It
-          works for 1 hour.
+          If there’s an account for <span className="font-medium">{state.values.email}</span>, we’ve sent it a reset link. It works for 1
+          hour.
         </p>
       ) : null}
       <AuthField

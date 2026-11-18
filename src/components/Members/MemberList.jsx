@@ -8,8 +8,18 @@ const selectClass =
   "rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 disabled:opacity-60";
 
 function Message({ state }) {
-  if (state.error) return <p role="alert" className="mt-2 text-xs text-rose-300">{state.error}</p>;
-  if (state.success) return <p role="status" className="mt-2 text-xs text-emerald-300">{state.success}</p>;
+  if (state.error)
+    return (
+      <p role="alert" className="mt-2 text-xs text-rose-300">
+        {state.error}
+      </p>
+    );
+  if (state.success)
+    return (
+      <p role="status" className="mt-2 text-xs text-emerald-300">
+        {state.success}
+      </p>
+    );
   return null;
 }
 

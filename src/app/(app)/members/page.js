@@ -19,7 +19,8 @@ export default async function MembersPage() {
   const canManage = can(role, "members:manage");
 
   // Dates are formatted here, in the household's timezone, so server and browser agree.
-  const formatDate = date => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: timezone }).format(date);
+  const formatDate = date =>
+    new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: timezone }).format(date);
   const now = new Date();
 
   const members = (await listMembers(householdId)).map(({ joinedAt, ...member }) => ({ ...member, joinedLabel: formatDate(joinedAt) }));
@@ -61,7 +62,10 @@ export default async function MembersPage() {
 
           <div className="flex flex-col gap-3">
             {canManage ? (
-              <Panel title="Invite someone" subtitle="They'll get an email with a link to choose a password and join. Links work for 7 days.">
+              <Panel
+                title="Invite someone"
+                subtitle="They'll get an email with a link to choose a password and join. Links work for 7 days."
+              >
                 <InvitePanel invites={invites} />
               </Panel>
             ) : null}

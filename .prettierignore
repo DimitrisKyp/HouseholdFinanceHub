@@ -1,0 +1,4 @@
+# Generated files: formatting them would only create noise in diffs.
+drizzle/meta/
+playwright-report/
+test-results/

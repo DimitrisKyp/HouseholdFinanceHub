@@ -69,7 +69,7 @@
 - [x] Add component tests for forms and list rendering (Testing Library).
 - [x] Add integration tests for key user flows (Playwright against a test database, `npm run test:e2e`; run in CI with a Postgres service).
 - [x] Add CI checks: lint, test, build (`.github/workflows/ci.yml`).
-- [ ] Add `npm run format:check` to CI once the remaining files are formatted with Prettier.
+- [x] Add `npm run format:check` to CI (all files formatted; generated drizzle snapshots are ignored).
 
 ## 9 Performance and production readiness
 
@@ -78,8 +78,8 @@
 - [ ] Add metadata, OG images, sitemap, robots.
 - [ ] Add analytics and error monitoring.
 
-- preferences per profile currency/language/theme 
-- setup profile 
+- preferences per profile currency/language/theme
+- setup profile
 
 ## 10 Deployment checklist (do when going live)
 
