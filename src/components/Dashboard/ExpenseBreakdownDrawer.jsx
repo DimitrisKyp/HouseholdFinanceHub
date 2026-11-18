@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
+import { useDismiss } from "@/hooks/useDismiss";
 import { InlineMessage } from "@/components/Auth/AuthField";
 import { deleteExpenseAction } from "@/lib/actions/expenses";
 
@@ -52,13 +53,10 @@ export default function ExpenseBreakdownDrawer({ isOpen, onClose, monthLabel, ca
   const closeButton = useRef(null);
 
   // Escape closes the drawer; focus moves into it when it opens.
+  useDismiss(isOpen, onClose);
   useEffect(() => {
-    if (!isOpen) return undefined;
-    closeButton.current?.focus();
-    const onKey = event => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, onClose]);
+    if (isOpen) closeButton.current?.focus();
+  }, [isOpen]);
 
   return (
     <>

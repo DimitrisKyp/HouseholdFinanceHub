@@ -25,8 +25,8 @@
   - src/components/home/GoalsRemindersPanel.jsx
   - src/components/home/Panel.jsx
 - [x] Move the household members register to a dedicated members route.
-- [ ] Move complex computed data into custom hooks (example: useBudgetStats).
-- [ ] Add presentational vs container pattern for larger features.
+- [x] Move complex client logic into custom hooks (`src/hooks`: useLiveUpdates, useUnreadCount, usePendingExpenses, useDismiss). Computed figures stay in pure `src/lib` functions run on the server.
+- [x] Add presentational vs container pattern for larger features (server pages and client containers own data and state; e.g. RecentExpenses, NotificationList, ToastStack only render). Described in the README.
 
 ## 3 Dashboard depth (showcase UI and state skills)
 

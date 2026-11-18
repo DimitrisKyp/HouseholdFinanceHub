@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
-import { UNREAD_CHANGED_EVENT } from "@/lib/unread-signal";
+import { useCallback, useId, useRef, useState } from "react";
+import { useDismiss } from "@/hooks/useDismiss";
+import { useUnreadCount } from "@/hooks/useUnreadCount";
 
 const NOTIFICATIONS_HREF = "/notifications";
 
@@ -109,44 +110,6 @@ const navItems = [
   },
 ];
 
-/**
- * The unread notification count. Starts from the server's count and asks again after each
- * navigation, when the window regains focus, and when told a notification arrived
- * (live, see LiveUpdates and lib/unread-signal.js).
- */
-function useUnreadCount(initial, pathname) {
-  const [unread, setUnread] = useState(initial);
-  // A fresh count from the server (e.g. after "Mark all as read") replaces the local one.
-  const [serverCount, setServerCount] = useState(initial);
-  if (initial !== serverCount) {
-    setServerCount(initial);
-    setUnread(initial);
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      if (document.visibilityState !== "visible") return;
-      try {
-        const response = await fetch("/api/notifications/unread", { cache: "no-store" });
-        if (response.ok && !cancelled) setUnread((await response.json()).unread);
-      } catch {
-        // Offline or the server is restarting: keep the last count.
-      }
-    };
-    load();
-    window.addEventListener("focus", load);
-    window.addEventListener(UNREAD_CHANGED_EVENT, load);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", load);
-      window.removeEventListener(UNREAD_CHANGED_EVENT, load);
-    };
-  }, [pathname]);
-
-  return unread;
-}
-
 const isActivePath = (pathname, href) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
 function NavIcon({ icon, active, badge }) {
@@ -182,18 +145,8 @@ function MoreMenu({ items, pathname }) {
   const menuId = useId();
   const wrapper = useRef(null);
   if (open && openedAt !== pathname) setOpen(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = event => event.key === "Escape" && setOpen(false);
-    const onClick = event => wrapper.current && !wrapper.current.contains(event.target) && setOpen(false);
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onClick);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onClick);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(open, close, { containerRef: wrapper });
 
   const active = items.some(item => isActivePath(pathname, item.href));
   return (

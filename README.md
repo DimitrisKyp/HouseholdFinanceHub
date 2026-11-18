@@ -4,6 +4,19 @@ A household finance app: track expenses, budgets and savings goals, and share th
 people you live with. Built with [Next.js](https://nextjs.org), PostgreSQL and
 [Drizzle ORM](https://orm.drizzle.team).
 
+## How the code is organised
+
+- **Server pages are the containers.** Each `src/app/(app)/*/page.js` checks access through the Data
+  Access Layer (`src/lib/dal.js`), loads data with the queries in `src/lib/finance.js` and friends, and
+  turns it into ready-to-show labels (money, dates) with the pure functions in `src/lib`.
+- **Presentational components** in `src/components` receive those labels as props and only render
+  (e.g. `RecentExpenses`, `NotificationList`, `ToastStack`, the charts).
+- **Client containers** hold browser state and wire it to presentational parts: e.g.
+  `ExpenseTrackerPanel` (form + optimistic list), `LiveUpdates` (live connection + messages), `SideNav`.
+- **Custom hooks** in `src/hooks` keep that logic reusable and testable on its own:
+  `useLiveUpdates`, `useUnreadCount`, `usePendingExpenses` (optimistic UI), `useDismiss`.
+- **Server Actions** in `src/lib/actions` change data; each one checks permissions itself.
+
 ## Requirements
 
 - [Node.js](https://nodejs.org) 22 or 24 (LTS)
