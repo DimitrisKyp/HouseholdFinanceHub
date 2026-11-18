@@ -61,7 +61,7 @@
 
 - [x] Add live expense updates: Server-Sent Events (`/api/events`) fed by PostgreSQL LISTEN/NOTIFY. Other open pages refresh with a short message when someone changes expenses, the budget, goals or members; the unread badge updates instantly; a removed member loses access at once.
 - [x] Add notification center for invites and budget alerts (/notifications, with an unread badge in the navigation): budget alerts at 80%/100% of a category limit, goals reached, members joining, role changes.
-- [ ] Add optimistic UI for invite and expense creation.
+- [x] Add optimistic UI for invite and expense creation (`useOptimistic`): a new expense shows in the dashboard's "Recent this month" list marked "Saving…", a new invitation as "Sending…"; both disappear again if the server refuses.
 
 ## 8 Testing and quality gates
 

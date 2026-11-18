@@ -5,6 +5,7 @@ import { resetHousehold, sql } from "./helpers/db.mjs";
 // Two people in the same household, each in their own browser: the owner (the default page) and
 // another member who makes the changes. Nobody reloads; changes arrive over /api/events.
 const liveConnected = page => expect(page.locator('[data-live="open"]')).toHaveCount(1);
+const recentExpenses = page => page.getByRole("list", { name: "Recent expenses" });
 const alertsLink = page => page.getByRole("navigation").getByRole("link", { name: /^Alerts/ });
 
 async function openAs(browser, role, path) {
@@ -36,7 +37,7 @@ test("an expense someone else adds appears without reloading, with a message", a
 
   await addExpense(editor.page, { title: "Coffee beans", amount: "12.40", category: "Transport" });
 
-  await expect(page.locator("main").getByText("Coffee beans", { exact: true })).toBeVisible();
+  await expect(recentExpenses(page).getByText("Coffee beans", { exact: true })).toBeVisible();
   await expect(page.getByText("Test Editor added Coffee beans (€12.40)")).toBeVisible();
   // The person who made the change isn't told about their own change.
   await expect(editor.page.getByText("Test Editor added Coffee beans")).toHaveCount(0);
@@ -75,6 +76,30 @@ test("budget changes reach other open pages", async ({ page, browser }) => {
   await expect(page.locator("main").getByText("Side job", { exact: true })).toBeVisible();
   await expect(page.getByText("Test Editor updated the budget")).toBeVisible();
   await editor.context.close();
+});
+
+test("a new expense is listed while it's saved (optimistic)", async ({ page }) => {
+  await page.goto("/");
+  // Hold the Server Action (a POST to the page) for a moment, as on a slow connection.
+  let release;
+  const held = new Promise(resolve => (release = resolve));
+  await page.route("**/*", async route => {
+    if (route.request().method() === "POST" && route.request().headers()["next-action"]) await held;
+    await route.continue();
+  });
+
+  await page.fill("#expense-title", "Lunch out");
+  await page.fill("#expense-amount", "18,90");
+  await page.selectOption("#expense-category", { label: "Groceries" });
+  await page.click('button:has-text("Add expense")');
+
+  const row = recentExpenses(page).getByRole("listitem").filter({ hasText: "Lunch out" });
+  await expect(row).toContainText("Saving…");
+  await expect(row).toContainText("€18.90");
+  release();
+  await expect(page.getByText("Lunch out (€18.90) added.")).toBeVisible();
+  await expect(row).not.toContainText("Saving…");
+  await page.unroute("**/*");
 });
 
 test("someone removed from the household loses access straight away", async ({ page, browser }) => {

@@ -1,13 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useMemo, useOptimistic } from "react";
 import AuthField, { FormError, FormSuccess, SelectField } from "@/components/Auth/AuthField";
 import Panel from "@/components/Panel";
 import { addExpenseAction } from "@/lib/actions/expenses";
+import { formatDay, formatMoney } from "@/lib/format";
+import { field, parseAmount } from "@/lib/forms";
 
-function AddExpenseForm({ categories, members, currentUserId, today }) {
-  const [state, formAction, pending] = useActionState(addExpenseAction, { values: { paidByUserId: currentUserId } });
+const RECENT_SHOWN = 5;
+
+/** This month's latest expenses. A row being saved shows straight away, marked "Saving…". */
+function RecentExpenses({ items }) {
+  if (!items.length) return <p className="text-sm text-slate-500">Nothing logged this month yet.</p>;
+  return (
+    <ul aria-label="Recent expenses" className="space-y-1.5">
+      {items.map(item => (
+        <li
+          key={item.id}
+          aria-busy={item.pending || undefined}
+          className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm transition ${
+            item.pending ? "border-dashed border-cyan-400/40 bg-cyan-400/5" : "border-white/5 bg-white/5"
+          }`}
+        >
+          <div className="min-w-0">
+            <p className="truncate text-white">{item.title}</p>
+            <p className="truncate text-xs text-slate-400">{item.pending ? `Saving… · ${item.detail}` : item.detail}</p>
+          </div>
+          <p className="shrink-0 font-medium text-white">{item.amountLabel}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AddExpenseForm({ categories, members, currentUserId, today, onSubmitting }) {
+  const [state, formAction, pending] = useActionState(
+    async (previous, formData) => {
+      onSubmitting(formData);
+      return addExpenseAction(previous, formData);
+    },
+    { values: { paidByUserId: currentUserId } },
+  );
   const values = state.values ?? {};
 
   return (
@@ -98,7 +132,37 @@ function AddExpenseForm({ categories, members, currentUserId, today }) {
   );
 }
 
-export default function ExpenseTrackerPanel({ categories, members, currentUserId, today, canEdit, onOpenBreakdown }) {
+export default function ExpenseTrackerPanel({
+  categories,
+  members,
+  currentUserId,
+  today,
+  canEdit,
+  onOpenBreakdown,
+  recentExpenses = [],
+  currency = "EUR",
+}) {
+  // Optimistic UI: the new expense is listed while the server saves it. When the action finishes,
+  // the page's fresh data replaces it (or, after a validation error, it simply disappears).
+  const latest = useMemo(() => recentExpenses.slice(0, RECENT_SHOWN), [recentExpenses]);
+  const [recent, addPending] = useOptimistic(latest, (list, item) => [item, ...list].slice(0, RECENT_SHOWN));
+  const showPending = formData => {
+    const title = field(formData, "title");
+    const amount = parseAmount(field(formData, "amount"));
+    const spentOn = field(formData, "spentOn") || today;
+    const category = categories.find(item => item.id === field(formData, "categoryId"));
+    const payer = members.find(member => member.userId === field(formData, "paidByUserId"));
+    // Only what the server will accept; anything else comes back as a field error instead.
+    if (!title || amount === null || !category || spentOn > today) return;
+    addPending({
+      id: `pending-${Date.now()}`,
+      title,
+      amountLabel: formatMoney(amount, currency),
+      detail: [formatDay(spentOn), category.name, payer?.name].filter(Boolean).join(" · "),
+      pending: true,
+    });
+  };
+
   let body;
   if (!canEdit) {
     body = <p className="text-sm text-slate-400">You have view-only access. Open the breakdown to see this month&apos;s spending.</p>;
@@ -113,12 +177,18 @@ export default function ExpenseTrackerPanel({ categories, members, currentUserId
       </p>
     );
   } else {
-    body = <AddExpenseForm categories={categories} members={members} currentUserId={currentUserId} today={today} />;
+    body = (
+      <AddExpenseForm categories={categories} members={members} currentUserId={currentUserId} today={today} onSubmitting={showPending} />
+    );
   }
 
   return (
     <Panel title="Expense tracker" subtitle={canEdit ? "Log household spending as it happens." : "Day-to-day household spending."}>
       {body}
+      <div className="mt-4">
+        <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-cyan-300 uppercase">Recent this month</p>
+        <RecentExpenses items={recent} />
+      </div>
       <button
         type="button"
         onClick={onOpenBreakdown}

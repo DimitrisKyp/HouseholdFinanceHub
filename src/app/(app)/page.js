@@ -103,6 +103,7 @@ export default async function DashboardPage() {
               monthLabel={monthLabel}
               categoryTotals={categoryTotals}
               expenses={expenseRows}
+              currency={currency}
             />
           </div>
 

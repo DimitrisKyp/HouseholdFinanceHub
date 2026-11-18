@@ -1,12 +1,19 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useOptimistic } from "react";
 import AuthField, { FormError, FormSuccess } from "@/components/Auth/AuthField";
 import { inviteMemberAction, resendInviteAction, revokeInviteAction } from "@/lib/actions/members";
+import { EMAIL_PATTERN, field } from "@/lib/forms";
 import { ROLE_LABELS } from "@/lib/permissions";
 
-function InviteForm() {
-  const [state, formAction, pending] = useActionState(inviteMemberAction, { values: { role: "editor" } });
+function InviteForm({ onSubmitting }) {
+  const [state, formAction, pending] = useActionState(
+    async (previous, formData) => {
+      onSubmitting(formData);
+      return inviteMemberAction(previous, formData);
+    },
+    { values: { role: "editor" } },
+  );
 
   return (
     <form action={formAction} className="space-y-3" noValidate>
@@ -48,6 +55,16 @@ function InviteForm() {
   );
 }
 
+/** An invitation being sent: shown straight away, without actions until it's saved. */
+function SendingInvite({ invite }) {
+  return (
+    <li aria-busy="true" className="rounded-xl border border-dashed border-cyan-400/40 bg-cyan-400/5 px-4 py-3">
+      <p className="truncate text-sm font-medium text-white">{invite.email}</p>
+      <p className="text-xs text-slate-400">{ROLE_LABELS[invite.role]} · Sending…</p>
+    </li>
+  );
+}
+
 function PendingInvite({ invite }) {
   const [resendState, resendAction, resendPending] = useActionState(resendInviteAction, {});
   const [revokeState, revokeAction, revokePending] = useActionState(revokeInviteAction, {});
@@ -85,23 +102,45 @@ function PendingInvite({ invite }) {
           </form>
         </div>
       </div>
-      {message.error ? <p role="alert" className="mt-2 text-xs text-rose-300">{message.error}</p> : null}
-      {message.success ? <p role="status" className="mt-2 text-xs text-emerald-300">{message.success}</p> : null}
+      {message.error ? (
+        <p role="alert" className="mt-2 text-xs text-rose-300">
+          {message.error}
+        </p>
+      ) : null}
+      {message.success ? (
+        <p role="status" className="mt-2 text-xs text-emerald-300">
+          {message.success}
+        </p>
+      ) : null}
     </li>
   );
 }
 
 export default function InvitePanel({ invites }) {
+  // Optimistic UI: the invitation is listed while it's saved and emailed. The page's fresh list
+  // replaces it afterwards; after an error it disappears and the form says why. Inviting an
+  // address that's already pending refreshes that invitation, so it replaces the row.
+  const [list, addSending] = useOptimistic(invites, (current, sending) => [
+    ...current.filter(invite => invite.email !== sending.email),
+    sending,
+  ]);
+  const showSending = formData => {
+    const email = field(formData, "email").toLowerCase();
+    const role = field(formData, "role");
+    if (!EMAIL_PATTERN.test(email) || !ROLE_LABELS[role]) return;
+    addSending({ id: `sending-${email}`, email, role, sending: true });
+  };
+
   return (
     <div className="space-y-5">
-      <InviteForm />
+      <InviteForm onSubmitting={showSending} />
       <div>
         <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-cyan-300 uppercase">Pending invitations</p>
-        {invites.length ? (
-          <ul className="space-y-2">
-            {invites.map(invite => (
-              <PendingInvite key={invite.id} invite={invite} />
-            ))}
+        {list.length ? (
+          <ul aria-label="Pending invitations" className="space-y-2">
+            {list.map(invite =>
+              invite.sending ? <SendingInvite key={invite.id} invite={invite} /> : <PendingInvite key={invite.id} invite={invite} />,
+            )}
           </ul>
         ) : (
           <p className="text-sm text-slate-500">No pending invitations.</p>
