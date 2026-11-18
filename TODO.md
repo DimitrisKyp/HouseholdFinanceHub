@@ -2,14 +2,14 @@
 
 ## 1 Understand and apply Next.js structure
 
-- [ ] Keep routes in src/app with file conventions:
+- [x] Keep routes in src/app with file conventions:
   - page.js: route UI
   - layout.js: shared wrapper
   - loading.js: suspense fallback
   - error.js: route-level error boundary
   - not-found.js: custom 404 per segment
   - route.js: API handlers
-- [ ] Use route folders for URL segments and dynamic folders like [id].
+- [x] Use route folders for URL segments and dynamic folders like [id].
 - [x] Keep reusable UI in src/components and state logic in src/lib.
 - [x] Keep static files in public.
 - [x] Build a shared app shell with a sticky header and an internal scroll area.
