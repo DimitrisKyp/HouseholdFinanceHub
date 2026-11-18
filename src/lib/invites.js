@@ -69,7 +69,10 @@ export async function getInviteByToken(token) {
   if (!row) return null;
 
   const status = row.revokedAt ? "revoked" : row.acceptedAt ? "accepted" : row.expiresAt <= new Date() ? "expired" : "pending";
-  const [existing] = await db.select({ id: user.id }).from(user).where(sql`lower(${user.email}) = lower(${row.email})`);
+  const [existing] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(sql`lower(${user.email}) = lower(${row.email})`);
   return { ...row, status, accountExists: Boolean(existing) };
 }
 
@@ -107,7 +110,10 @@ export async function acceptInviteAsNewUser({ token, name, password }) {
     const pending = await lockPendingInvite(tx, token);
     const email = pending.email.toLowerCase();
 
-    const [taken] = await tx.select({ id: user.id }).from(user).where(sql`lower(${user.email}) = ${email}`);
+    const [taken] = await tx
+      .select({ id: user.id })
+      .from(user)
+      .where(sql`lower(${user.email}) = ${email}`);
     if (taken) throw new InviteError("An account with this email already exists. Sign in to accept the invitation.");
 
     const userId = randomUUID();

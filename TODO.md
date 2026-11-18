@@ -51,9 +51,10 @@
 
 ## 6 Auth and permissions
 
-- [ ] Add authentication flow (sign in/sign up/sign out).
-- [ ] Add protected routes and role-based views (owner, editor, viewer).
-- [ ] Show permission-aware UI controls (disable/hide actions by role).
+- [x] Add authentication flow (sign in/sign up/sign out).
+- [x] Add protected routes and role-based views (owner, editor, viewer).
+- [x] Show permission-aware UI controls (disable/hide actions by role).
+- [x] Store budget, expenses and goals in PostgreSQL (replaced the Redux demo data).
 
 ## 7 Real-time and collaboration
 
@@ -76,7 +77,6 @@
 - [ ] Add analytics and error monitoring.
 
 - preferences per profile currency/language/theme 
-- sign in / sign up 
 - setup profile 
 
 ## 10 Deployment checklist (do when going live)

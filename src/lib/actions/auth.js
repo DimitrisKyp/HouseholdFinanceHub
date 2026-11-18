@@ -112,9 +112,7 @@ export async function resendVerificationAction(_previousState, formData) {
   try {
     // Sends only if the account exists and isn't confirmed yet, but always answers the same way
     // and takes the same time.
-    await withMinimumDuration(1500, () =>
-      auth.api.sendVerificationEmail({ body: { email, callbackURL: verificationCallbackPath() } }),
-    );
+    await withMinimumDuration(1500, () => auth.api.sendVerificationEmail({ body: { email, callbackURL: verificationCallbackPath() } }));
   } catch (error) {
     console.error("Resending verification email failed", error);
     return { error: "We couldn't send the email. Please try again later." };

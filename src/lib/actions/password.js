@@ -22,9 +22,7 @@ export async function requestPasswordResetAction(_previousState, formData) {
 
   try {
     // The email link goes through Better Auth, which checks it and forwards to /reset-password.
-    await withMinimumDuration(1500, () =>
-      auth.api.requestPasswordReset({ body: { email: values.email, redirectTo: "/reset-password" } }),
-    );
+    await withMinimumDuration(1500, () => auth.api.requestPasswordReset({ body: { email: values.email, redirectTo: "/reset-password" } }));
   } catch (error) {
     console.error("Password reset request failed", error);
     return { values, error: "We couldn't send the email. Please try again later." };
@@ -90,9 +88,7 @@ export async function changePasswordAction(_previousState, formData) {
   }
 
   return {
-    success: signOutOthers
-      ? "Password changed. Other devices have been signed out."
-      : "Password changed.",
+    success: signOutOthers ? "Password changed. Other devices have been signed out." : "Password changed.",
     signOutOthers,
   };
 }

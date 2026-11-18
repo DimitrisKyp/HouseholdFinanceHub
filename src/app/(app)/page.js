@@ -1,135 +1,102 @@
-"use client";
-
-import { useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { addExpense } from "@/store/features/financeSlice";
-import TopBar from "@/components/TopBar";
-import HeroSection from "@/components/Dashboard/HeroSection";
-import ExpenseTrackerPanel from "@/components/Dashboard/ExpenseTrackerPanel";
+import ExpenseSection from "@/components/Dashboard/ExpenseSection";
 import FinancialNewsPanel from "@/components/Dashboard/FinancialNewsPanel";
 import GoalsRemindersPanel from "@/components/Dashboard/GoalsRemindersPanel";
-import ExpenseBreakdownDrawer from "@/components/Dashboard/ExpenseBreakdownDrawer";
+import HeroSection from "@/components/Dashboard/HeroSection";
+import TopBar from "@/components/TopBar";
+import { requireHousehold } from "@/lib/dal";
+import { categorySpending, goalView, listCategories, listExpenses, listGoals, listRecurringItems, recurringTotals } from "@/lib/finance";
+import { currentMonthRange, formatDay, formatMoney, formatMonth, todayIn } from "@/lib/format";
+import { listMembers } from "@/lib/invites";
+import { MARKET_NEWS } from "@/lib/news";
+import { can } from "@/lib/permissions";
 
-export default function Home() {
-  const dispatch = useDispatch();
-  const finance = useSelector((state) => state.finance);
-  const numberFormatter = useMemo(() => new Intl.NumberFormat("en-US"), []);
-  const formatCurrency = (value) => `€${numberFormatter.format(value)}`;
-  const [expenseForm, setExpenseForm] = useState({
-    title: "",
-    category: "Groceries",
-    amount: "",
-    paidBy: "Alex",
-  });
-  const [breakdownOpen, setBreakdownOpen] = useState(false);
+const DASHBOARD_GOALS = 4;
 
-  const totalIncome = useMemo(
-    () => finance.incomeSources.reduce((sum, income) => sum + income.amount, 0),
-    [finance.incomeSources]
-  );
+export default async function DashboardPage() {
+  const { user, householdId, householdName, role, currency, timezone } = await requireHousehold();
+  const canEdit = can(role, "finance:write");
+  const money = amount => formatMoney(amount, currency);
+  const today = todayIn(timezone);
+  const month = currentMonthRange(timezone);
 
-  const recurringExpensesTotal = useMemo(
-    () => finance.recurringExpenses.reduce((sum, expense) => sum + expense.amount, 0),
-    [finance.recurringExpenses]
-  );
+  const [recurring, categories, expenses, goals, members] = await Promise.all([
+    listRecurringItems(householdId),
+    listCategories(householdId),
+    listExpenses(householdId, { from: month.start, to: month.end }),
+    listGoals(householdId),
+    canEdit ? listMembers(householdId) : [],
+  ]);
 
-  const totals = useMemo(() => {
-    const totalExpenses = finance.expenses.reduce(
-      (sum, expense) => sum + expense.amount,
-      0
-    );
-    const savings = totalIncome - recurringExpensesTotal - totalExpenses;
-    const savingsRate = totalIncome
-      ? Math.max(0, Math.round((savings / totalIncome) * 100))
-      : 0;
+  // This month: recurring income minus fixed bills minus what was actually spent.
+  const totals = recurringTotals(recurring);
+  const spent = Math.round(expenses.reduce((sum, item) => sum + item.amount * 100, 0)) / 100;
+  const net = Math.round((totals.income - totals.expenses - spent) * 100) / 100;
+  const savingsRate = totals.income ? Math.max(0, Math.round((net / totals.income) * 100)) : 0;
 
-    return { totalExpenses, savings, savingsRate };
-  }, [finance.expenses, recurringExpensesTotal, totalIncome]);
+  const categoryTotals = categorySpending(categories, expenses).map(item => ({
+    ...item,
+    spentLabel: money(item.spent),
+    limitLabel: item.limit === null ? null : money(item.limit),
+  }));
+  const expenseRows = expenses.map(item => ({
+    id: item.id,
+    title: item.title,
+    amountLabel: money(item.amount),
+    detail: [formatDay(item.spentOn), item.categoryName, item.paidByName].filter(Boolean).join(" · "),
+  }));
+  const goalRows = goals
+    .filter(item => item.status === "active")
+    .slice(0, DASHBOARD_GOALS)
+    .map(item => goalView(item, { currency, today }));
 
-  const categoryTotals = useMemo(() => {
-    return finance.budgetCategories.map((category) => {
-      const spent = finance.expenses
-        .filter((expense) => expense.category === category.name)
-        .reduce((sum, expense) => sum + expense.amount, 0);
-
-      return {
-        ...category,
-        spent,
-        percent: Math.min(100, Math.round((spent / category.limit) * 100)),
-      };
-    });
-  }, [finance.budgetCategories, finance.expenses]);
-
-  const handleExpenseSubmit = (event) => {
-    event.preventDefault();
-
-    if (!expenseForm.title || !expenseForm.amount) {
-      return;
-    }
-
-    dispatch(
-      addExpense({
-        title: expenseForm.title,
-        category: expenseForm.category,
-        amount: Number(expenseForm.amount),
-        paidBy: expenseForm.paidBy,
-      })
-    );
-
-    setExpenseForm({
-      title: "",
-      category: expenseForm.category,
-      amount: "",
-      paidBy: expenseForm.paidBy,
-    });
-  };
+  const dateLabel = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: timezone,
+  }).format(new Date());
+  const monthLabel = formatMonth(month.start);
 
   return (
-    <>
-      <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
+    <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
       <main className="mx-auto flex h-full w-full flex-col gap-4">
         <TopBar
-          availableBalance={totals.savings}
-          currentUser={finance.currentUser}
-          formatCurrency={formatCurrency}
+          balanceLabel={money(net)}
+          balanceNegative={net < 0}
+          dateLabel={dateLabel}
+          currentUser={{ name: user.name, avatarUrl: user.image ?? null, role, householdName }}
         />
         <HeroSection
-          monthlyIncome={totalIncome}
-          totalExpenses={totals.totalExpenses}
-          totals={totals}
-          incomeSourcesCount={finance.incomeSources.length}
-          recurringExpensesCount={finance.recurringExpenses.length}
-          formatCurrency={formatCurrency}
+          monthLabel={monthLabel}
+          incomeLabel={money(totals.income)}
+          spentLabel={money(spent)}
+          billsLabel={money(totals.expenses)}
+          netLabel={money(net)}
+          savingsRate={savingsRate}
+          incomeSourcesCount={recurring.filter(item => item.type === "income").length}
         />
 
         <section className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.4fr_0.9fr]">
           <div className="min-h-0 space-y-4">
-            <ExpenseTrackerPanel
-              expenseForm={expenseForm}
-              setExpenseForm={setExpenseForm}
-              onSubmit={handleExpenseSubmit}
-              budgetCategories={finance.budgetCategories}
-              members={finance.members}
-              onOpenBreakdown={() => setBreakdownOpen(true)}
+            <ExpenseSection
+              categories={categories.map(({ id, name }) => ({ id, name }))}
+              members={members.map(({ userId, name }) => ({ userId, name }))}
+              currentUserId={user.id}
+              today={today}
+              canEdit={canEdit}
+              monthLabel={monthLabel}
+              categoryTotals={categoryTotals}
+              expenses={expenseRows}
             />
           </div>
 
           <div className="min-h-0 space-y-4">
-            <GoalsRemindersPanel goals={finance.goals} />
-
-            <FinancialNewsPanel news={finance.marketNews} />
+            <GoalsRemindersPanel goals={goalRows} />
+            <FinancialNewsPanel news={MARKET_NEWS} />
           </div>
         </section>
       </main>
     </div>
-
-    <ExpenseBreakdownDrawer
-      isOpen={breakdownOpen}
-      onClose={() => setBreakdownOpen(false)}
-      categoryTotals={categoryTotals}
-      expenses={finance.expenses}
-      formatCurrency={formatCurrency}
-    />
-    </>
   );
 }

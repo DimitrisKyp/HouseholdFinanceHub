@@ -7,13 +7,7 @@ import { nextCookies } from "better-auth/next-js";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { account, session, user, verification } from "@/db/schema";
-import {
-  sendAccountExistsEmail,
-  sendPasswordChangedEmail,
-  sendPasswordResetEmail,
-  sendVerificationEmail,
-  siteUrl,
-} from "@/lib/email";
+import { sendAccountExistsEmail, sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail, siteUrl } from "@/lib/email";
 
 export const auth = betterAuth({
   // Reads BETTER_AUTH_SECRET and BETTER_AUTH_URL from the environment.

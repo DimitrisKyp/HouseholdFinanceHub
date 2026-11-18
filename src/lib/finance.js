@@ -1,10 +1,10 @@
 // Read queries for household finance data. Callers pass the householdId from the DAL
 // (requireHousehold), so every query is scoped to the household the user belongs to.
 import "server-only";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { formatDay, formatMoney } from "@/lib/format";
-import { category, goal, goalContribution, recurringItem, user } from "@/db/schema";
+import { category, expense, goal, goalContribution, recurringItem, user } from "@/db/schema";
 
 export const FREQUENCIES = ["weekly", "monthly", "yearly"];
 export const FREQUENCY_LABELS = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" };
@@ -159,4 +159,48 @@ export function goalView(item, { currency, today }) {
       note: entry.note,
     })),
   };
+}
+
+// ── Expenses ─────────────────────────────────────────────────────────────────
+
+/** Expenses with spent_on in [from, to), newest first, with category and payer names. */
+export async function listExpenses(householdId, { from, to }) {
+  return db
+    .select({
+      id: expense.id,
+      title: expense.title,
+      amount: expense.amount,
+      spentOn: expense.spentOn,
+      categoryId: expense.categoryId,
+      categoryName: category.name,
+      paidByName: user.name,
+    })
+    .from(expense)
+    .innerJoin(category, eq(category.id, expense.categoryId))
+    .leftJoin(user, eq(user.id, expense.paidByUserId))
+    .where(and(eq(expense.householdId, householdId), gte(expense.spentOn, from), lt(expense.spentOn, to)))
+    .orderBy(desc(expense.spentOn), desc(expense.createdAt));
+}
+
+/**
+ * Spending per category for a list of expenses, against each category's monthly limit.
+ * Includes every active category with a limit, plus any category that has spending.
+ */
+export function categorySpending(categories, expenses) {
+  const spent = new Map();
+  const names = new Map(categories.map(item => [item.id, item.name]));
+  for (const item of expenses) {
+    spent.set(item.categoryId, (spent.get(item.categoryId) ?? 0) + Math.round(item.amount * 100));
+    if (!names.has(item.categoryId)) names.set(item.categoryId, item.categoryName);
+  }
+  const limits = new Map(categories.map(item => [item.id, item.monthlyLimit]));
+
+  return [...names.entries()]
+    .filter(([id]) => spent.has(id) || limits.get(id) != null)
+    .map(([id, name]) => {
+      const amount = (spent.get(id) ?? 0) / 100;
+      const limit = limits.get(id) ?? null;
+      return { id, name, spent: amount, limit, percent: limit ? Math.round((amount / limit) * 100) : null };
+    })
+    .sort((a, b) => (b.percent ?? -1) - (a.percent ?? -1) || b.spent - a.spent);
 }
