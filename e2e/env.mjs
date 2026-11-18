@@ -8,6 +8,9 @@ const loadEnvConfig = nextEnv.loadEnvConfig ?? nextEnv.default.loadEnvConfig;
 loadEnvConfig(process.cwd(), true, { info: () => {}, error: console.error });
 
 export const E2E_PORT = 3100;
+/** The stand-in for the news feed and exchange-rate API (e2e/market-stub.mjs). */
+export const MARKET_STUB_PORT = 3101;
+export const MARKET_STUB_URL = `http://localhost:${MARKET_STUB_PORT}`;
 export const BASE_URL = `http://localhost:${E2E_PORT}`;
 export const PASSWORD = "e2e-password-123";
 

@@ -90,6 +90,18 @@ locally).
 If the app shows `ECONNREFUSED ... 5433` errors, the database isn't running. Run
 `npm run db:start`.
 
+## Market data on the dashboard
+
+The "Markets & news" panel uses public services that need no API key: ECB exchange rates through
+[Frankfurter](https://frankfurter.dev) and the BBC News Business RSS feed. Answers are cached on the
+server for 15 minutes (`MARKET_CACHE_SECONDS`); if a refresh fails, the last good copy is shown and
+marked as not up to date. To use other sources, set `RATES_API_URL`, `NEWS_FEED_URL` and
+`NEWS_SOURCE_NAME`. The browser tests use a local stand-in (`e2e/market-stub.mjs`) instead.
+
+On a network that inspects HTTPS with its own certificate (common on company networks), Node.js
+rejects the connection and the panel says it couldn't load. Point Node at that certificate with
+`NODE_EXTRA_CA_CERTS=C:path	ocompany-root.pem` in `.env.local`'s environment, or check it at home.
+
 ## Database commands
 
 | Command                | What it does                                                |

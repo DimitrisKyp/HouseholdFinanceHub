@@ -1,7 +1,7 @@
 // Browser (end-to-end) tests: `npm run test:e2e`. Builds the app, starts it on port 3100 against
 // the test database, and drives it like a user. See "Tests" in README.md.
 import { defineConfig, devices } from "@playwright/test";
-import { BASE_URL, E2E_PORT, testDatabaseUrl } from "./e2e/env.mjs";
+import { BASE_URL, E2E_PORT, MARKET_STUB_URL, testDatabaseUrl } from "./e2e/env.mjs";
 
 const CI = Boolean(process.env.CI);
 
@@ -38,22 +38,36 @@ export default defineConfig({
     },
   ],
 
-  // The production build, like on the server. Each run rebuilds, so the tests never run old code.
-  webServer: {
-    command: `npm run build && npm run start -- --port ${E2E_PORT}`,
-    url: `${BASE_URL}/sign-in`,
-    timeout: 300_000,
-    reuseExistingServer: false,
-    stdout: "ignore",
-    stderr: "pipe",
-    // Real environment variables take precedence over .env.local, so the app uses the test database.
-    env: {
-      DATABASE_URL: testDatabaseUrl(),
-      BETTER_AUTH_URL: BASE_URL,
-      BETTER_AUTH_SECRET: process.env.E2E_AUTH_SECRET ?? "e2e-only-secret-not-used-anywhere-else-0123456789",
-      // No emails leave the test server: without SMTP the app refuses to send in production.
-      SMTP_URL: "",
-      NEXT_TELEMETRY_DISABLED: "1",
+  webServer: [
+    // Stand-in for the news feed and exchange-rate API, so tests never depend on the internet.
+    {
+      command: "node e2e/market-stub.mjs",
+      url: `${MARKET_STUB_URL}/health`,
+      reuseExistingServer: false,
+      stdout: "ignore",
     },
-  },
+    // The production build, like on the server. Each run rebuilds, so the tests never run old code.
+    {
+      command: `npm run build && npm run start -- --port ${E2E_PORT}`,
+      url: `${BASE_URL}/sign-in`,
+      timeout: 300_000,
+      reuseExistingServer: false,
+      stdout: "ignore",
+      stderr: "pipe",
+      // Real environment variables take precedence over .env.local, so the app uses the test database.
+      env: {
+        DATABASE_URL: testDatabaseUrl(),
+        BETTER_AUTH_URL: BASE_URL,
+        BETTER_AUTH_SECRET: process.env.E2E_AUTH_SECRET ?? "e2e-only-secret-not-used-anywhere-else-0123456789",
+        // No emails leave the test server: without SMTP the app refuses to send in production.
+        SMTP_URL: "",
+        NEXT_TELEMETRY_DISABLED: "1",
+        NEWS_FEED_URL: `${MARKET_STUB_URL}/news.xml`,
+        NEWS_SOURCE_NAME: "Test News",
+        RATES_API_URL: `${MARKET_STUB_URL}/rates`,
+        // Short, so the tests can see a refresh fail and stale data being shown.
+        MARKET_CACHE_SECONDS: "2",
+      },
+    },
+  ],
 });

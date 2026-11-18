@@ -45,10 +45,10 @@
 
 ## 5 API integration quality
 
-- [ ] Integrate a real API for market/news data.
-- [ ] Add loading, empty, error, and retry states for each async section.
-- [ ] Add caching strategy and stale-data indicators.
-- [ ] Add skeleton loading components.
+- [x] Integrate real market/news data without API keys: ECB exchange rates (Frankfurter API) for the household currency with the week's change, and business headlines from an RSS feed (BBC News Business). Sources can be changed with `RATES_API_URL` / `NEWS_FEED_URL`.
+- [x] Add loading, empty, error, and retry states: the Markets & news panel streams in a Suspense boundary (skeleton), each half shows empty / failed ("Try again") states, and a failing service never blocks the dashboard. Pages keep their route-level loading skeleton and error boundary with retry.
+- [x] Add caching strategy and stale-data indicators: in-memory cache (`src/lib/cache.js`, 15 min by default), last good copy served when a refresh fails, shown as "Not up to date: couldn't refresh, showing … from 14:05"; "Updated 14:05" otherwise.
+- [x] Add skeleton loading components (`ui/Skeleton`, used by the Markets panel while it loads).
 
 ## 6 Auth and permissions
 
