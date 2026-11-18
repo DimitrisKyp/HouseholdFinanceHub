@@ -87,8 +87,33 @@ If the app shows `ECONNREFUSED ... 5433` errors, the database isn't running. Run
 | `npm run db:migrate`  | Apply new migrations (run after pulling schema changes)     |
 | `npm run db:generate` | After editing `src/db/schema/`, create a new migration file |
 | `npm run db:studio`   | Browse and edit data in the browser (Drizzle Studio)        |
+| `npm run db:init-test` | Create the separate database the browser tests use (once)  |
 
 See [schema.md](schema.md) for the tables and the permission rules.
+
+## Tests
+
+| Command              | What it does                                                         |
+| -------------------- | -------------------------------------------------------------------- |
+| `npm test`           | Unit and component tests (Vitest), a few seconds, no database needed |
+| `npm run test:watch` | The same, re-running as you edit                                     |
+| `npm run test:e2e`   | Browser tests (Playwright) of the main user flows, about 2 minutes   |
+
+The browser tests build the app, start it on port 3100 and use it like a person would, signed in
+as an owner, an editor and a viewer. They use their own database, `household_finance_test`, and
+wipe it on every run, so your own data is never touched. Before the first run:
+
+```bash
+npm run db:start      # if it isn't running
+npm run db:init-test  # once: creates the test database and adds TEST_DATABASE_URL to .env.local
+```
+
+- Tests live in `e2e/`. Each file starts from a fresh test household (`e2e/helpers/db.mjs`).
+- Locally they run in Microsoft Edge. To use Playwright's own Chromium instead, run
+  `npx playwright install chromium` and set `E2E_BROWSER_CHANNEL=chromium`.
+- After a failure, `npx playwright show-report` opens the report with screenshots and a
+  step-by-step trace of each failed test.
+- CI runs all of them on every push and pull request (`.github/workflows/ci.yml`).
 
 ## Viewing the database in pgAdmin 4
 

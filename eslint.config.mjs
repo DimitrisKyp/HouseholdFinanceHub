@@ -30,6 +30,15 @@ const eslintConfig = defineConfig([
       "multiline-comment-style": "off",
     },
   },
+  // Browser tests: Playwright fixtures call `use()`, which isn't a React hook, and test steps
+  // (database setup, visiting pages one by one) are meant to run in order.
+  {
+    files: ["e2e/**"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "no-await-in-loop": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -38,6 +47,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "dist/**",
+    // Playwright output (generated, minified).
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

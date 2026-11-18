@@ -1,4 +1,4 @@
-# Lint, test and build on every push and pull request.
+# Lint, unit tests, build and browser tests on every push and pull request.
 name: CI
 
 on:
@@ -42,3 +42,49 @@ jobs:
           BETTER_AUTH_SECRET: ci-placeholder-secret-not-used-for-anything
           BETTER_AUTH_URL: http://localhost:3000
           NEXT_TELEMETRY_DISABLED: 1
+
+  # Browser tests of the main user flows: the production build against a throwaway Postgres.
+  e2e:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: household_finance_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://app:app@localhost:5432/household_finance_test
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: npm run test:e2e
+
+      - name: Upload the test report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

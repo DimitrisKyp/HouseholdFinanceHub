@@ -67,7 +67,7 @@
 
 - [x] Add unit tests for utility formatters and calculations (Vitest, `npm test`).
 - [x] Add component tests for forms and list rendering (Testing Library).
-- [ ] Add integration tests for key user flows (Playwright against a test database; run in CI with a Postgres service).
+- [x] Add integration tests for key user flows (Playwright against a test database, `npm run test:e2e`; run in CI with a Postgres service).
 - [x] Add CI checks: lint, test, build (`.github/workflows/ci.yml`).
 - [ ] Add `npm run format:check` to CI once the remaining files are formatted with Prettier.
 

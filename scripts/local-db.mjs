@@ -7,6 +7,8 @@
 //   npm run db:start    start the server (needed after each reboot)
 //   npm run db:stop     stop the server
 //   npm run db:status   show whether it is running
+//   npm run db:init-test  create a separate database for the browser tests (npm run test:e2e)
+//                         and write TEST_DATABASE_URL to .env.local
 //
 // Override locations with env vars PG_BIN (PostgreSQL bin folder) and LOCAL_DB_DIR.
 import { spawnSync } from "node:child_process";
@@ -17,6 +19,7 @@ import path from "node:path";
 
 const PORT = 5433;
 const DB_NAME = "household_finance_hub";
+const TEST_DB_NAME = "household_finance_test";
 const DB_USER = "app";
 
 const PG_BIN = process.env.PG_BIN ?? "C:\\Program Files\\PostgreSQL\\17\\bin";
@@ -61,11 +64,20 @@ function stop() {
   console.log("Local PostgreSQL stopped.");
 }
 
-function writeDatabaseUrl(url) {
+function readEnvValue(key) {
+  if (!fs.existsSync(ENV_FILE)) return null;
+  const line = fs
+    .readFileSync(ENV_FILE, "utf8")
+    .split(/\r?\n/)
+    .find(l => l.startsWith(`${key}=`));
+  return line ? line.slice(key.length + 1) : null;
+}
+
+function writeEnvValue(key, value) {
   const lines = fs.existsSync(ENV_FILE) ? fs.readFileSync(ENV_FILE, "utf8").split(/\r?\n/) : [];
-  const i = lines.findIndex(l => l.startsWith("DATABASE_URL="));
-  if (i >= 0) lines[i] = `DATABASE_URL=${url}`;
-  else lines.unshift(`DATABASE_URL=${url}`);
+  const i = lines.findIndex(l => l.startsWith(`${key}=`));
+  if (i >= 0) lines[i] = `${key}=${value}`;
+  else lines.unshift(`${key}=${value}`);
   fs.writeFileSync(ENV_FILE, lines.filter((l, idx) => l || idx < lines.length - 1).join("\n") + "\n");
 }
 
@@ -115,7 +127,7 @@ function init() {
     throw new Error("Creating the app user/database failed");
   }
 
-  writeDatabaseUrl(`postgres://${DB_USER}:${appPassword}@localhost:${PORT}/${DB_NAME}`);
+  writeEnvValue("DATABASE_URL", `postgres://${DB_USER}:${appPassword}@localhost:${PORT}/${DB_NAME}`);
 
   console.log(`
 Done.
@@ -125,8 +137,41 @@ Done.
 Next: npm run db:migrate`);
 }
 
+// A second, empty database on the same server for the browser tests. They wipe it freely,
+// so they never touch the data in the main database.
+function initTest() {
+  if (!isRunning()) {
+    console.error("Local PostgreSQL is not running. Run: npm run db:start");
+    process.exit(1);
+  }
+  const appUrl = readEnvValue("DATABASE_URL");
+  if (!appUrl || !fs.existsSync(SUPERUSER_PW_FILE)) {
+    console.error("No local database set up yet. Run: npm run db:init");
+    process.exit(1);
+  }
+  const testUrl = new URL(appUrl);
+  testUrl.pathname = `/${TEST_DB_NAME}`;
+
+  const env = { PGPASSWORD: fs.readFileSync(SUPERUSER_PW_FILE, "utf8").trim() };
+  const admin = ["-h", "localhost", "-p", String(PORT), "-U", "postgres", "-d", "postgres"];
+  const exists = spawnSync(exe("psql"), [...admin, "-tAc", `SELECT 1 FROM pg_database WHERE datname = '${TEST_DB_NAME}'`], {
+    env: { ...process.env, ...env },
+    encoding: "utf8",
+  });
+  if (exists.status !== 0) throw new Error("Could not connect as the admin user");
+  if (exists.stdout.trim() !== "1") {
+    const status = run("psql", [...admin, "-v", "ON_ERROR_STOP=1", "-q", "-c", `CREATE DATABASE ${TEST_DB_NAME} OWNER ${DB_USER}`], {
+      env,
+    });
+    if (status !== 0) throw new Error("Creating the test database failed");
+  }
+  writeEnvValue("TEST_DATABASE_URL", testUrl.toString());
+  console.log(`Test database ${TEST_DB_NAME} is ready (TEST_DATABASE_URL in .env.local). Run: npm run test:e2e`);
+}
+
 const commands = {
   init,
+  "init-test": initTest,
   start,
   stop,
   status: () => console.log(isRunning() ? `Running on port ${PORT} (${DATA_DIR})` : "Not running."),
