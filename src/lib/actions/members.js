@@ -164,11 +164,12 @@ export async function removeMemberAction(_previousState, formData) {
   const removed = await db
     .delete(householdMember)
     .where(nonOwnerMemberOf(context.householdId, memberId))
-    .returning({ id: householdMember.id });
+    .returning({ id: householdMember.id, userId: householdMember.userId });
   if (!removed.length) return { error: "This member can't be removed." };
+  const [gone] = await db.select({ name: user.name }).from(user).where(eq(user.id, removed[0].userId));
   await announce(context, "members");
   revalidatePath("/members");
-  return { success: "Member removed." };
+  return { success: `${gone?.name ?? "The member"} was removed from the household.` };
 }
 
 /** Invite link, new person: choose a name and password, join, and get signed in. */

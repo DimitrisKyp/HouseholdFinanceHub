@@ -37,8 +37,9 @@ test("an expense someone else adds appears without reloading, with a message", a
 
   await addExpense(editor.page, { title: "Coffee beans", amount: "12.40", category: "Transport" });
 
-  await expect(recentExpenses(page).getByText("Coffee beans", { exact: true })).toBeVisible();
+  // The message first: it disappears after a few seconds, while the page's refresh can be slow.
   await expect(page.getByText("Test Editor added Coffee beans (€12.40)")).toBeVisible();
+  await expect(recentExpenses(page).getByText("Coffee beans", { exact: true })).toBeVisible();
   // The person who made the change isn't told about their own change.
   await expect(editor.page.getByText("Test Editor added Coffee beans")).toHaveCount(0);
   await editor.context.close();
@@ -109,6 +110,7 @@ test("someone removed from the household loses access straight away", async ({ p
   page.once("dialog", dialog => dialog.accept());
   await page.locator("li", { hasText: "Test Viewer" }).getByRole("button", { name: "Remove" }).click();
   await expect(page.locator("li", { hasText: "Test Viewer" })).toHaveCount(0);
+  await expect(page.getByText("Test Viewer was removed from the household.")).toBeVisible();
 
   // Their page reloads its data, finds no household and sends them to set one up.
   await expect(viewer.page).toHaveURL(/\/onboarding/);

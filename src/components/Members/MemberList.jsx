@@ -23,9 +23,10 @@ function Message({ state }) {
   return null;
 }
 
-function MemberRow({ member, canManage, isYou }) {
+// Removing is handled by the list, not the row: the row disappears once it works, and the
+// result ("Sam was removed from the household.") has to stay on screen.
+function MemberRow({ member, canManage, isYou, removeAction, removePending }) {
   const [roleState, roleAction, rolePending] = useActionState(changeMemberRoleAction, {});
-  const [removeState, removeAction, removePending] = useActionState(removeMemberAction, {});
   const editable = canManage && member.role !== "owner";
 
   return (
@@ -81,17 +82,31 @@ function MemberRow({ member, canManage, isYou }) {
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{ROLE_LABELS[member.role]}</span>
         )}
       </div>
-      <Message state={roleState.error || roleState.success ? roleState : removeState} />
+      <Message state={roleState} />
     </li>
   );
 }
 
 export default function MemberList({ members, canManage, currentUserId }) {
+  const [removeState, removeAction, removePending] = useActionState(removeMemberAction, {});
+
   return (
-    <ul className="space-y-3">
-      {members.map(member => (
-        <MemberRow key={member.memberId} member={member} canManage={canManage} isYou={member.userId === currentUserId} />
-      ))}
-    </ul>
+    <div>
+      <div className="[&>p]:mt-0 [&>p]:mb-3">
+        <Message state={removeState} />
+      </div>
+      <ul className="space-y-3">
+        {members.map(member => (
+          <MemberRow
+            key={member.memberId}
+            member={member}
+            canManage={canManage}
+            isYou={member.userId === currentUserId}
+            removeAction={removeAction}
+            removePending={removePending}
+          />
+        ))}
+      </ul>
+    </div>
   );
 }
