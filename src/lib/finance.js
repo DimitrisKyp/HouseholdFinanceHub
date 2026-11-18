@@ -1,9 +1,10 @@
 // Read queries for household finance data. Callers pass the householdId from the DAL
 // (requireHousehold), so every query is scoped to the household the user belongs to.
 import "server-only";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { category, recurringItem, user } from "@/db/schema";
+import { formatDay, formatMoney } from "@/lib/format";
+import { category, goal, goalContribution, recurringItem, user } from "@/db/schema";
 
 export const FREQUENCIES = ["weekly", "monthly", "yearly"];
 export const FREQUENCY_LABELS = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" };
@@ -50,4 +51,112 @@ export function recurringTotals(items) {
   const sum = type =>
     Math.round(items.filter(item => item.type === type).reduce((total, item) => total + item.monthlyAmount * 100, 0)) / 100;
   return { income: sum("income"), expenses: sum("expense") };
+}
+
+// ── Goals ────────────────────────────────────────────────────────────────────
+
+export const GOAL_STATUSES = ["active", "paused", "completed"];
+const CONTRIBUTIONS_SHOWN_PER_GOAL = 10;
+
+/**
+ * Goals with the amount saved so far (sum of contributions) and their latest contributions.
+ * Active goals first, then paused, then completed; newest first within each.
+ */
+export async function listGoals(householdId) {
+  const saved = sql`coalesce(sum(${goalContribution.amount}), 0)`.mapWith(Number);
+  const goals = await db
+    .select({
+      id: goal.id,
+      name: goal.name,
+      note: goal.note,
+      targetAmount: goal.targetAmount,
+      targetDate: goal.targetDate,
+      status: goal.status,
+      saved,
+    })
+    .from(goal)
+    .leftJoin(goalContribution, eq(goalContribution.goalId, goal.id))
+    .where(and(eq(goal.householdId, householdId), inArray(goal.status, GOAL_STATUSES)))
+    .groupBy(goal.id)
+    .orderBy(sql`case ${goal.status} when 'active' then 0 when 'paused' then 1 else 2 end`, desc(goal.createdAt));
+  if (!goals.length) return [];
+
+  const contributions = await db
+    .select({
+      id: goalContribution.id,
+      goalId: goalContribution.goalId,
+      amount: goalContribution.amount,
+      contributedOn: goalContribution.contributedOn,
+      note: goalContribution.note,
+      userName: user.name,
+    })
+    .from(goalContribution)
+    .leftJoin(user, eq(user.id, goalContribution.userId))
+    .where(
+      inArray(
+        goalContribution.goalId,
+        goals.map(item => item.id),
+      ),
+    )
+    .orderBy(desc(goalContribution.contributedOn), desc(goalContribution.createdAt));
+
+  const byGoal = new Map();
+  for (const item of contributions) {
+    if (!byGoal.has(item.goalId)) byGoal.set(item.goalId, []);
+    byGoal.get(item.goalId).push(item);
+  }
+  return goals.map(item => ({
+    ...item,
+    saved: Math.round(item.saved * 100) / 100,
+    contributionCount: byGoal.get(item.id)?.length ?? 0,
+    contributions: (byGoal.get(item.id) ?? []).slice(0, CONTRIBUTIONS_SHOWN_PER_GOAL),
+  }));
+}
+
+/** Whole months from `today` until `targetDate` ("YYYY-MM-DD"), at least 1; null if no date or it has passed. */
+export function monthsUntil(today, targetDate) {
+  if (!targetDate || targetDate < today) return null;
+  const [y1, m1, d1] = today.split("-").map(Number);
+  const [y2, m2, d2] = targetDate.split("-").map(Number);
+  const months = (y2 - y1) * 12 + (m2 - m1) + (d2 >= d1 ? 0 : -1);
+  return Math.max(1, months);
+}
+
+/** A goal with display labels (money in the household currency, dates, progress and plan). */
+export function goalView(item, { currency, today }) {
+  const money = amount => formatMoney(amount, currency);
+  const remaining = Math.max(0, item.targetAmount - item.saved);
+  const reached = item.saved >= item.targetAmount;
+
+  let planLabel = null;
+  if (item.targetDate && !reached && item.status === "active") {
+    const months = monthsUntil(today, item.targetDate);
+    planLabel =
+      months === null
+        ? `Target date ${formatDay(item.targetDate)} has passed; ${money(remaining)} still to go.`
+        : `Save about ${money(Math.ceil((remaining / months) * 100) / 100)} a month to reach it by ${formatDay(item.targetDate)}.`;
+  } else if (item.targetDate && !reached) {
+    planLabel = `Target date ${formatDay(item.targetDate)}.`;
+  }
+
+  return {
+    id: item.id,
+    name: item.name,
+    note: item.note,
+    status: item.status,
+    reached,
+    percent: Math.min(100, Math.floor((item.saved / item.targetAmount) * 100)),
+    savedLabel: money(item.saved),
+    targetLabel: money(item.targetAmount),
+    planLabel,
+    contributionCount: item.contributionCount,
+    contributions: item.contributions.map(entry => ({
+      id: entry.id,
+      amount: entry.amount,
+      amountLabel: `${entry.amount < 0 ? "−" : "+"}${money(Math.abs(entry.amount))}`,
+      dayLabel: formatDay(entry.contributedOn),
+      userName: entry.userName,
+      note: entry.note,
+    })),
+  };
 }

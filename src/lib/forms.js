@@ -41,3 +41,13 @@ export function parseAmount(raw, { allowZero = false, allowNegative = false } = 
   if (value === 0 && !allowZero) return null;
   return value;
 }
+
+/** A "YYYY-MM-DD" date field that is a real calendar date, or null. */
+export function parseDate(raw) {
+  const text = String(raw ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const [year, month, day] = text.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const valid = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  return valid && year >= 2000 && year <= 2100 ? text : null;
+}
