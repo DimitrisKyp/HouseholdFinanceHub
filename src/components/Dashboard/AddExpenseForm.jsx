@@ -2,8 +2,9 @@
 
 // The expense form. onSubmitting(formData) runs first (for optimistic UI), then the Server Action.
 import { useActionState } from "react";
-import AuthField, { FormError, FormSuccess, SelectField } from "@/components/Auth/AuthField";
+import TextField, { FormError, FormSuccess, SelectField } from "@/components/ui/Field";
 import { addExpenseAction } from "@/lib/actions/expenses";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default function AddExpenseForm({ categories, members, currentUserId, today, onSubmitting }) {
   const [state, formAction, pending] = useActionState(
@@ -22,7 +23,7 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
         <FormSuccess message={state.success} />
       </div>
       <div className="md:col-span-3">
-        <AuthField
+        <TextField
           id="expense-title"
           name="title"
           label="Expense"
@@ -33,7 +34,7 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
         />
       </div>
       <div className="md:col-span-1">
-        <AuthField
+        <TextField
           id="expense-amount"
           name="amount"
           label="Amount"
@@ -44,7 +45,7 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
         />
       </div>
       <div className="md:col-span-2">
-        <AuthField
+        <TextField
           // Re-mount so a kept date survives React's reset of the form after a successful submit.
           key={`date-${values.spentOn}`}
           id="expense-date"
@@ -92,11 +93,7 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
           ))}
         </SelectField>
       </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-xl bg-cyan-500 px-4 py-3 font-medium text-slate-950 transition hover:bg-cyan-400 disabled:cursor-wait disabled:opacity-60 md:col-span-6"
-      >
+      <button type="submit" disabled={pending} className={buttonClasses({ variant: "primary", size: "md", className: "md:col-span-6" })}>
         {pending ? "Adding…" : "Add expense"}
       </button>
     </form>

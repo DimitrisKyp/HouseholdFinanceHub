@@ -55,7 +55,7 @@ test("summarises the last 6 months", async ({ page }) => {
   await expect(main).toContainText("Income €3,000");
   await expect(columns(spentChart(page))).toHaveCount(6);
   // Only the €2,600 month went over: 3000 − 1000 − 2600 = −600, drawn red.
-  await expect(netChart(page).locator('path[fill="#e66767"]')).toHaveCount(1);
+  await expect(netChart(page).locator('path[style*="--chart-negative"]')).toHaveCount(1);
 });
 
 test("charts have hover and keyboard tooltips and a table view", async ({ page }) => {

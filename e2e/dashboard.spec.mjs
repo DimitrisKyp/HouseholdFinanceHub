@@ -81,7 +81,7 @@ test("breakdown drawer shows categories against limits and deletes expenses", as
   await expect(drawer.getByText("Transactions (2)")).toBeVisible();
 
   await page.keyboard.press("Escape");
-  await expect(drawer).toHaveClass(/translate-x-full/);
+  await expect(drawer).toBeHidden();
   await expect(page.locator("main")).toContainText("€150.40");
 });
 

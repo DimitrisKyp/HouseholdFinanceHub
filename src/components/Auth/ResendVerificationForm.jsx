@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import AuthField, { FormError, SubmitButton } from "@/components/Auth/AuthField";
+import TextField, { FormError } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/Button";
 import { resendVerificationAction } from "@/lib/actions/auth";
 
 // "Send the confirmation email again". If the address is known, it's a hidden field;
@@ -14,7 +15,7 @@ export default function ResendVerificationForm({ email }) {
       {email ? (
         <input type="hidden" name="email" value={email} />
       ) : (
-        <AuthField id="email" label="Email" type="email" autoComplete="email" required />
+        <TextField id="email" label="Email" type="email" autoComplete="email" required />
       )}
       <FormError message={state.error} />
       {state.sent ? (

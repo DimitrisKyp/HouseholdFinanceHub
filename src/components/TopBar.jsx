@@ -30,7 +30,7 @@ export default function TopBar({ balanceLabel, balanceNegative, dateLabel, curre
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
         <p className="text-xs font-medium tracking-widest text-slate-500 uppercase">Left this month</p>
-        <p className={`text-2xl leading-tight font-bold ${balanceNegative ? "text-rose-400" : "text-emerald-400"}`}>{balanceLabel}</p>
+        <p className={`text-2xl leading-tight font-bold ${balanceNegative ? "text-rose-300" : "text-emerald-300"}`}>{balanceLabel}</p>
       </div>
 
       <p className="hidden shrink-0 text-sm text-slate-400 sm:block">{dateLabel}</p>

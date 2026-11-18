@@ -1,15 +1,12 @@
 // Presentational: the notification centre's list. Each item opens through openNotificationAction
 // (marks it read, then goes to what it's about), which works without JavaScript too.
 // items: [{ id, type, title, body, readAt, whenLabel }]
+import Badge from "@/components/ui/Badge";
 import { openNotificationAction } from "@/lib/actions/notifications";
 
 // A word next to each notification, so the kind never depends on colour alone.
 const TYPE_LABELS = { budget: "Budget", goal: "Goal", member: "Members" };
-const TYPE_STYLES = {
-  budget: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-  goal: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-  member: "border-violet-400/30 bg-violet-400/10 text-violet-200",
-};
+const TYPE_TONES = { budget: "warning", goal: "success", member: "violet" };
 
 export default function NotificationList({ items }) {
   return (
@@ -30,13 +27,7 @@ export default function NotificationList({ items }) {
               />
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase ${
-                      TYPE_STYLES[item.type] ?? "border-white/10 text-slate-300"
-                    }`}
-                  >
-                    {TYPE_LABELS[item.type] ?? "Update"}
-                  </span>
+                  <Badge tone={TYPE_TONES[item.type] ?? "neutral"}>{TYPE_LABELS[item.type] ?? "Update"}</Badge>
                   {item.readAt ? null : <span className="text-[10px] font-semibold tracking-wide text-cyan-300 uppercase">New</span>}
                   <span className="text-xs text-slate-500">{item.whenLabel}</span>
                 </span>

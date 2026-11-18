@@ -7,14 +7,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import { formatMoney } from "@/lib/format";
 import { niceTicks } from "@/lib/insights";
 
-// Chart tokens, validated against the panel surface (#1b2335) with the dataviz palette checker.
+// Chart colours come from the theme tokens in globals.css (--chart-*), validated with the dataviz
+// palette checker against the panel surface in both themes. Applied through style, as SVG
+// presentation attributes can't read CSS variables.
 const COLORS = {
-  positive: "#3987e5", // series slot 1 (blue)
-  negative: "#e66767", // diverging warm pole (red)
-  reference: "#c3c2b7", // secondary ink
-  grid: "#2a3346",
-  baseline: "#475569",
-  surface: "#1b2335",
+  positive: "var(--chart-positive)", // series slot 1 (blue)
+  negative: "var(--chart-negative)", // diverging warm pole (red)
+  reference: "var(--chart-reference)", // secondary ink
+  grid: "var(--chart-grid)",
+  baseline: "var(--chart-baseline)",
 };
 const HEIGHT = 240;
 const MARGIN = { top: 24, right: 16, bottom: 28, left: 56 };
@@ -79,7 +80,7 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
       <figcaption className="sr-only">{title}</figcaption>
       <div ref={containerRef} className="relative w-full" style={{ height: HEIGHT }} onPointerLeave={() => setActive(null)}>
         {width > 0 ? (
-          <svg width={width} height={HEIGHT} role="img" aria-label={title} className="block overflow-visible">
+          <svg width={width} height={HEIGHT} role="group" aria-label={title} className="block overflow-visible">
             {/* Gridlines and y ticks: solid hairlines, recessive. */}
             {ticks.map(tick => (
               <g key={tick}>
@@ -88,7 +89,7 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
                   x2={width - MARGIN.right}
                   y1={y(tick)}
                   y2={y(tick)}
-                  stroke={tick === 0 ? COLORS.baseline : COLORS.grid}
+                  style={{ stroke: tick === 0 ? COLORS.baseline : COLORS.grid }}
                 />
                 <text x={MARGIN.left - 8} y={y(tick)} dy="0.32em" textAnchor="end" className="fill-slate-400 text-[11px] tabular-nums">
                   {compactTick(tick, currency)}
@@ -105,9 +106,8 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
                 <g key={item.key}>
                   <path
                     d={columnPath(x, barWidth, y(0), y(item.value))}
-                    fill={color}
                     opacity={active === null || isActive ? 1 : 0.55}
-                    style={{ filter: isActive ? "brightness(1.15)" : undefined, transition: "opacity 120ms" }}
+                    style={{ fill: color, filter: isActive ? "brightness(1.15)" : undefined, transition: "opacity 120ms" }}
                   />
                   {labelKeys.includes(item.key) && item.value !== 0 ? (
                     <text
@@ -155,7 +155,7 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
                   x2={width - MARGIN.right}
                   y1={y(reference.value)}
                   y2={y(reference.value)}
-                  stroke={COLORS.reference}
+                  style={{ stroke: COLORS.reference }}
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
                 />

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import AuthField, { FormError, SubmitButton } from "@/components/Auth/AuthField";
+import TextField, { FormError } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/Button";
 import { changePasswordAction } from "@/lib/actions/password";
 
 export default function ChangePasswordForm() {
@@ -18,7 +19,7 @@ export default function ChangePasswordForm() {
         </p>
       ) : null}
       <div>
-        <AuthField
+        <TextField
           id="currentPassword"
           label="Current password"
           type="password"
@@ -30,7 +31,7 @@ export default function ChangePasswordForm() {
           Forgot it?
         </Link>
       </div>
-      <AuthField
+      <TextField
         id="newPassword"
         label="New password"
         type="password"
@@ -39,7 +40,7 @@ export default function ChangePasswordForm() {
         hint="At least 8 characters."
         error={state.errors?.newPassword}
       />
-      <AuthField
+      <TextField
         id="confirmPassword"
         label="Repeat new password"
         type="password"

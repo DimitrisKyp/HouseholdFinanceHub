@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import AuthField, { FormError, SubmitButton } from "@/components/Auth/AuthField";
+import TextField, { FormError } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/Button";
 import { resetPasswordAction } from "@/lib/actions/password";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default function ResetPasswordForm({ token }) {
   const [state, formAction, pending] = useActionState(resetPasswordAction, {});
@@ -12,10 +14,7 @@ export default function ResetPasswordForm({ token }) {
     return (
       <div className="space-y-4">
         <FormError message={state.error} />
-        <Link
-          href="/forgot-password"
-          className="block w-full rounded-xl bg-cyan-500 px-4 py-3 text-center font-medium text-slate-950 transition hover:bg-cyan-400"
-        >
+        <Link href="/forgot-password" className={buttonClasses({ variant: "primary", size: "md", block: true })}>
           Get a new link
         </Link>
       </div>
@@ -26,7 +25,7 @@ export default function ResetPasswordForm({ token }) {
     <form action={formAction} className="space-y-4" noValidate>
       <input type="hidden" name="token" value={token} />
       <FormError message={state.error} />
-      <AuthField
+      <TextField
         id="password"
         label="New password"
         type="password"
@@ -35,7 +34,7 @@ export default function ResetPasswordForm({ token }) {
         hint="At least 8 characters."
         error={state.errors?.password}
       />
-      <AuthField
+      <TextField
         id="confirmPassword"
         label="Repeat new password"
         type="password"

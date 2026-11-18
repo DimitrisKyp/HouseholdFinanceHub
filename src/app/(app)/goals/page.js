@@ -8,6 +8,7 @@ import { goalView } from "@/lib/finance";
 import { loadSavingsForecast } from "@/lib/forecast-data";
 import { formatMoney, todayIn } from "@/lib/format";
 import { can } from "@/lib/permissions";
+import { buttonClasses } from "@/components/ui/Button";
 
 export const metadata = { title: "Goals · Household Finance Hub" };
 
@@ -45,10 +46,7 @@ export default async function GoalsPage() {
                 <p className="text-xs text-emerald-200">Saved towards open goals</p>
                 <p className="text-xl leading-tight font-semibold">{formatMoney(totalSaved, currency)}</p>
               </div>
-              <Link
-                href="/"
-                className="inline-flex w-fit shrink-0 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
-              >
+              <Link href="/" className={buttonClasses({ variant: "secondary", size: "pill", className: "w-fit shrink-0" })}>
                 Back to dashboard
               </Link>
             </div>

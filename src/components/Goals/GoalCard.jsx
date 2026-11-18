@@ -2,7 +2,7 @@
 
 // One savings goal: progress, money in/out, status changes and recent history.
 import { useActionState } from "react";
-import { InlineMessage } from "@/components/Auth/AuthField";
+import { InlineMessage } from "@/components/ui/Field";
 import { addContributionAction, deleteGoalAction, setGoalStatusAction } from "@/lib/actions/goals";
 
 const smallButton =

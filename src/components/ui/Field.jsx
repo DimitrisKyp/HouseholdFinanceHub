@@ -1,5 +1,7 @@
-// Labelled input with an inline error message, wired up for screen readers.
-export default function AuthField({ id, label, error, hint, ...inputProps }) {
+// Form fields and form messages, wired up for screen readers (labels, aria-invalid, aria-describedby).
+
+/** Labelled input with an optional hint and an inline error message. */
+export default function TextField({ id, label, error, hint, ...inputProps }) {
   const describedBy = [error && `${id}-error`, hint && `${id}-hint`].filter(Boolean).join(" ") || undefined;
 
   return (
@@ -12,8 +14,8 @@ export default function AuthField({ id, label, error, hint, ...inputProps }) {
         name={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={`w-full rounded-xl border bg-slate-950/60 px-4 py-3 text-white transition outline-none placeholder:text-slate-500 focus:border-cyan-400 ${
-          error ? "border-rose-400/70" : "border-white/10"
+        className={`rounded-control w-full border bg-slate-950/60 px-4 py-3 text-white transition outline-none placeholder:text-slate-500 focus:border-cyan-400 ${
+          error ? "border-rose-400/70" : "border-line"
         }`}
         {...inputProps}
       />
@@ -49,19 +51,7 @@ export function FormSuccess({ message }) {
   );
 }
 
-export function SubmitButton({ pending, children, pendingText }) {
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full rounded-xl bg-cyan-500 px-4 py-3 font-medium text-slate-950 transition hover:bg-cyan-400 disabled:cursor-wait disabled:opacity-60"
-    >
-      {pending ? pendingText : children}
-    </button>
-  );
-}
-
-/** Labelled <select> with an inline error message, styled like AuthField. */
+/** Labelled <select> with an inline error message, styled like TextField. */
 export function SelectField({ id, label, error, children, ...selectProps }) {
   return (
     <div>
@@ -73,8 +63,8 @@ export function SelectField({ id, label, error, children, ...selectProps }) {
         name={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={`w-full rounded-xl border bg-slate-950/60 px-4 py-3 text-white transition outline-none focus:border-cyan-400 ${
-          error ? "border-rose-400/70" : "border-white/10"
+        className={`rounded-control w-full border bg-slate-950/60 px-4 py-3 text-white transition outline-none focus:border-cyan-400 ${
+          error ? "border-rose-400/70" : "border-line"
         }`}
         {...selectProps}
       >

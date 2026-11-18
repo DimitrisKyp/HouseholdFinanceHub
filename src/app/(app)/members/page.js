@@ -5,6 +5,7 @@ import Panel from "@/components/Panel";
 import { requireHousehold } from "@/lib/dal";
 import { listMembers, listOpenInvites } from "@/lib/invites";
 import { can } from "@/lib/permissions";
+import { buttonClasses } from "@/components/ui/Button";
 
 export const metadata = { title: "Members · Household Finance Hub" };
 
@@ -46,10 +47,7 @@ export default async function MembersPage() {
                   : "The people sharing this household. Only the owner can invite or remove members."}
               </p>
             </div>
-            <Link
-              href="/"
-              className="inline-flex w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
-            >
+            <Link href="/" className={buttonClasses({ variant: "secondary", size: "pill", className: "w-fit" })}>
               Back to dashboard
             </Link>
           </div>

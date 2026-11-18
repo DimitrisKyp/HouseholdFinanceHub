@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
-import AuthField, { FormError, FormSuccess } from "@/components/Auth/AuthField";
+import TextField, { FormError, FormSuccess } from "@/components/ui/Field";
 import { addGoalAction } from "@/lib/actions/goals";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default function AddGoalForm({ minDate }) {
   const [state, formAction, pending] = useActionState(addGoalAction, {});
@@ -15,7 +16,7 @@ export default function AddGoalForm({ minDate }) {
         <FormSuccess message={state.success} />
       </div>
       <div className="md:col-span-2">
-        <AuthField
+        <TextField
           id="goal-name"
           name="name"
           label="Goal"
@@ -25,7 +26,7 @@ export default function AddGoalForm({ minDate }) {
           error={state.errors?.name}
         />
       </div>
-      <AuthField
+      <TextField
         id="goal-target"
         name="targetAmount"
         label="Target amount"
@@ -34,7 +35,7 @@ export default function AddGoalForm({ minDate }) {
         defaultValue={values.targetAmount}
         error={state.errors?.targetAmount}
       />
-      <AuthField
+      <TextField
         id="goal-date"
         name="targetDate"
         label="Target date (optional)"
@@ -44,7 +45,7 @@ export default function AddGoalForm({ minDate }) {
         error={state.errors?.targetDate}
       />
       <div className="md:col-span-2">
-        <AuthField
+        <TextField
           id="goal-note"
           name="note"
           label="Note (optional)"
@@ -54,7 +55,7 @@ export default function AddGoalForm({ minDate }) {
           error={state.errors?.note}
         />
       </div>
-      <AuthField
+      <TextField
         id="goal-starting"
         name="startingAmount"
         label="Already saved (optional)"
@@ -66,7 +67,7 @@ export default function AddGoalForm({ minDate }) {
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-xl bg-cyan-500 px-4 py-3 font-medium text-slate-950 transition hover:bg-cyan-400 disabled:cursor-wait disabled:opacity-60 md:mt-6"
+        className={buttonClasses({ variant: "primary", size: "md", className: "self-start md:mt-6" })}
       >
         {pending ? "Adding…" : "Add goal"}
       </button>

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import AuthField, { FormError, SubmitButton } from "@/components/Auth/AuthField";
+import TextField, { FormError } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/Button";
 import { requestPasswordResetAction } from "@/lib/actions/password";
 
 export default function ForgotPasswordForm({ email }) {
@@ -17,7 +18,7 @@ export default function ForgotPasswordForm({ email }) {
           hour.
         </p>
       ) : null}
-      <AuthField
+      <TextField
         id="email"
         label="Email"
         type="email"

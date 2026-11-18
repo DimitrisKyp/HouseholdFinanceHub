@@ -15,6 +15,7 @@ import {
 import { loadSavingsForecast } from "@/lib/forecast-data";
 import { formatMoney, formatMonth, todayIn } from "@/lib/format";
 import { INSIGHT_RANGES, monthlySeries, parseInsightRange, rangeMonths, topCategories } from "@/lib/insights";
+import { buttonClasses } from "@/components/ui/Button";
 
 export const metadata = { title: "Insights · Household Finance Hub" };
 
@@ -91,10 +92,7 @@ export default async function InsightsPage({ searchParams }) {
                 Spending over time, what&apos;s left each month, and the biggest categories.
               </p>
             </div>
-            <Link
-              href="/"
-              className="inline-flex w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
-            >
+            <Link href="/" className={buttonClasses({ variant: "secondary", size: "pill", className: "w-fit" })}>
               Back to dashboard
             </Link>
           </div>

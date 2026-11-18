@@ -123,7 +123,7 @@ function NavIcon({ icon, active, badge }) {
       {badge ? (
         <span
           aria-hidden="true"
-          className="absolute -top-1.5 -right-1.5 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] leading-4 font-semibold text-white"
+          className="absolute -top-1.5 -right-1.5 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[10px] leading-4 font-semibold text-white"
         >
           {badge}
         </span>

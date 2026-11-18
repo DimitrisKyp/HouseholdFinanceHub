@@ -3,6 +3,7 @@
 import Form from "next/form";
 import Link from "next/link";
 import { transactionsHref } from "@/lib/transaction-filters";
+import { buttonClasses } from "@/components/ui/Button";
 
 const inputClass =
   "w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400";
@@ -94,10 +95,7 @@ export default function TransactionFilters({ filters, presets, categories, membe
         {filters.sort !== "date" ? <input type="hidden" name="sort" value={filters.sort} /> : null}
         <input type="hidden" name="dir" value={filters.dir} />
         <div className="flex items-end gap-2">
-          <button
-            type="submit"
-            className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-medium text-slate-950 transition hover:bg-cyan-400"
-          >
+          <button type="submit" className={buttonClasses({ variant: "primary", size: "sm" })}>
             Apply
           </button>
           <Link

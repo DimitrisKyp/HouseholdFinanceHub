@@ -14,6 +14,7 @@ import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, newPasswordErrors, passwordFie
 import { createHouseholdWithOwner } from "@/lib/households";
 import { checkEmailPath, safeRedirectPath, verificationCallbackPath } from "@/lib/redirects";
 import { isTooSoon, withMinimumDuration } from "@/lib/throttle";
+import { rememberTheme, savedTheme } from "@/lib/preferences";
 
 const MAX_NAME_LENGTH = 100;
 
@@ -79,8 +80,9 @@ export async function signInAction(_previousState, formData) {
 
   const next = safeRedirectPath(formData.get("next"));
   let needsVerification = false;
+  let signedIn;
   try {
-    await auth.api.signInEmail({
+    signedIn = await auth.api.signInEmail({
       // callbackURL: where the confirmation link (if one gets sent) brings them back to.
       body: { email: values.email, password, rememberMe: true, callbackURL: verificationCallbackPath(next) },
       headers: await headers(),
@@ -98,6 +100,9 @@ export async function signInAction(_previousState, formData) {
   }
 
   if (needsVerification) redirect(checkEmailPath(values.email, "sign-in"));
+  // Bring the theme chosen on another device to this browser.
+  const theme = signedIn?.user ? await savedTheme(signedIn.user.id) : null;
+  if (theme) await rememberTheme(theme);
   redirect(next);
 }
 

@@ -2,8 +2,9 @@
 
 // Spending categories with an optional monthly limit. Shared by expenses, recurring bills and budgets.
 import { useActionState } from "react";
-import AuthField, { FormError, FormSuccess, InlineMessage } from "@/components/Auth/AuthField";
+import TextField, { FormError, FormSuccess, InlineMessage } from "@/components/ui/Field";
 import { addCategoryAction, setCategoryArchivedAction, updateCategoryLimitAction } from "@/lib/actions/budget";
+import { buttonClasses } from "@/components/ui/Button";
 
 const smallButton =
   "rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:text-white disabled:opacity-60";
@@ -79,7 +80,7 @@ function AddCategoryForm() {
         <FormError message={state.error} />
         <FormSuccess message={state.success} />
       </div>
-      <AuthField
+      <TextField
         id="category-name"
         name="name"
         label="New category"
@@ -88,7 +89,7 @@ function AddCategoryForm() {
         defaultValue={state.values?.name}
         error={state.errors?.name}
       />
-      <AuthField
+      <TextField
         id="category-limit"
         name="monthlyLimit"
         label="Monthly limit"
@@ -97,11 +98,7 @@ function AddCategoryForm() {
         defaultValue={state.values?.monthlyLimit}
         error={state.errors?.monthlyLimit}
       />
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-xl bg-cyan-500 px-4 py-3 font-medium text-slate-950 transition hover:bg-cyan-400 disabled:cursor-wait disabled:opacity-60 md:mt-6"
-      >
+      <button type="submit" disabled={pending} className={buttonClasses({ variant: "primary", size: "md", className: "md:mt-6" })}>
         {pending ? "Adding…" : "Add"}
       </button>
     </form>

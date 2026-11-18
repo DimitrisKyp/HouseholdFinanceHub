@@ -1,13 +1,20 @@
 import Link from "next/link";
 import ChangePasswordForm from "@/components/Account/ChangePasswordForm";
+import HouseholdSettingsForm from "@/components/Account/HouseholdSettingsForm";
+import ProfileForm from "@/components/Account/ProfileForm";
+import ThemeForm from "@/components/Account/ThemeForm";
 import Panel from "@/components/Panel";
 import { requireHousehold } from "@/lib/dal";
-import { ROLE_LABELS } from "@/lib/permissions";
+import { can, ROLE_LABELS } from "@/lib/permissions";
+import { CURRENCIES, currentTheme, THEME_LABELS, THEMES, timezones } from "@/lib/preferences";
+import { buttonClasses } from "@/components/ui/Button";
 
 export const metadata = { title: "Account · Household Finance Hub" };
 
 export default async function AccountPage() {
-  const { user, householdName, role } = await requireHousehold();
+  const { user, householdName, role, currency, timezone } = await requireHousehold();
+  const theme = await currentTheme();
+  const canManageHousehold = can(role, "household:manage");
 
   return (
     <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-5 md:py-4">
@@ -16,36 +23,30 @@ export default async function AccountPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-semibold tracking-[0.35em] text-cyan-300 uppercase">Account</p>
-              <h1 className="mt-2 text-xl font-semibold tracking-tight md:text-3xl">Your sign-in and security.</h1>
+              <h1 className="mt-2 text-xl font-semibold tracking-tight md:text-3xl">Your profile, theme and security.</h1>
             </div>
-            <Link
-              href="/"
-              className="inline-flex w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
-            >
+            <Link href="/" className={buttonClasses({ variant: "secondary", size: "pill", className: "w-fit" })}>
               Back to dashboard
             </Link>
           </div>
         </section>
 
         <div className="grid gap-3 xl:grid-cols-2">
-          <Panel title="Profile" subtitle="How you appear to your household.">
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="text-slate-400">Name</dt>
-                <dd className="font-medium">{user.name}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-400">Email</dt>
-                <dd className="font-medium">{user.email}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-400">Household</dt>
-                <dd className="font-medium">
-                  {householdName} · {ROLE_LABELS[role]}
-                </dd>
-              </div>
-            </dl>
+          <Panel title="Profile" subtitle={`How you appear to your household: ${householdName} · ${ROLE_LABELS[role]}.`}>
+            <ProfileForm name={user.name} email={user.email} />
           </Panel>
+          <Panel title="Appearance" subtitle="Saved to your account, so it follows you to other devices.">
+            <ThemeForm theme={theme} options={THEMES.map(value => ({ value, label: THEME_LABELS[value] }))} />
+          </Panel>
+          {canManageHousehold ? (
+            <Panel title="Household settings" subtitle="Only the owner can change these.">
+              <HouseholdSettingsForm
+                household={{ name: householdName, currency, timezone }}
+                currencies={CURRENCIES}
+                timezones={timezones()}
+              />
+            </Panel>
+          ) : null}
           <Panel title="Change password" subtitle="We’ll email you when your password changes.">
             <ChangePasswordForm />
           </Panel>

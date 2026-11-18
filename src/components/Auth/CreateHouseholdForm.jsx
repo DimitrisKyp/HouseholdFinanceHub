@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import AuthField, { FormError, SubmitButton } from "@/components/Auth/AuthField";
+import TextField, { FormError } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/Button";
 import { createHouseholdAction, signOutAction } from "@/lib/actions/auth";
 
 export default function CreateHouseholdForm() {
@@ -11,7 +12,7 @@ export default function CreateHouseholdForm() {
     <div className="space-y-4">
       <form action={formAction} className="space-y-4" noValidate>
         <FormError message={state.error} />
-        <AuthField
+        <TextField
           id="householdName"
           label="Household name"
           placeholder="Our home"

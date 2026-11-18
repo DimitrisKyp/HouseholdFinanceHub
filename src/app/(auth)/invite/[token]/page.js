@@ -4,6 +4,7 @@ import { signOutAction } from "@/lib/actions/auth";
 import { getMembership, getSession } from "@/lib/dal";
 import { getInviteByToken } from "@/lib/invites";
 import { ROLE_LABELS } from "@/lib/permissions";
+import { buttonClasses } from "@/components/ui/Button";
 
 // The token is in the URL: don't leak it to other sites through the Referer header.
 export const metadata = { title: "Invitation · Household Finance Hub", referrer: "no-referrer" };
@@ -124,7 +125,7 @@ export default async function InvitePage({ params }) {
         </p>
         <Link
           href={`/sign-in?next=${encodeURIComponent(`/invite/${token}`)}`}
-          className="block w-full rounded-xl bg-cyan-500 px-4 py-3 text-center font-medium text-slate-950 transition hover:bg-cyan-400"
+          className={buttonClasses({ variant: "primary", size: "md", block: true })}
         >
           Sign in to accept
         </Link>

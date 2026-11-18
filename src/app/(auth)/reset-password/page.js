@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ResetPasswordForm from "@/components/Auth/ResetPasswordForm";
+import { buttonClasses } from "@/components/ui/Button";
 
 // The token is in the URL: don't leak it to other sites through the Referer header.
 export const metadata = { title: "Choose a new password · Household Finance Hub", referrer: "no-referrer" };
@@ -16,10 +17,7 @@ export default async function ResetPasswordPage({ searchParams }) {
         <p className="mt-3 mb-6 text-sm leading-6 text-slate-300">
           This reset link has expired or has already been used. Reset links work once, for 1 hour.
         </p>
-        <Link
-          href="/forgot-password"
-          className="block w-full rounded-xl bg-cyan-500 px-4 py-3 text-center font-medium text-slate-950 transition hover:bg-cyan-400"
-        >
+        <Link href="/forgot-password" className={buttonClasses({ variant: "primary", size: "md", block: true })}>
           Get a new link
         </Link>
       </>

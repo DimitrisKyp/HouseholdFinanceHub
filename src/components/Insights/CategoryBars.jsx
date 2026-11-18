@@ -1,6 +1,6 @@
 // Ranked horizontal bars: spending per category, largest first, one hue. Every bar carries its
 // amount and share at the tip, so no tooltip is needed; the list itself is the table view.
-const BAR_COLOR = "#3987e5"; // series slot 1, validated on the panel surface
+const BAR_COLOR = "var(--chart-positive)"; // series slot 1, from the theme tokens in globals.css
 
 export default function CategoryBars({ rows }) {
   if (!rows.length) return <p className="text-sm text-slate-500">No spending in this period.</p>;

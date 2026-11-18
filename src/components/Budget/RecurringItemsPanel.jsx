@@ -2,7 +2,8 @@
 
 // Recurring income (salary, side income) or recurring bills (rent, subscriptions) for the budget page.
 import { useActionState } from "react";
-import AuthField, { FormError, FormSuccess, InlineMessage, SelectField } from "@/components/Auth/AuthField";
+import TextField, { FormError, FormSuccess, InlineMessage, SelectField } from "@/components/ui/Field";
+import { buttonClasses } from "@/components/ui/Button";
 import { addRecurringItemAction, deleteRecurringItemAction, updateBillCategoryAction } from "@/lib/actions/budget";
 
 const FREQUENCY_OPTIONS = [
@@ -17,7 +18,7 @@ const COPY = {
     titlePlaceholder: "Main salary",
     amountPlaceholder: "2400",
     submit: "Add income",
-    button: "bg-emerald-500 text-slate-950 hover:bg-emerald-400",
+    button: "success",
     amountColor: "text-emerald-200",
     empty: "No income added yet.",
   },
@@ -26,7 +27,7 @@ const COPY = {
     titlePlaceholder: "Rent",
     amountPlaceholder: "850",
     submit: "Add bill",
-    button: "bg-rose-500 text-white hover:bg-rose-400",
+    button: "danger",
     amountColor: "text-rose-200",
     empty: "No recurring bills added yet.",
   },
@@ -45,7 +46,7 @@ function AddItemForm({ type, categories, members }) {
         <FormError message={state.error} />
         <FormSuccess message={state.success} />
       </div>
-      <AuthField
+      <TextField
         id={`${prefix}title`}
         name="title"
         label={copy.titleLabel}
@@ -54,7 +55,7 @@ function AddItemForm({ type, categories, members }) {
         defaultValue={values.title}
         error={state.errors?.title}
       />
-      <AuthField
+      <TextField
         id={`${prefix}amount`}
         name="amount"
         label="Amount"
@@ -112,11 +113,7 @@ function AddItemForm({ type, categories, members }) {
           ))}
         </SelectField>
       )}
-      <button
-        type="submit"
-        disabled={pending}
-        className={`rounded-xl px-4 py-3 font-medium transition disabled:cursor-wait disabled:opacity-60 md:col-span-2 ${copy.button}`}
-      >
+      <button type="submit" disabled={pending} className={buttonClasses({ variant: copy.button, className: "md:col-span-2" })}>
         {pending ? "Saving…" : copy.submit}
       </button>
     </form>

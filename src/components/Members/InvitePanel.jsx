@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState, useOptimistic } from "react";
-import AuthField, { FormError, FormSuccess } from "@/components/Auth/AuthField";
+import TextField, { FormError, FormSuccess } from "@/components/ui/Field";
 import { inviteMemberAction, resendInviteAction, revokeInviteAction } from "@/lib/actions/members";
 import { EMAIL_PATTERN, field } from "@/lib/forms";
 import { ROLE_LABELS } from "@/lib/permissions";
+import { buttonClasses } from "@/components/ui/Button";
 
 function InviteForm({ onSubmitting }) {
   const [state, formAction, pending] = useActionState(
@@ -19,7 +20,7 @@ function InviteForm({ onSubmitting }) {
     <form action={formAction} className="space-y-3" noValidate>
       <FormError message={state.error} />
       <FormSuccess message={state.success} />
-      <AuthField
+      <TextField
         id="email"
         label="Email address"
         type="email"
@@ -44,11 +45,7 @@ function InviteForm({ onSubmitting }) {
         </select>
         {state.errors?.role ? <p className="mt-1 text-xs text-rose-300">{state.errors.role}</p> : null}
       </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-xl bg-cyan-500 px-4 py-3 font-medium text-slate-950 transition hover:bg-cyan-400 disabled:cursor-wait disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={buttonClasses({ variant: "primary", size: "md", block: true })}>
         {pending ? "Sending…" : "Send invitation"}
       </button>
     </form>

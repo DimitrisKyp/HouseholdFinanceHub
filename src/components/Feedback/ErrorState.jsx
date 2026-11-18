@@ -4,6 +4,7 @@
 // in production Next.js replaces them with a digest that matches the server log.
 import Link from "next/link";
 import { useEffect } from "react";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default function ErrorState({ error, onRetry, homeHref = "/" }) {
   useEffect(() => {
@@ -19,11 +20,7 @@ export default function ErrorState({ error, onRetry, homeHref = "/" }) {
       </p>
       {error?.digest ? <p className="mt-3 font-mono text-xs text-slate-500">Reference: {error.digest}</p> : null}
       <div className="mt-5 flex justify-center gap-3">
-        <button
-          type="button"
-          onClick={onRetry}
-          className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-medium text-slate-950 transition hover:bg-cyan-400"
-        >
+        <button type="button" onClick={onRetry} className={buttonClasses({ variant: "primary", size: "sm" })}>
           Try again
         </button>
         <Link

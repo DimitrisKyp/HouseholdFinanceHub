@@ -11,12 +11,21 @@ export default async function AppLayout({ children }) {
 
   return (
     <div className="flex h-full flex-col md:flex-row">
+      {/* First thing a keyboard user reaches: jump past the navigation. */}
+      <a
+        href="#content"
+        className="bg-accent text-on-accent sr-only z-50 rounded-full px-4 py-2 text-sm font-medium focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
+        Skip to content
+      </a>
       <aside className="shrink-0 md:w-25">
         <div className="h-full md:py-28 md:pr-0 md:pl-6">
           <SideNav unreadCount={unreadCount} />
         </div>
       </aside>
-      <section className="min-h-0 flex-1 overflow-hidden">{children}</section>
+      <section id="content" tabIndex={-1} className="min-h-0 flex-1 overflow-hidden outline-none">
+        {children}
+      </section>
       <LiveUpdates />
     </div>
   );

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import AuthField, { FormError, SubmitButton } from "@/components/Auth/AuthField";
+import TextField, { FormError } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/Button";
 import { signUpAction } from "@/lib/actions/auth";
 
 export default function SignUpForm() {
@@ -12,8 +13,8 @@ export default function SignUpForm() {
   return (
     <form action={formAction} className="space-y-4" noValidate>
       <FormError message={state.error} />
-      <AuthField id="name" label="Your name" autoComplete="name" required defaultValue={state.values?.name} error={errors.name} />
-      <AuthField
+      <TextField id="name" label="Your name" autoComplete="name" required defaultValue={state.values?.name} error={errors.name} />
+      <TextField
         id="email"
         label="Email"
         type="email"
@@ -22,7 +23,7 @@ export default function SignUpForm() {
         defaultValue={state.values?.email}
         error={errors.email}
       />
-      <AuthField
+      <TextField
         id="password"
         label="Password"
         type="password"
@@ -31,7 +32,7 @@ export default function SignUpForm() {
         hint="At least 8 characters."
         error={errors.password}
       />
-      <AuthField
+      <TextField
         id="confirmPassword"
         label="Confirm password"
         type="password"
@@ -39,7 +40,7 @@ export default function SignUpForm() {
         required
         error={errors.confirmPassword}
       />
-      <AuthField
+      <TextField
         id="householdName"
         label="Household name"
         placeholder="Our home"

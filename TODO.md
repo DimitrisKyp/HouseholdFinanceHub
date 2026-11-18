@@ -38,10 +38,10 @@
 
 ## 4 Design system and UX polish
 
-- [ ] Create shared UI primitives (Button, Input, Card, Badge, Modal).
-- [ ] Define design tokens in CSS variables (color, spacing, radius, shadows).
-- [ ] Add theme support (light/dark) with persistence.
-- [ ] Improve accessibility (labels, keyboard nav, focus styles, contrast, aria).
+- [x] Create shared UI primitives in `src/components/ui`: Button (+ `buttonClasses` for links), Field (TextField, SelectField, form messages), Card, Badge, Modal (native `<dialog>`), Skeleton.
+- [x] Define design tokens in CSS variables (`globals.css`): semantic colours (accent, ink, surface, line), focus ring, chart colours, radii, page gradient.
+- [x] Add theme support (system / dark / light), saved per user (`user_preference`) and in a cookie so pages render in it from the first byte; chart colours validated for both themes.
+- [x] Improve accessibility: axe-core WCAG 2.1 A/AA checks on every page in both themes (`e2e/accessibility.spec.mjs`), skip link, visible focus ring, reduced motion, modal dialog via `<dialog>`, contrast fixes.
 
 ## 5 API integration quality
 
@@ -78,8 +78,9 @@
 - [ ] Add metadata, OG images, sitemap, robots.
 - [ ] Add analytics and error monitoring.
 
-- preferences per profile currency/language/theme
-- setup profile
+- [x] Preferences: theme per user; currency, timezone and name per household (owner, Account page).
+- [ ] Language: the UI is English only. Translating it needs a message catalogue for every string (e.g. next-intl); amounts and dates already follow the household currency and timezone.
+- [x] Set up your profile: change your name on the Account page.
 
 ## 10 Deployment checklist (do when going live)
 

@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import { currentTheme } from "@/lib/preferences";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,11 +17,15 @@ export const metadata = {
   description: "A finance dashboard, expense tracker, and family manager",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // The theme comes from a cookie (set on the Account page), so it applies before anything loads.
+  const theme = await currentTheme();
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" data-theme={theme} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="h-full overflow-hidden bg-slate-950 text-white">
-        <div className="h-full bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)]">{children}</div>
+        <div className="h-full" style={{ backgroundImage: "var(--page-gradient)" }}>
+          {children}
+        </div>
       </body>
     </html>
   );

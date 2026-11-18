@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import AuthField, { FormError, SubmitButton } from "@/components/Auth/AuthField";
+import TextField, { FormError } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/Button";
 import { signInAction } from "@/lib/actions/auth";
 
 export default function SignInForm({ next }) {
@@ -12,9 +13,9 @@ export default function SignInForm({ next }) {
     <form action={formAction} className="space-y-4" noValidate>
       <input type="hidden" name="next" value={next ?? "/"} />
       <FormError message={state.error} />
-      <AuthField id="email" label="Email" type="email" autoComplete="email" required defaultValue={state.values?.email} />
+      <TextField id="email" label="Email" type="email" autoComplete="email" required defaultValue={state.values?.email} />
       <div>
-        <AuthField id="password" label="Password" type="password" autoComplete="current-password" required />
+        <TextField id="password" label="Password" type="password" autoComplete="current-password" required />
         <Link href="/forgot-password" className="mt-1 inline-block text-xs text-cyan-300 hover:text-cyan-200">
           Forgot password?
         </Link>
