@@ -8,16 +8,18 @@ import { db } from "@/db";
 import { category, householdMember, recurringItem } from "@/db/schema";
 import { requirePermission } from "@/lib/dal";
 import { FREQUENCIES } from "@/lib/finance";
+import { announce } from "@/lib/live";
 import { todayIn } from "@/lib/format";
 import { field, isUniqueViolation, parseAmount, UUID_PATTERN } from "@/lib/forms";
 
 const MAX_TITLE_LENGTH = 120;
 const MAX_CATEGORY_NAME_LENGTH = 50;
 
-// The budget feeds the dashboard totals, so both pages are refreshed.
-function refreshBudgetPages() {
+// The budget feeds the dashboard totals, so both pages are refreshed, here and for everyone else.
+async function refreshBudgetPages(context) {
   revalidatePath("/budget");
   revalidatePath("/");
+  await announce(context, "budget", `${context.user.name} updated the budget`);
 }
 
 /** The category if it belongs to this household (and isn't archived), else null. */
@@ -87,7 +89,7 @@ export async function addRecurringItemAction(_previousState, formData) {
     memberUserId,
     startsOn: todayIn(context.timezone),
   });
-  refreshBudgetPages();
+  await refreshBudgetPages(context);
   // Keep the choices (frequency, category, member) for the next entry; clear the rest.
   return {
     success: `${values.title} added.`,
@@ -109,7 +111,7 @@ export async function updateBillCategoryAction(_previousState, formData) {
     .where(and(eq(recurringItem.id, itemId), eq(recurringItem.householdId, context.householdId), eq(recurringItem.type, "expense")))
     .returning({ id: recurringItem.id });
   if (!updated.length) return { error: "This bill no longer exists." };
-  refreshBudgetPages();
+  await refreshBudgetPages(context);
   return { success: `Now in ${found.name}.` };
 }
 
@@ -123,7 +125,7 @@ export async function deleteRecurringItemAction(_previousState, formData) {
     .where(and(eq(recurringItem.id, itemId), eq(recurringItem.householdId, context.householdId)))
     .returning({ id: recurringItem.id });
   if (!removed.length) return { error: "This item no longer exists." };
-  refreshBudgetPages();
+  await refreshBudgetPages(context);
   return { success: "Removed." };
 }
 
@@ -155,7 +157,7 @@ export async function addCategoryAction(_previousState, formData) {
     }
     throw error;
   }
-  refreshBudgetPages();
+  await refreshBudgetPages(context);
   return { success: `${values.name} added.`, values: {} };
 }
 
@@ -168,7 +170,7 @@ export async function updateCategoryLimitAction(_previousState, formData) {
   if (error) return { error };
 
   await db.update(category).set({ monthlyLimit: limit }).where(eq(category.id, found.id));
-  refreshBudgetPages();
+  await refreshBudgetPages(context);
   return { success: "Saved." };
 }
 
@@ -180,6 +182,6 @@ export async function setCategoryArchivedAction(_previousState, formData) {
 
   const archived = field(formData, "archived") === "true";
   await db.update(category).set({ isArchived: archived }).where(eq(category.id, found.id));
-  refreshBudgetPages();
+  await refreshBudgetPages(context);
   return { success: archived ? `${found.name} archived.` : `${found.name} restored.` };
 }

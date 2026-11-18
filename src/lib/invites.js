@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { account, household, householdMember, invite, user } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { memberJoinedMessage, welcomeMessage } from "@/lib/notification-messages";
+import { publish } from "@/lib/live";
 import { memberIds, notify } from "@/lib/notifications";
 
 export const INVITE_TTL_DAYS = 7;
@@ -106,6 +107,7 @@ async function joinHousehold(tx, pending, userId) {
     tx.select({ name: user.name }).from(user).where(eq(user.id, pending.invitedByUserId)),
     tx.select({ name: household.name }).from(household).where(eq(household.id, pending.householdId)),
   ]);
+  await publish({ householdId: pending.householdId, kind: "members", actorId: userId, message: `${joined.name} joined the household` }, tx);
   const owners = await memberIds(tx, pending.householdId, { roles: ["owner"] });
   const recipients = [...new Set([...owners, pending.invitedByUserId])].filter(id => id && id !== userId);
   await notify(tx, {

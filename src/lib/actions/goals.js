@@ -10,16 +10,18 @@ import { requirePermission } from "@/lib/dal";
 import { GOAL_STATUSES } from "@/lib/finance";
 import { formatMoney, todayIn } from "@/lib/format";
 import { field, parseAmount, parseDate, UUID_PATTERN } from "@/lib/forms";
+import { announce } from "@/lib/live";
 import { goalReachedMessage } from "@/lib/notification-messages";
 import { memberIds, notify } from "@/lib/notifications";
 
 const MAX_NAME_LENGTH = 120;
 const MAX_NOTE_LENGTH = 500;
 
-// Goals also appear on the dashboard.
-function refreshGoalPages() {
+// Goals also appear on the dashboard; everyone else's pages are refreshed too.
+async function refreshGoalPages(context, message = `${context.user.name} updated the goals`) {
   revalidatePath("/goals");
   revalidatePath("/");
+  await announce(context, "goals", message);
 }
 
 /** The goal if it belongs to this household, else null. */
@@ -85,7 +87,7 @@ export async function addGoalAction(_previousState, formData) {
       });
     }
   });
-  refreshGoalPages();
+  await refreshGoalPages(context);
   return { success: `${values.name} added.`, values: {} };
 }
 
@@ -153,10 +155,19 @@ export async function addContributionAction(_previousState, formData) {
     });
     if (direction > 0) await notifyIfGoalReached(tx, { context, goal: found, amount });
     const verb = direction > 0 ? "added to" : "taken from";
-    return { success: `${formatMoney(amount, context.currency)} ${verb} ${found.name}.`, values: {} };
+    return { success: `${formatMoney(amount, context.currency)} ${verb} ${found.name}.`, values: {}, goalName: found.name };
   });
 
-  if (result.success) refreshGoalPages();
+  if (result.success) {
+    const money = formatMoney(amount, context.currency);
+    await refreshGoalPages(
+      context,
+      direction > 0
+        ? `${context.user.name} added ${money} to ${result.goalName}`
+        : `${context.user.name} took ${money} from ${result.goalName}`,
+    );
+  }
+  delete result.goalName;
   return result;
 }
 
@@ -169,7 +180,7 @@ export async function setGoalStatusAction(_previousState, formData) {
   if (!found) return { error: "This goal no longer exists." };
 
   await db.update(goal).set({ status }).where(eq(goal.id, found.id));
-  refreshGoalPages();
+  await refreshGoalPages(context);
   const messages = { active: "resumed", paused: "paused", completed: "marked as completed" };
   return { success: `${found.name} ${messages[status]}.` };
 }
@@ -181,6 +192,6 @@ export async function deleteGoalAction(_previousState, formData) {
   if (!found) return { error: "This goal no longer exists." };
 
   await db.delete(goal).where(eq(goal.id, found.id));
-  refreshGoalPages();
+  await refreshGoalPages(context);
   return { success: `${found.name} deleted.` };
 }

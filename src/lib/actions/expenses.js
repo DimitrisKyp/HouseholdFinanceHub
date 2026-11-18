@@ -9,6 +9,7 @@ import { category, expense, householdMember } from "@/db/schema";
 import { requirePermission } from "@/lib/dal";
 import { formatMoney, todayIn } from "@/lib/format";
 import { field, parseAmount, parseDate, UUID_PATTERN } from "@/lib/forms";
+import { announce } from "@/lib/live";
 import { checkBudgetAlert } from "@/lib/notifications";
 
 const MAX_TITLE_LENGTH = 120;
@@ -76,6 +77,7 @@ export async function addExpenseAction(_previousState, formData) {
   }
   revalidatePath("/");
   revalidatePath("/transactions");
+  await announce(context, "expenses", `${context.user.name} added ${values.title} (${formatMoney(amount, context.currency)})`);
   // Keep category, payer and date for the next entry (people often log several at once).
   return {
     success: `${values.title} (${formatMoney(amount, context.currency)}) added.`,
@@ -91,9 +93,10 @@ export async function deleteExpenseAction(_previousState, formData) {
   const removed = await db
     .delete(expense)
     .where(and(eq(expense.id, expenseId), eq(expense.householdId, context.householdId)))
-    .returning({ id: expense.id });
+    .returning({ id: expense.id, title: expense.title });
   if (!removed.length) return { error: "This expense no longer exists." };
   revalidatePath("/");
   revalidatePath("/transactions");
+  await announce(context, "expenses", `${context.user.name} deleted ${removed[0].title}`);
   return { success: "Expense deleted." };
 }

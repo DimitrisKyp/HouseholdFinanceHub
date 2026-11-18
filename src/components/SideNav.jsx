@@ -6,7 +6,6 @@ import { useEffect, useId, useRef, useState } from "react";
 import { UNREAD_CHANGED_EVENT } from "@/lib/unread-signal";
 
 const NOTIFICATIONS_HREF = "/notifications";
-const UNREAD_POLL_MS = 60_000;
 
 // On phones only the everyday pages fit in the bar; the others (setup and settings) go under "More".
 const PHONE_BAR = new Set(["/", "/transactions", "/insights", "/goals", NOTIFICATIONS_HREF]);
@@ -112,8 +111,8 @@ const navItems = [
 
 /**
  * The unread notification count. Starts from the server's count and asks again after each
- * navigation, when the window regains focus, when a form signals a change (see lib/unread-signal.js),
- * and every minute while the page is visible.
+ * navigation, when the window regains focus, and when told a notification arrived
+ * (live, see LiveUpdates and lib/unread-signal.js).
  */
 function useUnreadCount(initial, pathname) {
   const [unread, setUnread] = useState(initial);
@@ -136,12 +135,10 @@ function useUnreadCount(initial, pathname) {
       }
     };
     load();
-    const timer = setInterval(load, UNREAD_POLL_MS);
     window.addEventListener("focus", load);
     window.addEventListener(UNREAD_CHANGED_EVENT, load);
     return () => {
       cancelled = true;
-      clearInterval(timer);
       window.removeEventListener("focus", load);
       window.removeEventListener(UNREAD_CHANGED_EVENT, load);
     };

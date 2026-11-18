@@ -59,7 +59,7 @@
 
 ## 7 Real-time and collaboration
 
-- [ ] Add live expense updates (WebSocket or polling).
+- [x] Add live expense updates: Server-Sent Events (`/api/events`) fed by PostgreSQL LISTEN/NOTIFY. Other open pages refresh with a short message when someone changes expenses, the budget, goals or members; the unread badge updates instantly; a removed member loses access at once.
 - [x] Add notification center for invites and budget alerts (/notifications, with an unread badge in the navigation): budget alerts at 80%/100% of a category limit, goals reached, members joining, role changes.
 - [ ] Add optimistic UI for invite and expense creation.
 
@@ -116,6 +116,13 @@ Things that work locally but must be done or changed on the real server
 - [ ] `scripts/local-db.mjs` and the `db:init/start/stop/status` commands are for local
       development only. Don't use them on the server.
 - [ ] Rename the package from `learning-hub` in `package.json`.
+
+- [ ] **Live updates need a direct database connection** for `LISTEN` (`src/lib/live.js`). If a
+      connection pooler such as PgBouncer is ever put in front of PostgreSQL, it must not be in
+      transaction mode for this app, or give `live.js` its own direct connection string.
+- [ ] **Don't buffer `/api/events`** in the reverse proxy (Server-Sent Events). Coolify's Traefik
+      streams by default; the route also sends `X-Accel-Buffering: no` for nginx. If a proxy
+      closes idle connections sooner than every 25 s (the heartbeat), raise its timeout.
 
 ### Fine for one server, revisit if the app grows
 

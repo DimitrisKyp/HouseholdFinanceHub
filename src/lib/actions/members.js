@@ -22,6 +22,7 @@ import {
   inviteExpiry,
   newInviteToken,
 } from "@/lib/invites";
+import { announce } from "@/lib/live";
 import { roleChangedMessage } from "@/lib/notification-messages";
 import { notify } from "@/lib/notifications";
 import { ROLE_LABELS } from "@/lib/permissions";
@@ -142,6 +143,7 @@ export async function changeMemberRoleAction(_previousState, formData) {
     .where(nonOwnerMemberOf(context.householdId, memberId))
     .returning({ id: householdMember.id, userId: householdMember.userId });
   if (!updated.length) return { error: "This member can't be changed." };
+  await announce(context, "members");
   await notify(db, {
     householdId: context.householdId,
     userIds: [updated[0].userId],
@@ -164,6 +166,7 @@ export async function removeMemberAction(_previousState, formData) {
     .where(nonOwnerMemberOf(context.householdId, memberId))
     .returning({ id: householdMember.id });
   if (!removed.length) return { error: "This member can't be removed." };
+  await announce(context, "members");
   revalidatePath("/members");
   return { success: "Member removed." };
 }

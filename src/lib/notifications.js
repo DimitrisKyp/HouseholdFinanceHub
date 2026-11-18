@@ -6,6 +6,7 @@ import { and, count, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { category, expense, householdMember, notification } from "@/db/schema";
 import { monthStart } from "@/lib/forecast";
+import { publish } from "@/lib/live";
 import { budgetAlertMessage, budgetDedupeKey, budgetThreshold } from "@/lib/notification-messages";
 
 /** How many notifications the notification centre shows. */
@@ -22,7 +23,10 @@ export async function notify(executor, { householdId, userIds, type, title, body
     .values(userIds.map(userId => ({ householdId, userId, type, title, body, link, dedupeKey })))
     .onConflictDoNothing()
     .returning({ id: notification.id });
-  return sent.length > 0;
+  if (!sent.length) return false;
+  // Updates the unread badge of the people who got one (after the transaction commits, if in one).
+  await publish({ householdId, kind: "notifications", userIds: [...new Set(userIds)] }, executor);
+  return true;
 }
 
 /** User ids of the household's members, optionally only some roles. */

@@ -1,4 +1,5 @@
 // Shell for the logged-in app: side navigation around the page.
+import LiveUpdates from "@/components/LiveUpdates";
 import SideNav from "@/components/SideNav";
 import { requireHousehold } from "@/lib/dal";
 import { unreadNotificationCount } from "@/lib/notifications";
@@ -16,6 +17,7 @@ export default async function AppLayout({ children }) {
         </div>
       </aside>
       <section className="min-h-0 flex-1 overflow-hidden">{children}</section>
+      <LiveUpdates />
     </div>
   );
 }
