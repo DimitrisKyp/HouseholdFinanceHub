@@ -89,11 +89,10 @@ Things that work locally but must be done or changed on the real server
 
 ### Must do before going live
 
-- [ ] **Rate-limit sign-in and the other auth forms.** Better Auth's built-in rate limiting
-      only covers its `/api/auth/*` HTTP routes. Our forms call it from Server Actions, which
-      skip it, so password guessing on the sign-in form is currently unlimited. Add a limit per
-      IP and per email to `signInAction`, `signUpAction`, `changePasswordAction` and
-      `resetPasswordAction` (`src/lib/actions/`).
+- [x] **Rate-limit sign-in and the other auth forms** (`src/lib/throttle.js`): failed sign-ins per
+      account and per address, sign-ups, password resets and password changes are limited, with a
+      "Too many attempts. Please wait N minutes" message. Behind Coolify the address comes from
+      `X-Forwarded-For`, so the proxy must set it (Traefik does by default).
 - [ ] **Email sending:** choose an SMTP provider (Resend, Brevo, Postmark, ...), verify the domain
       (SPF, DKIM and DMARC DNS records), then set `SMTP_URL` and
       `EMAIL_FROM="Household Finance Hub <no-reply@yourdomain>"`. Without `SMTP_URL`, production
@@ -112,11 +111,10 @@ Things that work locally but must be done or changed on the real server
 ### Server setup
 
 - [ ] Node.js 22 or 24 LTS on the server (Node 20 is end of life).
-- [ ] Add `.env.example` listing every variable (no values). `.gitignore` currently ignores
-      all `.env*` files, so add an exception: `!.env.example`.
+- [x] Add `.env.example` listing every variable (no values), with an exception in `.gitignore`.
 - [ ] `scripts/local-db.mjs` and the `db:init/start/stop/status` commands are for local
       development only. Don't use them on the server.
-- [ ] Rename the package from `learning-hub` in `package.json`.
+- [x] Rename the package from `learning-hub` in `package.json` (now `household-finance-hub`).
 
 - [ ] **Live updates need a direct database connection** for `LISTEN` (`src/lib/live.js`). If a
       connection pooler such as PgBouncer is ever put in front of PostgreSQL, it must not be in
@@ -133,9 +131,8 @@ Things that work locally but must be done or changed on the real server
 
 ### Fine for one server, revisit if the app grows
 
-- [ ] The limit of one email per address per minute (confirmation, password reset and
-      invitation emails; `src/lib/throttle.js`) is kept in server
-      memory. It resets on restart and isn't shared if the app ever runs on more than one server.
+- [ ] The limit of one email per address per minute and the sign-in / password attempt limits
+      (`src/lib/throttle.js`) are kept in server memory. It resets on restart and isn't shared if the app ever runs on more than one server.
       Move it to Redis or the database then.
 
 ### Later features that depend on deployment

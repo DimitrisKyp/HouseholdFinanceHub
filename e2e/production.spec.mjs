@@ -26,6 +26,28 @@ test.describe("signed out", () => {
   });
 });
 
+test.describe("password guessing", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("sign-in is blocked for a while after repeated wrong passwords", async ({ page }) => {
+    await page.goto("/sign-in");
+    // An address nobody uses, so the other tests' accounts aren't affected.
+    const email = `guess-${Date.now()}@e2e.test`;
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      await page.getByLabel("Email").fill(email);
+      await page.getByLabel("Password").fill(`wrong-${attempt}`);
+      await page.getByRole("button", { name: "Sign in" }).click();
+      await expect(page.locator("form").getByRole("alert")).toHaveText("Incorrect email or password.");
+      // React resets the form after each submit; wait for that before typing again.
+      await expect(page.getByLabel("Password")).toHaveValue("");
+    }
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill("wrong-9");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator("form").getByRole("alert")).toHaveText(/^Too many attempts. Please wait 15 minutes/);
+  });
+});
+
 test("signed-in pages ask search engines not to index them", async ({ page }) => {
   await page.goto("/budget");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);

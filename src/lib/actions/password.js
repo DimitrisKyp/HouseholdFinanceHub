@@ -8,7 +8,8 @@ import { auth } from "@/lib/auth";
 import { requireUser } from "@/lib/dal";
 import { sendPasswordChangedEmail, siteUrl } from "@/lib/email";
 import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, newPasswordErrors, passwordField } from "@/lib/forms";
-import { isTooSoon, withMinimumDuration } from "@/lib/throttle";
+import { clientIp } from "@/lib/request";
+import { blockedFor, clearAttempts, countAttempt, isTooSoon, LIMITS, tooManyMessage, withMinimumDuration } from "@/lib/throttle";
 
 /** "Forgot password": emails a reset link if the account exists. Always answers the same way. */
 export async function requestPasswordResetAction(_previousState, formData) {
@@ -16,6 +17,10 @@ export async function requestPasswordResetAction(_previousState, formData) {
   if (!EMAIL_PATTERN.test(values.email)) {
     return { values, errors: { email: "Enter a valid email address." } };
   }
+  const ipKey = `reset-request:${await clientIp()}`;
+  const wait = blockedFor(ipKey, LIMITS.resetRequestPerIp);
+  if (wait) return { values, error: tooManyMessage(wait) };
+  countAttempt(ipKey, LIMITS.resetRequestPerIp);
   if (isTooSoon(`reset:${values.email}`, EMAIL_COOLDOWN_MS)) {
     return { values, error: "We just sent one. Please wait a minute before asking again." };
   }
@@ -38,6 +43,11 @@ export async function resetPasswordAction(_previousState, formData) {
   const errors = newPasswordErrors(password, passwordField(formData, "confirmPassword"));
   if (!token) return { error: "This reset link isn't valid.", linkInvalid: true };
   if (Object.keys(errors).length) return { errors };
+
+  const ipKey = `reset:${await clientIp()}`;
+  const wait = blockedFor(ipKey, LIMITS.resetPerIp);
+  if (wait) return { error: tooManyMessage(wait) };
+  countAttempt(ipKey, LIMITS.resetPerIp);
 
   try {
     // Also signs out every device and (via onPasswordReset) emails a security notice.
@@ -67,6 +77,11 @@ export async function changePasswordAction(_previousState, formData) {
   }
   if (Object.keys(errors).length) return { errors, signOutOthers };
 
+  // Guessing the current password on an unlocked device is limited too.
+  const userKey = `change-password:${user.id}`;
+  const wait = blockedFor(userKey, LIMITS.changePasswordPerUser);
+  if (wait) return { error: tooManyMessage(wait), signOutOthers };
+
   try {
     // With revokeOtherSessions, every session is deleted and this browser gets a new one.
     await auth.api.changePassword({
@@ -75,12 +90,14 @@ export async function changePasswordAction(_previousState, formData) {
     });
   } catch (error) {
     if (error instanceof APIError && error.body?.code === "INVALID_PASSWORD") {
+      countAttempt(userKey, LIMITS.changePasswordPerUser);
       return { errors: { currentPassword: "That's not your current password." }, signOutOthers };
     }
     console.error("Changing password failed", error);
     return { error: "We couldn't change your password. Please try again.", signOutOthers };
   }
 
+  clearAttempts(userKey);
   try {
     await sendPasswordChangedEmail({ to: user.email, name: user.name, url: siteUrl("/forgot-password") });
   } catch (error) {

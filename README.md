@@ -43,6 +43,9 @@ npm run db:migrate   # create the tables
 - Saves the database admin (`postgres`) password in
   `%LOCALAPPDATA%\household-finance-hub\postgres-superuser-password.txt`.
 
+Every setting the app reads is listed, with what it's for, in [`.env.example`](.env.example). Copy the
+ones you need into `.env.local` (development) or set them in Coolify (production).
+
 ## Starting the app (every day)
 
 ```bash

@@ -29,3 +29,40 @@ export async function withMinimumDuration(ms, task) {
     if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
   }
 }
+
+// ── Attempt limits (password guessing) ───────────────────────────────────────
+
+const attempts = new Map(); // key → { count, resetAt }
+
+/** Limits per form: at most `max` attempts per `windowMs`. */
+export const LIMITS = {
+  signInPerEmail: { max: 8, windowMs: 15 * 60_000 }, // failed sign-ins for one account
+  signInPerIp: { max: 40, windowMs: 15 * 60_000 }, // failed sign-ins from one address (many accounts)
+  signUpPerIp: { max: 10, windowMs: 60 * 60_000 },
+  resetPerIp: { max: 10, windowMs: 15 * 60_000 }, // setting a new password from a link
+  resetRequestPerIp: { max: 10, windowMs: 60 * 60_000 }, // asking for reset emails
+  changePasswordPerUser: { max: 8, windowMs: 15 * 60_000 }, // wrong current password
+};
+
+/** Minutes until `key` may try again, or 0 if it's within its limit. Doesn't count an attempt. */
+export function blockedFor(key, { max }) {
+  const entry = attempts.get(key);
+  if (!entry || entry.resetAt <= Date.now() || entry.count < max) return 0;
+  return Math.max(1, Math.ceil((entry.resetAt - Date.now()) / 60_000));
+}
+
+/** Counts one attempt for `key`. */
+export function countAttempt(key, { windowMs }) {
+  const now = Date.now();
+  const entry = attempts.get(key);
+  if (!entry || entry.resetAt <= now) attempts.set(key, { count: 1, resetAt: now + windowMs });
+  else entry.count += 1;
+  if (attempts.size > 50_000) {
+    for (const [k, value] of attempts) if (value.resetAt <= now) attempts.delete(k);
+  }
+}
+
+/** Forgets the attempts for `key` (e.g. after a successful sign-in). */
+export const clearAttempts = key => attempts.delete(key);
+
+export const tooManyMessage = minutes => `Too many attempts. Please wait ${minutes} minute${minutes === 1 ? "" : "s"} and try again.`;

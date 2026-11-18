@@ -13,7 +13,8 @@ import { getMembership, requireUser } from "@/lib/dal";
 import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, newPasswordErrors, passwordField } from "@/lib/forms";
 import { createHouseholdWithOwner } from "@/lib/households";
 import { checkEmailPath, safeRedirectPath, verificationCallbackPath } from "@/lib/redirects";
-import { isTooSoon, withMinimumDuration } from "@/lib/throttle";
+import { clientIp } from "@/lib/request";
+import { blockedFor, clearAttempts, countAttempt, isTooSoon, LIMITS, tooManyMessage, withMinimumDuration } from "@/lib/throttle";
 import { rememberTheme, savedTheme } from "@/lib/preferences";
 
 const MAX_NAME_LENGTH = 100;
@@ -40,6 +41,11 @@ export async function signUpAction(_previousState, formData) {
   const householdError = validateHouseholdName(values.householdName);
   if (householdError) errors.householdName = householdError;
   if (Object.keys(errors).length) return { errors, values };
+
+  const ipKey = `signup:${await clientIp()}`;
+  const waitSignUp = blockedFor(ipKey, LIMITS.signUpPerIp);
+  if (waitSignUp) return { values, error: tooManyMessage(waitSignUp) };
+  countAttempt(ipKey, LIMITS.signUpPerIp);
 
   let result;
   try {
@@ -78,6 +84,12 @@ export async function signInAction(_previousState, formData) {
     return { values, error: "Enter your email and password." };
   }
 
+  // Password guessing: limited per account and per address (only failed attempts count).
+  const emailKey = `signin:email:${values.email}`;
+  const ipKey = `signin:ip:${await clientIp()}`;
+  const wait = Math.max(blockedFor(emailKey, LIMITS.signInPerEmail), blockedFor(ipKey, LIMITS.signInPerIp));
+  if (wait) return { values, error: tooManyMessage(wait) };
+
   const next = safeRedirectPath(formData.get("next"));
   let needsVerification = false;
   let signedIn;
@@ -94,11 +106,14 @@ export async function signInAction(_previousState, formData) {
       needsVerification = true;
     } else {
       if (!(error instanceof APIError)) console.error("Sign-in failed", error);
+      countAttempt(emailKey, LIMITS.signInPerEmail);
+      countAttempt(ipKey, LIMITS.signInPerIp);
       // Same message whether the email or the password is wrong, so accounts can't be probed.
       return { values, error: "Incorrect email or password." };
     }
   }
 
+  clearAttempts(emailKey);
   if (needsVerification) redirect(checkEmailPath(values.email, "sign-in"));
   // Bring the theme chosen on another device to this browser.
   const theme = signedIn?.user ? await savedTheme(signedIn.user.id) : null;
