@@ -151,6 +151,7 @@ export default function GoalCard({ goal, canEdit }) {
       </div>
 
       {goal.planLabel ? <p className="mt-2 text-xs text-slate-400">{goal.planLabel}</p> : null}
+      {goal.forecastLabel ? <p className="mt-1 text-xs text-slate-400">{goal.forecastLabel}</p> : null}
 
       {canEdit && goal.status === "active" ? <ContributionForm goal={goal} /> : null}
 

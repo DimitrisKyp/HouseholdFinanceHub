@@ -1,6 +1,7 @@
 // Budget and goal calculations on plain data. No database or server-only imports, so these can be
 // used anywhere and unit-tested directly. The queries that feed them live in lib/finance.js.
-import { formatDay, formatMoney } from "@/lib/format";
+import { goalProjection, plural } from "@/lib/forecast";
+import { formatDay, formatMoney, formatMonth } from "@/lib/format";
 
 export const FREQUENCIES = ["weekly", "monthly", "yearly"];
 
@@ -30,21 +31,51 @@ export function monthsUntil(today, targetDate) {
   return Math.max(1, months);
 }
 
-/** A goal with display labels (money in the household currency, dates, progress and plan). */
-export function goalView(item, { currency, today }) {
+/**
+ * How much an active goal needs each month to reach its target by its target date (rounded up to
+ * cents), or null if it has no future target date, is already reached, or isn't active.
+ */
+export function monthlyNeeded(item, today) {
+  if (!item.targetDate || item.status !== "active" || item.saved >= item.targetAmount) return null;
+  const months = monthsUntil(today, item.targetDate);
+  return months === null ? null : Math.ceil(((item.targetAmount - item.saved) / months) * 100) / 100;
+}
+
+/** "At your recent pace (about €120 a month) you'd reach it in March 2027, in time for the target date." */
+function projectionLabel(projection, pace, money) {
+  if (projection.status === "new") return "A projected date appears after its first full month.";
+  if (projection.status === "stalled") {
+    return `Nothing added in the last ${plural(pace.months, "full month")}, so there's no projected date yet.`;
+  }
+  const when = `At your recent pace (about ${money(pace.monthly)} a month) you'd reach it in ${formatMonth(projection.reachMonth)}`;
+  if (projection.monthsLate === null) return `${when}.`;
+  if (projection.monthsLate === 0) return `${when}, in time for the target date.`;
+  return `${when}, ${plural(projection.monthsLate, "month")} after the target date.`;
+}
+
+/**
+ * A goal with display labels (money in the household currency, dates, progress, plan and,
+ * when `pace` is given (see lib/forecast.js goalPace), a projected date).
+ */
+export function goalView(item, { currency, today, pace }) {
   const money = amount => formatMoney(amount, currency);
   const remaining = Math.max(0, item.targetAmount - item.saved);
   const reached = item.saved >= item.targetAmount;
 
   let planLabel = null;
-  if (item.targetDate && !reached && item.status === "active") {
-    const months = monthsUntil(today, item.targetDate);
-    planLabel =
-      months === null
-        ? `Target date ${formatDay(item.targetDate)} has passed; ${money(remaining)} still to go.`
-        : `Save about ${money(Math.ceil((remaining / months) * 100) / 100)} a month to reach it by ${formatDay(item.targetDate)}.`;
+  const needed = monthlyNeeded(item, today);
+  if (needed !== null) {
+    planLabel = `Save about ${money(needed)} a month to reach it by ${formatDay(item.targetDate)}.`;
+  } else if (item.targetDate && !reached && item.status === "active") {
+    planLabel = `Target date ${formatDay(item.targetDate)} has passed; ${money(remaining)} still to go.`;
   } else if (item.targetDate && !reached) {
     planLabel = `Target date ${formatDay(item.targetDate)}.`;
+  }
+
+  let forecastLabel = null;
+  if (pace !== undefined && !reached && item.status === "active") {
+    const projection = goalProjection({ saved: item.saved, targetAmount: item.targetAmount, targetDate: item.targetDate, pace, today });
+    forecastLabel = projectionLabel(projection, pace, money);
   }
 
   return {
@@ -57,6 +88,7 @@ export function goalView(item, { currency, today }) {
     savedLabel: money(item.saved),
     targetLabel: money(item.targetAmount),
     planLabel,
+    forecastLabel,
     contributionCount: item.contributionCount,
     contributions: item.contributions.map(entry => ({
       id: entry.id,

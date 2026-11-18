@@ -1,5 +1,5 @@
 import { acceptNextDialog, authFile, expect, test } from "./fixtures.mjs";
-import { dayOf, formatDay, monthStart, parts, today } from "./helpers/dates.mjs";
+import { dateMonthsAhead, formatDay } from "./helpers/dates.mjs";
 import { resetHousehold } from "./helpers/db.mjs";
 
 test.describe.configure({ mode: "serial" });
@@ -8,12 +8,6 @@ test.beforeAll(async () => {
 });
 
 const card = (page, name) => page.locator("article", { has: page.getByRole("heading", { name, exact: true }) });
-
-/** A target date exactly 10 whole months away (day 28 when today is later than the 28th). */
-function tenMonthsAway() {
-  const day = parts(today())[2];
-  return day <= 28 ? dayOf(monthStart(today(), 10), day) : dayOf(monthStart(today(), 11), 28);
-}
 
 test("owner adds goals, with validation and a monthly plan", async ({ page }) => {
   await page.goto("/goals");
@@ -25,7 +19,7 @@ test("owner adds goals, with validation and a monthly plan", async ({ page }) =>
   await expect(page.getByText("Enter the amount you want to reach")).toBeVisible();
   await expect(page.getByText("Choose a date in the future.")).toBeVisible();
 
-  const target = tenMonthsAway();
+  const target = dateMonthsAhead(10);
   await page.fill("#goal-name", "Emergency fund");
   await page.fill("#goal-target", "5000");
   await page.fill("#goal-date", target);

@@ -37,3 +37,13 @@ export const formatMonth = isoDate =>
 /** "Nov 26" (axis label of the first column in a chart). */
 export const shortMonthWithYear = isoDate =>
   `${new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "UTC" }).format(utcDate(isoDate))} ${isoDate.slice(2, 4)}`;
+
+/**
+ * A date exactly `months` whole months from today, as the app counts them for a goal plan.
+ * Today's day of the month when possible; past the 28th, the 28th of the following month
+ * (still `months` whole months away, without landing on a day some months don't have).
+ */
+export function dateMonthsAhead(months) {
+  const day = parts(today())[2];
+  return day <= 28 ? dayOf(monthStart(today(), months), day) : dayOf(monthStart(today(), months + 1), 28);
+}

@@ -33,7 +33,7 @@
 - [x] Add filters: date range, category, household member.
 - [x] Add searchable and sortable transactions table.
 - [x] Add charts (monthly trend, category breakdown as ranked bars instead of a pie, left over per month) on /insights.
-- [ ] Savings forecast (project goal balances / monthly left-over forward).
+- [x] Savings forecast on /goals: expected monthly left-over, 6/12-month totals, what goals need, and a projected date per goal at its recent pace.
 - [x] Add pagination or virtualized list for transactions.
 
 ## 4 Design system and UX polish

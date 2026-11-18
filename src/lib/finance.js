@@ -14,6 +14,7 @@ export {
   GOAL_STATUSES,
   goalView,
   monthlyAmount,
+  monthlyNeeded,
   monthsUntil,
   recurringTotals,
 } from "@/lib/calculations";
@@ -54,10 +55,11 @@ export async function listRecurringItems(householdId) {
 const CONTRIBUTIONS_SHOWN_PER_GOAL = 10;
 
 /**
- * Goals with the amount saved so far (sum of contributions) and their latest contributions.
+ * Goals with the amount saved so far (sum of contributions), the day they were created
+ * ("YYYY-MM-DD" in the household timezone) and their latest contributions.
  * Active goals first, then paused, then completed; newest first within each.
  */
-export async function listGoals(householdId) {
+export async function listGoals(householdId, { timezone = "UTC" } = {}) {
   const saved = sql`coalesce(sum(${goalContribution.amount}), 0)`.mapWith(Number);
   const goals = await db
     .select({
@@ -67,6 +69,7 @@ export async function listGoals(householdId) {
       targetAmount: goal.targetAmount,
       targetDate: goal.targetDate,
       status: goal.status,
+      createdOn: sql`to_char(${goal.createdAt} at time zone ${timezone}, 'YYYY-MM-DD')`,
       saved,
     })
     .from(goal)
@@ -108,7 +111,37 @@ export async function listGoals(householdId) {
   }));
 }
 
+/**
+ * Net contributions per goal per month for contributed_on in [from, to):
+ * Map of goalId → Map of "YYYY-MM-01" → amount (withdrawals count as negative).
+ */
+export async function goalContributionsByMonth(householdId, { from, to }) {
+  const month = sql`to_char(date_trunc('month', ${goalContribution.contributedOn}), 'YYYY-MM-01')`;
+  const rows = await db
+    .select({ goalId: goalContribution.goalId, month, total: sql`sum(${goalContribution.amount})`.mapWith(Number) })
+    .from(goalContribution)
+    .innerJoin(goal, eq(goal.id, goalContribution.goalId))
+    .where(and(eq(goal.householdId, householdId), gte(goalContribution.contributedOn, from), lt(goalContribution.contributedOn, to)))
+    .groupBy(goalContribution.goalId, month);
+
+  const byGoal = new Map();
+  for (const row of rows) {
+    if (!byGoal.has(row.goalId)) byGoal.set(row.goalId, new Map());
+    byGoal.get(row.goalId).set(row.month, Math.round(row.total * 100) / 100);
+  }
+  return byGoal;
+}
+
 // ── Expenses ─────────────────────────────────────────────────────────────────
+
+/** The date of the household's earliest expense ("YYYY-MM-DD"), or null if there are none. */
+export async function firstExpenseDate(householdId) {
+  const [row] = await db
+    .select({ first: sql`min(${expense.spentOn})::text` })
+    .from(expense)
+    .where(eq(expense.householdId, householdId));
+  return row?.first ?? null;
+}
 
 /** Expenses with spent_on in [from, to), newest first, with category and payer names. */
 export async function listExpenses(householdId, { from, to }) {
