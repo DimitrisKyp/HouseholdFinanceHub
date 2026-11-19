@@ -87,16 +87,23 @@
 Things that work locally but must be done or changed on the real server
 (VPS + Coolify + own domain).
 
+- [x] **Temporary, personal use:** `nestestia.com` served from the PC through VS Code port forwarding
+      and a Cloudflare Worker that shows an "offline" page when the PC is off (README, "Running the
+      app on nestestia.com from your PC"; `deploy/cloudflare-worker.js`). When moving to a server:
+      remove the Worker's custom domains, point the domain at the server, delete `.env.production.local`.
+
 ### Must do before going live
 
 - [x] **Rate-limit sign-in and the other auth forms** (`src/lib/throttle.js`): failed sign-ins per
       account and per address, sign-ups, password resets and password changes are limited, with a
       "Too many attempts. Please wait N minutes" message. Behind Coolify the address comes from
       `X-Forwarded-For`, so the proxy must set it (Traefik does by default).
-- [ ] **Email sending:** choose an SMTP provider (Resend, Brevo, Postmark, ...), verify the domain
-      (SPF, DKIM and DMARC DNS records), then set `SMTP_URL` and
-      `EMAIL_FROM="Household Finance Hub <no-reply@yourdomain>"`. Without `SMTP_URL`, production
-      sends no emails at all, so nobody can confirm their account or reset a password.
+- [ ] **Email sending:** domain `nestestia.com` (registered and DNS at papaki.com), sent through
+      **Resend** from the subdomain `mail.nestestia.com`. Verify it in Resend (SPF, DKIM and DMARC
+      records added in papaki's DNS), then set
+      `SMTP_URL=smtps://resend:<API key>@smtp.resend.com:465` and
+      `EMAIL_FROM="Household Finance Hub <no-reply@mail.nestestia.com>"`. Without `SMTP_URL`,
+      production sends no emails at all, so nobody can confirm their account or reset a password.
 - [ ] **New `BETTER_AUTH_SECRET`** for production. Don't reuse the one in `.env.local`. Generate
       it with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
 - [ ] **`BETTER_AUTH_URL`** = the real `https://` address. Links in emails are built from it.

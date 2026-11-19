@@ -92,6 +92,66 @@ added aren't confirmed yet. Sign in once, and a fresh link appears in the termin
   (7 days, single use), choose their own password and join as **Editor** or **Viewer**.
   Locally, the invite link appears in the terminal.
 
+## Running the app on nestestia.com from your PC
+
+A temporary setup for development and personal use, until the app has a real server (see TODO.md,
+"Deployment checklist"). Nothing is installed on the PC: VS Code's built-in port forwarding makes
+the app reachable, and a free Cloudflare Worker in front of `nestestia.com` passes visits to it. When
+the PC, VS Code or the app is off, the Worker shows an "offline" page in English and Greek instead.
+
+```
+browser → nestestia.com (Cloudflare Worker) → VS Code tunnel (*.devtunnels.ms) → npm start on your PC
+```
+
+### One-time setup
+
+1. **Cloudflare account** (free plan) at cloudflare.com: **Add a domain** → `nestestia.com`. Cloudflare
+   shows two name servers. At papaki.com, open the domain's **Name servers** and replace papaki's
+   with Cloudflare's. The domain stays registered at papaki; DNS (including the email records for
+   Resend) is now managed in Cloudflare. The switch can take a few hours.
+2. **Public address of the app**: create `.env.production.local` (git-ignored, read only by
+   `npm run build` and `npm start`, not by `npm run dev`) with:
+   ```
+   BETTER_AUTH_URL=https://nestestia.com
+   ```
+   Add `SMTP_URL` and `EMAIL_FROM` there too once email is set up (see [Email](#email)). Until then
+   the app sends no emails in this mode, so invitations and password resets won't arrive; signing
+   in with an existing, confirmed account works. It uses the database from `.env.local`.
+3. **Forward the port** once to get the tunnel address: start the app (below), then in VS Code open
+   the **Ports** panel (next to Terminal) → **Forward a Port** → `3000`. Right-click it →
+   **Port Visibility** → **Public**. Copy the **Forwarded Address**, e.g.
+   `https://abc123-3000.euw.devtunnels.ms`. VS Code asks you to sign in with GitHub the first time.
+4. **The Worker**: in Cloudflare, **Workers & Pages** → **Create** → **Hello World** worker, name it
+   e.g. `nestestia`, **Deploy**, then **Edit code**. Replace the code with the whole of
+   [`deploy/cloudflare-worker.js`](deploy/cloudflare-worker.js) and **Deploy**. Then in the Worker:
+   - **Settings → Variables and Secrets → Add**: `TUNNEL_URL` = the forwarded address from step 3.
+   - **Settings → Domains & Routes → Add → Custom domain**: `nestestia.com`, and again for
+     `www.nestestia.com` (the Worker redirects www to the bare domain).
+5. **Keep it private** (recommended, since this is for personal use): Cloudflare **Zero Trust**
+   (free up to 50 people) → **Access → Applications → Add → Self-hosted**, domain `nestestia.com`,
+   with a policy **Allow** → **Emails** → your own address(es). Visitors then have to enter a code
+   sent to an allowed email before they see anything, even the sign-in page.
+
+### Every time you want the site online
+
+```bash
+npm run db:start
+npm run build        # again after code changes, and after the browser tests (they rebuild it)
+npm start
+```
+
+Then make sure VS Code's **Ports** panel shows port 3000 forwarded, and open https://nestestia.com.
+Close it with Ctrl+C (or close VS Code), and the site shows "Currently offline".
+
+- **Use https://nestestia.com, not localhost**, while running this way: sign-in only accepts the
+  address in `BETTER_AUTH_URL`. For everyday development keep using `npm run dev` and localhost.
+- **If the forwarded address changes** (VS Code gives a new one), update `TUNNEL_URL` in the Worker.
+- **How the Worker spots the app**: every app response carries the header `x-household-app`
+  (`next.config.mjs`). Anything else (no answer, or the tunnel's own error page) means offline.
+- The tunnel address itself is public too, but hard to guess, and every page still needs a sign-in.
+- **Moving to a real server later**: delete the Worker's custom domains (or the Worker), point
+  `nestestia.com` at the server, and delete `.env.production.local`.
+
 ## Email
 
 | Variable     | What it does                                                                       |
