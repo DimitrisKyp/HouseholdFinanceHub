@@ -110,7 +110,8 @@ Things that work locally but must be done or changed on the real server
 
 ### Server setup
 
-- [ ] Node.js 22 or 24 LTS on the server (Node 20 is end of life).
+- [ ] Node.js 26 LTS on the server, the same version CI and local development use (Node 20
+      is end of life).
 - [x] Add `.env.example` listing every variable (no values), with an exception in `.gitignore`.
 - [ ] `scripts/local-db.mjs` and the `db:init/start/stop/status` commands are for local
       development only. Don't use them on the server.
