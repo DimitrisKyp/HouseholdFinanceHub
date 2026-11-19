@@ -167,6 +167,10 @@ Close it with Ctrl+C (or close VS Code), and the site shows "Currently offline".
   program, no install or admin rights needed). Then add `SMTP_URL=smtp://localhost:1025` to
   `.env.local` and open http://localhost:8025.
 - If a password in `SMTP_URL` contains special characters (`@`, `:`, `/`, `#`), URL-encode them.
+- **"self-signed certificate in certificate chain" when sending** means antivirus or a company network
+  is inspecting the mail connection (e.g. Kaspersky does this on ports 465 and 587). Resend also
+  listens on **2465** (SSL) and **2587** (STARTTLS), which such tools usually leave alone:
+  `SMTP_URL=smtps://resend:<API key>@smtp.resend.com:2465`.
 
 `.env.local` also holds `BETTER_AUTH_SECRET` (signs login sessions; keep it secret, and use a
 different one in production) and `BETTER_AUTH_URL` (the site's address, `http://localhost:3000`

@@ -98,12 +98,14 @@ Things that work locally but must be done or changed on the real server
       account and per address, sign-ups, password resets and password changes are limited, with a
       "Too many attempts. Please wait N minutes" message. Behind Coolify the address comes from
       `X-Forwarded-For`, so the proxy must set it (Traefik does by default).
-- [ ] **Email sending:** domain `nestestia.com` (registered and DNS at papaki.com), sent through
-      **Resend** from the subdomain `mail.nestestia.com`. Verify it in Resend (SPF, DKIM and DMARC
-      records added in papaki's DNS), then set
-      `SMTP_URL=smtps://resend:<API key>@smtp.resend.com:465` and
-      `EMAIL_FROM="Household Finance Hub <no-reply@mail.nestestia.com>"`. Without `SMTP_URL`,
-      production sends no emails at all, so nobody can confirm their account or reset a password.
+- [x] **Email sending:** domain `nestestia.com` (registered at papaki.com, DNS at Cloudflare), sent
+      through **Resend** from `mail.nestestia.com` (verified; SPF, DKIM and DMARC records in
+      Cloudflare). Set in `.env.production.local` on the PC and tested (reaches a Gmail inbox):
+      `SMTP_URL=smtps://resend:<API key>@smtp.resend.com:2465` (2465, not 465: Kaspersky on the
+      work PC intercepts 465 and 587) and `EMAIL_FROM="... <no-reply@mail.nestestia.com>"`.
+- [ ] **On the real server, set `SMTP_URL` and `EMAIL_FROM` in Coolify** (port 465 is fine there).
+      Without `SMTP_URL`, production sends no emails at all, so nobody can confirm their account or
+      reset a password.
 - [ ] **New `BETTER_AUTH_SECRET`** for production. Don't reuse the one in `.env.local`. Generate
       it with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
 - [ ] **`BETTER_AUTH_URL`** = the real `https://` address. Links in emails are built from it.
