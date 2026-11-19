@@ -110,8 +110,10 @@ Things that work locally but must be done or changed on the real server
 
 ### Server setup
 
-- [ ] Node.js 26 LTS on the server, the same version CI and local development use (Node 20
-      is end of life).
+- [x] Node.js 26 LTS, set in one place: `.nvmrc` (read by Coolify's builders and by CI) and
+      `engines.node` in `package.json`. To change the version later, edit `.nvmrc`.
+- [ ] After the first deploy, check that Coolify's build log shows Node 26. If it doesn't, set
+      the app's environment variable `NIXPACKS_NODE_VERSION=26` in Coolify.
 - [x] Add `.env.example` listing every variable (no values), with an exception in `.gitignore`.
 - [ ] `scripts/local-db.mjs` and the `db:init/start/stop/status` commands are for local
       development only. Don't use them on the server.
