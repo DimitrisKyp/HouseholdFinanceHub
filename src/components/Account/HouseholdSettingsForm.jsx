@@ -5,11 +5,14 @@
 import { useActionState } from "react";
 import { SubmitButton } from "@/components/ui/Button";
 import TextField, { FormError, FormSuccess, SelectField } from "@/components/ui/Field";
+import { useTranslations } from "@/i18n/client";
 import { updateHouseholdAction } from "@/lib/actions/account";
 
 export default function HouseholdSettingsForm({ household, currencies, timezones }) {
   const [state, formAction, pending] = useActionState(updateHouseholdAction, { values: household });
   const values = state.values ?? household;
+  const t = useTranslations("account");
+  const common = useTranslations("common");
 
   return (
     <form action={formAction} className="space-y-3" noValidate>
@@ -18,7 +21,7 @@ export default function HouseholdSettingsForm({ household, currencies, timezones
       <TextField
         id="household-name"
         name="name"
-        label="Household name"
+        label={t("household.name")}
         maxLength={100}
         defaultValue={values.name}
         error={state.errors?.name}
@@ -28,7 +31,7 @@ export default function HouseholdSettingsForm({ household, currencies, timezones
           key={`currency-${values.currency}`}
           id="household-currency"
           name="currency"
-          label="Currency"
+          label={t("household.currency")}
           defaultValue={values.currency}
           error={state.errors?.currency}
         >
@@ -42,7 +45,7 @@ export default function HouseholdSettingsForm({ household, currencies, timezones
           key={`timezone-${values.timezone}`}
           id="household-timezone"
           name="timezone"
-          label="Timezone"
+          label={t("household.timezone")}
           defaultValue={values.timezone}
           error={state.errors?.timezone}
         >
@@ -53,9 +56,9 @@ export default function HouseholdSettingsForm({ household, currencies, timezones
           ))}
         </SelectField>
       </div>
-      <p className="text-xs text-slate-400">Amounts aren&apos;t converted: changing the currency only changes how they&apos;re shown.</p>
-      <SubmitButton pending={pending} pendingText="Saving…" block={false} size="sm">
-        Save household settings
+      <p className="text-xs text-slate-400">{t("household.note")}</p>
+      <SubmitButton pending={pending} pendingText={common("saving")} block={false} size="sm">
+        {t("household.save")}
       </SubmitButton>
     </form>
   );

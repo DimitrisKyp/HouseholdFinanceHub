@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import Modal from "@/components/ui/Modal";
 import { InlineMessage } from "@/components/ui/Field";
 import { deleteExpenseAction } from "@/lib/actions/expenses";
+import { useTranslations } from "@/i18n/client";
 
 function barColor(percent) {
   if (percent >= 90) return "bg-linear-to-r from-rose-400 to-red-500";
@@ -14,6 +15,7 @@ function barColor(percent) {
 
 function TransactionRow({ item, canEdit }) {
   const [state, formAction, pending] = useActionState(deleteExpenseAction, {});
+  const t = useTranslations("dashboard");
 
   return (
     <li className="rounded-xl border border-white/5 bg-white/5 px-4 py-3">
@@ -28,17 +30,17 @@ function TransactionRow({ item, canEdit }) {
             <form
               action={formAction}
               onSubmit={event => {
-                if (!window.confirm(`Delete ${item.title}?`)) event.preventDefault();
+                if (!window.confirm(t("breakdown.confirmDelete", { title: item.title }))) event.preventDefault();
               }}
             >
               <input type="hidden" name="expenseId" value={item.id} />
               <button
                 type="submit"
                 disabled={pending}
-                aria-label={`Delete ${item.title}`}
+                aria-label={t("breakdown.deleteLabel", { title: item.title })}
                 className="rounded-lg border border-white/10 px-2 py-1 text-xs text-slate-400 transition hover:border-rose-400/50 hover:text-rose-200 disabled:opacity-60"
               >
-                {pending ? "…" : "Delete"}
+                {pending ? "…" : t("breakdown.delete")}
               </button>
             </form>
           ) : null}
@@ -50,11 +52,12 @@ function TransactionRow({ item, canEdit }) {
 }
 
 export default function ExpenseBreakdownDrawer({ isOpen, onClose, monthLabel, categoryTotals, expenses, canEdit }) {
+  const t = useTranslations("dashboard");
   return (
-    <Modal open={isOpen} onClose={onClose} title="Budget breakdown" description={`${monthLabel}: spending by category and transactions`}>
+    <Modal open={isOpen} onClose={onClose} title={t("breakdown.title")} description={t("breakdown.description", { month: monthLabel })}>
       <div className="space-y-6">
         <section>
-          <h3 className="font-medium text-white">Categories</h3>
+          <h3 className="font-medium text-white">{t("breakdown.categories")}</h3>
           {categoryTotals.length ? (
             <ul className="mt-4 space-y-4">
               {categoryTotals.map(item => (
@@ -62,7 +65,7 @@ export default function ExpenseBreakdownDrawer({ isOpen, onClose, monthLabel, ca
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-slate-300">{item.name}</span>
                     <span className={item.percent >= 100 ? "text-rose-300" : "text-slate-400"}>
-                      {item.limitLabel ? `${item.spentLabel} / ${item.limitLabel}` : `${item.spentLabel} · no limit`}
+                      {item.limitLabel ? `${item.spentLabel} / ${item.limitLabel}` : t("breakdown.noLimit", { spent: item.spentLabel })}
                     </span>
                   </div>
                   {item.percent !== null ? (
@@ -77,14 +80,14 @@ export default function ExpenseBreakdownDrawer({ isOpen, onClose, monthLabel, ca
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-slate-500">No spending or limits yet. Set limits on the Budget page.</p>
+            <p className="mt-3 text-sm text-slate-500">{t("breakdown.noCategories")}</p>
           )}
         </section>
 
         <hr className="border-white/10" />
 
         <section>
-          <h3 className="font-medium text-white">Transactions ({expenses.length})</h3>
+          <h3 className="font-medium text-white">{t("breakdown.transactions", { count: expenses.length })}</h3>
           {expenses.length ? (
             <ul className="mt-4 space-y-3">
               {expenses.map(item => (
@@ -92,13 +95,13 @@ export default function ExpenseBreakdownDrawer({ isOpen, onClose, monthLabel, ca
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-slate-500">No transactions this month yet.</p>
+            <p className="mt-3 text-sm text-slate-500">{t("breakdown.noTransactions")}</p>
           )}
           <Link
             href="/transactions"
             className="mt-4 block rounded-xl border border-white/10 px-4 py-2.5 text-center text-sm font-medium text-slate-300 transition hover:border-cyan-400/40 hover:text-white"
           >
-            Search all transactions →
+            {t("breakdown.searchAll")}
           </Link>
         </section>
       </div>

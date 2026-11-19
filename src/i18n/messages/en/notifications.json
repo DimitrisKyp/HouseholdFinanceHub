@@ -1,0 +1,66 @@
+{
+  "metaTitle": "Notifications",
+  "eyebrow": "Notifications",
+  "heading": "What needs your attention.",
+  "intro": "Budget alerts at 80% and 100% of a category's monthly limit, goals that reach their target, and changes to who's in the household.",
+  "latest": {
+    "title": "Latest",
+    "unread_one": "{count} unread.",
+    "unread_other": "{count} unread.",
+    "allRead": "All read.",
+    "hint": "Open one to see what it's about. The latest {shown} are kept here.",
+    "nothingYet": "Nothing yet.",
+    "empty": "You'll get one when a category nears its monthly limit, a goal reaches its target, or someone joins the household."
+  },
+  "markAllRead": "Mark all as read",
+  "marking": "Marking…",
+  "new": "New",
+  "types": {
+    "budget": "Budget",
+    "goal": "Goal",
+    "member": "Members",
+    "other": "Update"
+  },
+  "messages": {
+    "budget": {
+      "over": {
+        "title": "{category} is over budget",
+        "body": "{spent} spent of {limit} in {month}: {over} over."
+      },
+      "reached": {
+        "title": "{category} has reached its budget",
+        "body": "{spent} spent of {limit} in {month}."
+      },
+      "near": {
+        "title": "{category} is at {percent}% of its budget",
+        "body": "{spent} spent of {limit} in {month}, {left} left."
+      }
+    },
+    "goalReached": {
+      "title": "Goal reached: {goal}",
+      "body": "{saved} saved of {target}. Mark it as completed on the Goals page when you're ready."
+    },
+    "memberJoined": {
+      "title": "{name} joined {household}",
+      "body": "They accepted the invitation and joined as {role}."
+    },
+    "welcome": {
+      "title": "Welcome to {household}",
+      "body": {
+        "viewer": "{inviter} invited you as {role}. You can see everything but can't make changes.",
+        "editor": "{inviter} invited you as {role}. You can add expenses and update budgets and goals."
+      },
+      "someone": "Someone"
+    },
+    "roleChanged": {
+      "title": {
+        "viewer": "You're now a {role} in {household}",
+        "editor": "You're now an {role} in {household}"
+      },
+      "body": {
+        "viewer": "You can still see everything, but can no longer add or change anything.",
+        "editor": "You can now add expenses and update budgets and goals."
+      }
+    }
+  }
+}

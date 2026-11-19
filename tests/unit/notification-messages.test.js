@@ -5,6 +5,7 @@ import {
   budgetThreshold,
   goalReachedMessage,
   memberJoinedMessage,
+  renderNotification,
   roleChangedMessage,
   welcomeMessage,
 } from "@/lib/notification-messages";
@@ -32,7 +33,7 @@ describe("budgetAlertMessage", () => {
   const base = { categoryName: "Groceries", limit: 650, month: "2026-11-01", currency: "EUR" };
 
   it("says how close the category is", () => {
-    expect(budgetAlertMessage({ ...base, spent: 530, threshold: 80 })).toEqual({
+    expect(budgetAlertMessage({ ...base, spent: 530, threshold: 80 })).toMatchObject({
       title: "Groceries is at 81% of its budget",
       body: "€530 spent of €650 in November 2026, €120 left.",
     });
@@ -40,7 +41,7 @@ describe("budgetAlertMessage", () => {
 
   it("says when it's reached or over", () => {
     expect(budgetAlertMessage({ ...base, spent: 650, threshold: 100 }).title).toBe("Groceries has reached its budget");
-    expect(budgetAlertMessage({ ...base, spent: 740.5, threshold: 100 })).toEqual({
+    expect(budgetAlertMessage({ ...base, spent: 740.5, threshold: 100 })).toMatchObject({
       title: "Groceries is over budget",
       body: "€740.50 spent of €650 in November 2026: €90.50 over.",
     });
@@ -59,5 +60,45 @@ describe("other messages", () => {
     );
     expect(roleChangedMessage({ role: "editor", householdName: "Home" }).title).toBe("You're now an Editor in Home");
     expect(roleChangedMessage({ role: "viewer", householdName: "Home" }).title).toBe("You're now a Viewer in Home");
+  });
+});
+
+describe("renderNotification", () => {
+  const alert = budgetAlertMessage({
+    categoryName: "Groceries",
+    limit: 650,
+    month: "2026-11-01",
+    currency: "EUR",
+    spent: 740.5,
+    threshold: 100,
+  });
+
+  it("stores the values, so a notification can be shown in the reader's language", () => {
+    expect(alert.data).toEqual({
+      kind: "budget",
+      categoryName: "Groceries",
+      spent: 740.5,
+      limit: 650,
+      month: "2026-11-01",
+      threshold: 100,
+      currency: "EUR",
+    });
+    expect(renderNotification(alert, "el")).toEqual({
+      title: "«Groceries»: εκτός προϋπολογισμού",
+      body: "Δαπάνες 740,50 € από 650 € (Νοέμβριος 2026): 90,50 € πάνω από το όριο.",
+    });
+  });
+
+  it("translates role names", () => {
+    expect(renderNotification(roleChangedMessage({ role: "viewer", householdName: "Home" }), "el").title).toBe(
+      "Ο ρόλος σας στο «Home» είναι πλέον Αναγνώστης",
+    );
+  });
+
+  it("falls back to the stored English text for notifications without values", () => {
+    expect(renderNotification({ data: null, title: "Old title", body: "Old body" }, "el")).toEqual({
+      title: "Old title",
+      body: "Old body",
+    });
   });
 });

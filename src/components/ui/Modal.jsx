@@ -4,6 +4,7 @@
 // on Escape, puts it above everything and makes the rest of the page inert. A click on the
 // backdrop closes it too. placement "sheet" slides in from the right; "center" is a dialog box.
 import { useEffect, useId, useRef } from "react";
+import { useTranslations } from "@/i18n/client";
 
 const PLACEMENT = {
   sheet:
@@ -15,6 +16,7 @@ export default function Modal({ open, onClose, title, description, placement = "
   const dialog = useRef(null);
   const titleId = useId();
   const descriptionId = useId();
+  const t = useTranslations("common");
 
   useEffect(() => {
     const element = dialog.current;
@@ -47,7 +49,7 @@ export default function Modal({ open, onClose, title, description, placement = "
           type="button"
           autoFocus
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("close")}
           className="border-line rounded-full border p-2 text-slate-400 transition hover:border-white/30 hover:text-white"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

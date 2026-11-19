@@ -10,5 +10,3 @@ const PERMISSIONS = {
 export function can(role, permission) {
   return PERMISSIONS[permission]?.includes(role) ?? false;
 }
-
-export const ROLE_LABELS = { owner: "Owner", editor: "Editor", viewer: "Viewer" };

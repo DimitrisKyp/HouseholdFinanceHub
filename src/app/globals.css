@@ -112,7 +112,8 @@
 
 /* Semantic tokens as Tailwind utilities (bg-accent, text-on-accent, rounded-card, …). */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  /* --font-text (root layout) is Geist with Inter for Greek letters. */
+  --font-sans: var(--font-text, var(--font-geist-sans));
   --font-mono: var(--font-geist-mono);
 
   --color-accent: var(--color-cyan-500);
@@ -134,7 +135,7 @@ body {
 }
 
 body {
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-text, var(--font-geist-sans)), Arial, Helvetica, sans-serif;
   overflow: hidden;
 }
 

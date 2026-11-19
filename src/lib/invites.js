@@ -6,9 +6,10 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { and, asc, eq, gt, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { account, household, householdMember, invite, user } from "@/db/schema";
+import { getTranslations } from "@/i18n/server";
 import { auth } from "@/lib/auth";
 import { memberJoinedMessage, welcomeMessage } from "@/lib/notification-messages";
-import { publish } from "@/lib/live";
+import { liveMessage, publish } from "@/lib/live";
 import { memberIds, notify } from "@/lib/notifications";
 
 export const INVITE_TTL_DAYS = 7;
@@ -93,7 +94,7 @@ async function lockPendingInvite(tx, token) {
       ),
     )
     .for("update");
-  if (!row) throw new InviteError("This invitation is no longer valid. Ask for a new one.");
+  if (!row) throw new InviteError((await getTranslations("auth"))("invite.errors.noLongerValid"));
   return row;
 }
 
@@ -107,7 +108,10 @@ async function joinHousehold(tx, pending, userId) {
     tx.select({ name: user.name }).from(user).where(eq(user.id, pending.invitedByUserId)),
     tx.select({ name: household.name }).from(household).where(eq(household.id, pending.householdId)),
   ]);
-  await publish({ householdId: pending.householdId, kind: "members", actorId: userId, message: `${joined.name} joined the household` }, tx);
+  await publish(
+    { householdId: pending.householdId, kind: "members", actorId: userId, message: liveMessage("memberJoined", { name: joined.name }) },
+    tx,
+  );
   const owners = await memberIds(tx, pending.householdId, { roles: ["owner"] });
   const recipients = [...new Set([...owners, pending.invitedByUserId])].filter(id => id && id !== userId);
   await notify(tx, {
@@ -121,7 +125,7 @@ async function joinHousehold(tx, pending, userId) {
     householdId: pending.householdId,
     userIds: [userId],
     type: "member",
-    ...welcomeMessage({ householdName: home.name, role: pending.role, inviterName: inviter?.name ?? "Someone" }),
+    ...welcomeMessage({ householdName: home.name, role: pending.role, inviterName: inviter?.name ?? null }),
     link: "/",
   });
 }
@@ -141,7 +145,7 @@ export async function acceptInviteAsNewUser({ token, name, password }) {
       .select({ id: user.id })
       .from(user)
       .where(sql`lower(${user.email}) = ${email}`);
-    if (taken) throw new InviteError("An account with this email already exists. Sign in to accept the invitation.");
+    if (taken) throw new InviteError((await getTranslations("auth"))("invite.errors.accountExists"));
 
     const userId = randomUUID();
     await tx.insert(user).values({ id: userId, name, email, emailVerified: true });
@@ -157,7 +161,7 @@ export async function acceptInviteAsExistingUser({ token, userId, email }) {
   return db.transaction(async tx => {
     const pending = await lockPendingInvite(tx, token);
     if (pending.email.toLowerCase() !== email.toLowerCase()) {
-      throw new InviteError(`This invitation was sent to ${pending.email}. Sign in with that email to accept it.`);
+      throw new InviteError((await getTranslations("auth"))("invite.errors.wrongEmail", { email: pending.email }));
     }
     const [membership] = await tx
       .select({ id: householdMember.id })
@@ -165,7 +169,7 @@ export async function acceptInviteAsExistingUser({ token, userId, email }) {
       .where(eq(householdMember.userId, userId))
       .limit(1);
     if (membership) {
-      throw new InviteError("You already belong to a household. Being in more than one household isn't supported yet.");
+      throw new InviteError((await getTranslations("auth"))("invite.errors.alreadyMember"));
     }
     await joinHousehold(tx, pending, userId);
   });

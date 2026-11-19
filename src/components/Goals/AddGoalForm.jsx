@@ -2,12 +2,14 @@
 
 import { useActionState } from "react";
 import TextField, { FormError, FormSuccess } from "@/components/ui/Field";
+import { useTranslations } from "@/i18n/client";
 import { addGoalAction } from "@/lib/actions/goals";
 import { buttonClasses } from "@/components/ui/Button";
 
 export default function AddGoalForm({ minDate }) {
   const [state, formAction, pending] = useActionState(addGoalAction, {});
   const values = state.values ?? {};
+  const t = useTranslations("goals");
 
   return (
     <form action={formAction} className="grid gap-3 md:grid-cols-4" noValidate>
@@ -19,8 +21,8 @@ export default function AddGoalForm({ minDate }) {
         <TextField
           id="goal-name"
           name="name"
-          label="Goal"
-          placeholder="Emergency fund"
+          label={t("form.name")}
+          placeholder={t("form.namePlaceholder")}
           maxLength={120}
           defaultValue={values.name}
           error={state.errors?.name}
@@ -29,7 +31,7 @@ export default function AddGoalForm({ minDate }) {
       <TextField
         id="goal-target"
         name="targetAmount"
-        label="Target amount"
+        label={t("form.target")}
         inputMode="decimal"
         placeholder="5000"
         defaultValue={values.targetAmount}
@@ -38,7 +40,7 @@ export default function AddGoalForm({ minDate }) {
       <TextField
         id="goal-date"
         name="targetDate"
-        label="Target date (optional)"
+        label={t("form.date")}
         type="date"
         min={minDate}
         defaultValue={values.targetDate}
@@ -48,8 +50,8 @@ export default function AddGoalForm({ minDate }) {
         <TextField
           id="goal-note"
           name="note"
-          label="Note (optional)"
-          placeholder="Three months of household expenses"
+          label={t("form.note")}
+          placeholder={t("form.notePlaceholder")}
           maxLength={500}
           defaultValue={values.note}
           error={state.errors?.note}
@@ -58,7 +60,7 @@ export default function AddGoalForm({ minDate }) {
       <TextField
         id="goal-starting"
         name="startingAmount"
-        label="Already saved (optional)"
+        label={t("form.starting")}
         inputMode="decimal"
         placeholder="0"
         defaultValue={values.startingAmount}
@@ -69,7 +71,7 @@ export default function AddGoalForm({ minDate }) {
         disabled={pending}
         className={buttonClasses({ variant: "primary", size: "md", className: "self-start md:mt-6" })}
       >
-        {pending ? "Adding…" : "Add goal"}
+        {pending ? t("form.adding") : t("form.add")}
       </button>
     </form>
   );

@@ -6,16 +6,19 @@ import TextField, { FormError } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/Button";
 import { resetPasswordAction } from "@/lib/actions/password";
 import { buttonClasses } from "@/components/ui/Button";
+import { useTranslations } from "@/i18n/client";
 
 export default function ResetPasswordForm({ token }) {
   const [state, formAction, pending] = useActionState(resetPasswordAction, {});
+  const t = useTranslations("auth");
+  const common = useTranslations("common");
 
   if (state.linkInvalid) {
     return (
       <div className="space-y-4">
         <FormError message={state.error} />
         <Link href="/forgot-password" className={buttonClasses({ variant: "primary", size: "md", block: true })}>
-          Get a new link
+          {t("getNewLink")}
         </Link>
       </div>
     );
@@ -27,23 +30,23 @@ export default function ResetPasswordForm({ token }) {
       <FormError message={state.error} />
       <TextField
         id="password"
-        label="New password"
+        label={t("fields.newPassword")}
         type="password"
         autoComplete="new-password"
         required
-        hint="At least 8 characters."
+        hint={t("fields.passwordHint")}
         error={state.errors?.password}
       />
       <TextField
         id="confirmPassword"
-        label="Repeat new password"
+        label={t("fields.repeatNewPassword")}
         type="password"
         autoComplete="new-password"
         required
         error={state.errors?.confirmPassword}
       />
-      <SubmitButton pending={pending} pendingText="Saving…">
-        Set new password
+      <SubmitButton pending={pending} pendingText={common("saving")}>
+        {t("reset.submit")}
       </SubmitButton>
     </form>
   );

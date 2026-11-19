@@ -7,8 +7,9 @@ import { field, parseAmount } from "@/lib/forms";
  * Call showPending(formData) at the start of the form's action; when the action finishes, the
  * page's fresh data replaces the pending row (after a validation error it simply disappears).
  * Only input the server will accept is shown, so nothing flashes up only to be rejected.
+ * locale: the UI language, for the amount and date.
  */
-export function usePendingExpenses({ recentExpenses, categories, members, today, currency, limit = 5 }) {
+export function usePendingExpenses({ recentExpenses, categories, members, today, currency, locale, limit = 5 }) {
   const latest = useMemo(() => recentExpenses.slice(0, limit), [recentExpenses, limit]);
   const [items, addPending] = useOptimistic(latest, (list, item) => [item, ...list].slice(0, limit));
 
@@ -22,8 +23,8 @@ export function usePendingExpenses({ recentExpenses, categories, members, today,
     addPending({
       id: `pending-${Date.now()}`,
       title,
-      amountLabel: formatMoney(amount, currency),
-      detail: [formatDay(spentOn), category.name, payer?.name].filter(Boolean).join(" · "),
+      amountLabel: formatMoney(amount, currency, locale),
+      detail: [formatDay(spentOn, locale), category.name, payer?.name].filter(Boolean).join(" · "),
       pending: true,
     });
   };

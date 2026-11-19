@@ -79,7 +79,7 @@
 - [x] Add analytics and error monitoring, self-hosted: server errors (`instrumentation.js` onRequestError), browser errors, page views and Core Web Vitals (`instrumentation-client.js`, `/api/telemetry`) are written to the server log as JSON lines. No cookies, user ids or query strings.
 
 - [x] Preferences: theme per user; currency, timezone and name per household (owner, Account page).
-- [ ] Language: the UI is English only. Translating it needs a message catalogue for every string (e.g. next-intl); amounts and dates already follow the household currency and timezone.
+- [x] Language: English and Greek, chosen per user on the Account page (saved to the account and a cookie), the browser's language before that, and a switch on the sign-in pages. Messages per area in `src/i18n/messages`; amounts, dates, emails, notifications and live messages follow the reader's language. See "Languages" in the README.
 - [x] Set up your profile: change your name on the Account page.
 
 ## 10 Deployment checklist (do when going live)

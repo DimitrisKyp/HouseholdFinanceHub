@@ -4,6 +4,8 @@
 // (positive and negative columns in two colours), with an optional labelled reference line.
 // Each column's whole band is a hover/focus target showing a tooltip; a table view sits below.
 import { useEffect, useId, useRef, useState } from "react";
+import { numberLocale } from "@/i18n/config";
+import { useLocale, useTranslations } from "@/i18n/client";
 import { formatMoney } from "@/lib/format";
 import { niceTicks } from "@/lib/insights";
 
@@ -47,10 +49,12 @@ function useWidth() {
   return [ref, width];
 }
 
-const compactTick = (value, currency) =>
+const compactTick = (value, currency, locale) =>
   Math.abs(value) >= 10_000
-    ? new Intl.NumberFormat("en-IE", { style: "currency", currency, notation: "compact", maximumFractionDigits: 1 }).format(value)
-    : formatMoney(value, currency);
+    ? new Intl.NumberFormat(numberLocale(locale), { style: "currency", currency, notation: "compact", maximumFractionDigits: 1 }).format(
+        value,
+      )
+    : formatMoney(value, currency, locale);
 
 /**
  * data: [{ key, label (axis, e.g. "Nov"), fullLabel ("November 2026"), value, note? }]
@@ -61,6 +65,8 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
   const [containerRef, width] = useWidth();
   const [active, setActive] = useState(null);
   const tooltipId = useId();
+  const t = useTranslations("insights");
+  const locale = useLocale();
 
   const values = data.map(item => item.value);
   const ticks = niceTicks(Math.min(...values, 0), Math.max(...values, reference?.value ?? 0, 0));
@@ -72,7 +78,7 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
   const y = value => MARGIN.top + ((max - value) / (max - min || 1)) * plotHeight;
   const band = data.length ? plotWidth / data.length : 0;
   const barWidth = Math.min(MAX_BAR, Math.max(4, band * 0.6));
-  const money = value => formatMoney(value, currency);
+  const money = value => formatMoney(value, currency, locale);
   const activeItem = active === null ? null : data[active];
 
   return (
@@ -92,7 +98,7 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
                   style={{ stroke: tick === 0 ? COLORS.baseline : COLORS.grid }}
                 />
                 <text x={MARGIN.left - 8} y={y(tick)} dy="0.32em" textAnchor="end" className="fill-slate-400 text-[11px] tabular-nums">
-                  {compactTick(tick, currency)}
+                  {compactTick(tick, currency, locale)}
                 </text>
               </g>
             ))}
@@ -185,12 +191,12 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
       </div>
 
       <details className="mt-3 text-xs">
-        <summary className="cursor-pointer text-slate-400 hover:text-slate-200">Show as table</summary>
+        <summary className="cursor-pointer text-slate-400 hover:text-slate-200">{t("chart.showTable")}</summary>
         <table className="mt-2 w-full max-w-md text-left">
           <thead className="text-slate-400">
             <tr>
               <th scope="col" className="py-1 pr-4 font-medium">
-                Month
+                {t("chart.month")}
               </th>
               <th scope="col" className="py-1 text-right font-medium">
                 {valueHeading}

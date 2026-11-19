@@ -1,19 +1,23 @@
+"use client";
+
 // Filter bar for the transactions page. A GET form (next/form adds client-side navigation),
 // so the filters end up in the URL and a filtered view can be bookmarked or shared.
 import Form from "next/form";
 import Link from "next/link";
 import { transactionsHref } from "@/lib/transaction-filters";
 import { buttonClasses } from "@/components/ui/Button";
+import { useTranslations } from "@/i18n/client";
 
 const inputClass =
   "w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400";
 
 export default function TransactionFilters({ filters, presets, categories, members }) {
+  const t = useTranslations("transactions");
   const activePreset = presets.find(item => item.from === (filters.from ?? "") && item.to === (filters.to ?? ""));
 
   return (
     <div className="space-y-3">
-      <nav aria-label="Date range" className="flex flex-wrap gap-2">
+      <nav aria-label={t("filters.dateRange")} className="flex flex-wrap gap-2">
         {presets.map(item => {
           const active = activePreset?.key === item.key;
           return (
@@ -27,7 +31,7 @@ export default function TransactionFilters({ filters, presets, categories, membe
                   : "border-white/10 text-slate-300 hover:border-cyan-400/40 hover:text-white"
               }`}
             >
-              {item.label}
+              {t(`filters.presets.${item.key}`)}
             </Link>
           );
         })}
@@ -41,13 +45,13 @@ export default function TransactionFilters({ filters, presets, categories, membe
       >
         <div>
           <label htmlFor="filter-q" className="mb-1 block text-xs text-slate-300">
-            Search
+            {t("filters.search")}
           </label>
           <input
             id="filter-q"
             name="q"
             type="search"
-            placeholder="e.g. groceries"
+            placeholder={t("filters.searchPlaceholder")}
             maxLength={100}
             defaultValue={filters.q}
             className={inputClass}
@@ -55,35 +59,35 @@ export default function TransactionFilters({ filters, presets, categories, membe
         </div>
         <div>
           <label htmlFor="filter-from" className="mb-1 block text-xs text-slate-300">
-            From
+            {t("filters.from")}
           </label>
           <input id="filter-from" name="from" type="date" defaultValue={filters.from ?? ""} className={inputClass} />
         </div>
         <div>
           <label htmlFor="filter-to" className="mb-1 block text-xs text-slate-300">
-            To
+            {t("filters.to")}
           </label>
           <input id="filter-to" name="to" type="date" defaultValue={filters.to ?? ""} className={inputClass} />
         </div>
         <div>
           <label htmlFor="filter-category" className="mb-1 block text-xs text-slate-300">
-            Category
+            {t("filters.category")}
           </label>
           <select id="filter-category" name="category" defaultValue={filters.categoryId} className={inputClass}>
-            <option value="">All categories</option>
+            <option value="">{t("filters.allCategories")}</option>
             {categories.map(item => (
               <option key={item.id} value={item.id}>
-                {item.isArchived ? `${item.name} (archived)` : item.name}
+                {item.isArchived ? t("filters.archived", { name: item.name }) : item.name}
               </option>
             ))}
           </select>
         </div>
         <div>
           <label htmlFor="filter-member" className="mb-1 block text-xs text-slate-300">
-            Paid by
+            {t("filters.paidBy")}
           </label>
           <select id="filter-member" name="member" defaultValue={filters.paidByUserId} className={inputClass}>
-            <option value="">Anyone</option>
+            <option value="">{t("filters.anyone")}</option>
             {members.map(member => (
               <option key={member.userId} value={member.userId}>
                 {member.name}
@@ -96,13 +100,13 @@ export default function TransactionFilters({ filters, presets, categories, membe
         <input type="hidden" name="dir" value={filters.dir} />
         <div className="flex items-end gap-2">
           <button type="submit" className={buttonClasses({ variant: "primary", size: "sm" })}>
-            Apply
+            {t("filters.apply")}
           </button>
           <Link
             href="/transactions"
             className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-slate-300 transition hover:border-white/30 hover:text-white"
           >
-            Reset
+            {t("filters.reset")}
           </Link>
         </div>
       </Form>

@@ -11,7 +11,6 @@ export {
   billsByCategory,
   categorySpending,
   FREQUENCIES,
-  FREQUENCY_LABELS,
   GOAL_STATUSES,
   goalView,
   monthlyAmount,

@@ -5,9 +5,11 @@
 import RetryButton from "@/components/Feedback/RetryButton";
 import Panel from "@/components/Panel";
 import Badge from "@/components/ui/Badge";
+import { dateLocale, numberLocale } from "@/i18n/config";
+import { getLocale, getTranslations } from "@/i18n/server";
 import { getHeadlines, getRates, NEWS_SOURCE } from "@/lib/market";
 
-function timeLabel(date, timezone) {
+function timeLabel(date, timezone, locale) {
   const sameDay = d => new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(d);
   const options = {
     hour: "2-digit",
@@ -15,26 +17,26 @@ function timeLabel(date, timezone) {
     timeZone: timezone,
     ...(sameDay(date) === sameDay(new Date()) ? {} : { day: "numeric", month: "short" }),
   };
-  return new Intl.DateTimeFormat("en-GB", options).format(date);
+  return new Intl.DateTimeFormat(dateLocale(locale), options).format(date);
 }
 
 /** "Updated 14:05", or a warning that the data couldn't be refreshed. */
-function Freshness({ result, what, timezone }) {
-  const when = timeLabel(result.fetchedAt, timezone);
-  if (!result.stale) return <p className="text-xs text-slate-500">Updated {when}</p>;
+function Freshness({ result, staleKey, timezone, t, locale }) {
+  const when = timeLabel(result.fetchedAt, timezone, locale);
+  if (!result.stale) return <p className="text-xs text-slate-500">{t("market.updated", { time: when })}</p>;
   return (
     <p className="flex flex-wrap items-center gap-2 text-xs text-amber-200">
-      <Badge tone="warning">Not up to date</Badge>
-      Couldn&apos;t refresh, showing {what} from {when}.
+      <Badge tone="warning">{t("market.notUpToDate")}</Badge>
+      {t(staleKey, { time: when })}
     </p>
   );
 }
 
-function Failed({ what }) {
+function Failed({ messageKey, t }) {
   return (
     <div role="alert" className="rounded-xl border border-rose-400/20 bg-rose-400/5 p-4 text-sm">
-      <p className="text-rose-200">Couldn&apos;t load {what} right now.</p>
-      <p className="mt-1 text-xs text-slate-400">The service may be busy or unreachable. Everything else works as normal.</p>
+      <p className="text-rose-200">{t(messageKey)}</p>
+      <p className="mt-1 text-xs text-slate-400">{t("market.failedHint")}</p>
       <div className="mt-3">
         <RetryButton />
       </div>
@@ -42,26 +44,29 @@ function Failed({ what }) {
   );
 }
 
-const rateFormat = rate =>
-  new Intl.NumberFormat("en-IE", { minimumFractionDigits: rate >= 100 ? 2 : 4, maximumFractionDigits: rate >= 100 ? 2 : 4 }).format(rate);
+const rateFormat = (rate, locale) =>
+  new Intl.NumberFormat(numberLocale(locale), {
+    minimumFractionDigits: rate >= 100 ? 2 : 4,
+    maximumFractionDigits: rate >= 100 ? 2 : 4,
+  }).format(rate);
 
-function Rates({ result, currency, timezone }) {
+function Rates({ result, currency, timezone, t, locale }) {
   const { rows, date } = result.data;
-  if (!rows.length) return <p className="text-sm text-slate-400">No exchange rates are published for {currency}.</p>;
+  if (!rows.length) return <p className="text-sm text-slate-400">{t("market.noRates", { currency })}</p>;
   return (
     <div className="space-y-2">
       <table className="w-full text-sm">
-        <caption className="sr-only">Exchange rates for 1 {currency}, and the change over a week</caption>
+        <caption className="sr-only">{t("market.ratesCaption", { currency })}</caption>
         <thead>
           <tr className="text-left text-xs text-slate-400">
             <th scope="col" className="pb-1 font-normal">
               1 {currency} =
             </th>
             <th scope="col" className="pb-1 text-right font-normal">
-              Rate
+              {t("market.rateColumn")}
             </th>
             <th scope="col" className="pb-1 text-right font-normal">
-              Week
+              {t("market.weekColumn")}
             </th>
           </tr>
         </thead>
@@ -71,7 +76,7 @@ function Rates({ result, currency, timezone }) {
               <th scope="row" className="py-1.5 text-left font-medium text-white">
                 {row.code}
               </th>
-              <td className="py-1.5 text-right text-slate-200 tabular-nums">{rateFormat(row.rate)}</td>
+              <td className="py-1.5 text-right text-slate-200 tabular-nums">{rateFormat(row.rate, locale)}</td>
               <td
                 className={`py-1.5 text-right tabular-nums ${
                   row.changePercent > 0 ? "text-emerald-300" : row.changePercent < 0 ? "text-rose-300" : "text-slate-400"
@@ -85,54 +90,62 @@ function Rates({ result, currency, timezone }) {
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-slate-500">ECB reference rates{date ? ` for ${date}` : ""}.</p>
-      <Freshness result={result} what="rates" timezone={timezone} />
+      <p className="text-xs text-slate-500">{date ? t("market.ecbRatesFor", { date }) : t("market.ecbRates")}</p>
+      <Freshness result={result} staleKey="market.staleRates" timezone={timezone} t={t} locale={locale} />
     </div>
   );
 }
 
-function Headlines({ result, timezone }) {
-  if (!result.data.length) return <p className="text-sm text-slate-400">No headlines right now. Check back later.</p>;
+function Headlines({ result, timezone, t, locale }) {
+  if (!result.data.length) return <p className="text-sm text-slate-400">{t("market.noHeadlines")}</p>;
   return (
     <div className="space-y-2">
-      <ul aria-label="Business headlines" className="space-y-3">
+      <ul aria-label={t("market.headlinesLabel")} className="space-y-3">
         {result.data.map(item => (
           <li key={item.link}>
             <a href={item.link} target="_blank" rel="noopener noreferrer" className="group block rounded-lg outline-offset-4">
               <span className="font-medium text-white group-hover:text-cyan-300 group-hover:underline">{item.title}</span>
-              <span className="sr-only"> (opens {NEWS_SOURCE} in a new tab)</span>
+              <span className="sr-only">{t("market.opensInNewTab", { source: NEWS_SOURCE })}</span>
             </a>
             {item.summary ? <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-slate-400">{item.summary}</p> : null}
           </li>
         ))}
       </ul>
-      <Freshness result={result} what="headlines" timezone={timezone} />
+      <Freshness result={result} staleKey="market.staleHeadlines" timezone={timezone} t={t} locale={locale} />
     </div>
   );
 }
 
 export default async function MarketPanel({ currency, timezone }) {
-  const [rates, news] = await Promise.allSettled([getRates(currency), getHeadlines()]);
+  const [[rates, news], t, locale] = await Promise.all([
+    Promise.allSettled([getRates(currency), getHeadlines()]),
+    getTranslations("dashboard"),
+    getLocale(),
+  ]);
   for (const result of [rates, news]) if (result.status === "rejected") console.error("Market data failed", result.reason);
 
   return (
-    <Panel title="Markets & news" subtitle={`Exchange rates for ${currency} and the latest business headlines from ${NEWS_SOURCE}.`}>
+    <Panel title={t("market.title")} subtitle={t("market.subtitle", { currency, source: NEWS_SOURCE })}>
       <div className="grid gap-5 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <section aria-labelledby="rates-heading">
           <h3 id="rates-heading" className="mb-2 text-xs font-semibold tracking-[0.2em] text-cyan-300 uppercase">
-            Exchange rates
+            {t("market.ratesHeading")}
           </h3>
           {rates.status === "fulfilled" ? (
-            <Rates result={rates.value} currency={currency} timezone={timezone} />
+            <Rates result={rates.value} currency={currency} timezone={timezone} t={t} locale={locale} />
           ) : (
-            <Failed what="exchange rates" />
+            <Failed messageKey="market.failedRates" t={t} />
           )}
         </section>
         <section aria-labelledby="news-heading">
           <h3 id="news-heading" className="mb-2 text-xs font-semibold tracking-[0.2em] text-cyan-300 uppercase">
-            Headlines
+            {t("market.headlinesHeading")}
           </h3>
-          {news.status === "fulfilled" ? <Headlines result={news.value} timezone={timezone} /> : <Failed what="headlines" />}
+          {news.status === "fulfilled" ? (
+            <Headlines result={news.value} timezone={timezone} t={t} locale={locale} />
+          ) : (
+            <Failed messageKey="market.failedHeadlines" t={t} />
+          )}
         </section>
       </div>
     </Panel>

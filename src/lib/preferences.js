@@ -1,4 +1,4 @@
-// The user's theme, and the household currencies and timezones the settings form offers.
+// The user's theme and language, and the household currencies and timezones the settings form offers.
 import "server-only";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -6,7 +6,6 @@ import { db } from "@/db";
 import { THEMES, userPreference } from "@/db/schema";
 
 export { THEMES };
-export const THEME_LABELS = { system: "Same as this device", dark: "Dark", light: "Light" };
 const THEME_COOKIE = "theme";
 
 /** The theme to render, from the cookie (so pages before sign-in use it too). */
@@ -27,6 +26,16 @@ export async function savedTheme(userId) {
 
 export async function saveTheme(userId, theme) {
   await db.insert(userPreference).values({ userId, theme }).onConflictDoUpdate({ target: userPreference.userId, set: { theme } });
+}
+
+/** The language the user chose ("en", "el"), or null if they never did. */
+export async function savedLocale(userId) {
+  const [row] = await db.select({ locale: userPreference.locale }).from(userPreference).where(eq(userPreference.userId, userId));
+  return row?.locale ?? null;
+}
+
+export async function saveLocale(userId, locale) {
+  await db.insert(userPreference).values({ userId, locale }).onConflictDoUpdate({ target: userPreference.userId, set: { locale } });
 }
 
 /** Currencies offered for a household (ISO 4217); amounts are always shown in this one currency. */

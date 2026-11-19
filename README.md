@@ -17,9 +17,31 @@ people you live with. Built with [Next.js](https://nextjs.org), PostgreSQL and
   `useLiveUpdates`, `useUnreadCount`, `usePendingExpenses` (optimistic UI), `useDismiss`.
 - **Server Actions** in `src/lib/actions` change data; each one checks permissions itself.
 
+## Languages
+
+The app is in English and Greek. Each person picks a language on the Account page (saved to their
+account and a cookie, like the theme); visitors who haven't chosen get their browser's language, and
+the sign-in pages have a language switch.
+
+- **Messages** are in `src/i18n/messages/<language>/<area>.json`, one file per area of the app. Every
+  message must exist in both languages with the same `{placeholders}`: a unit test checks this.
+- **Server Components and Server Actions** translate with `const t = await getTranslations("budget")`
+  (`src/i18n/server.js`). **Client Components** use `useTranslations("budget")` and `useLocale()`
+  (`src/i18n/client.jsx`).
+- **A page sends the browser only the messages its Client Components need**: wrap it in
+  `<Messages namespaces={["budget"]}>` (`src/i18n/MessagesProvider.jsx`). The root layout already
+  provides `common` and `errors`. A missing message shows as `budget.someKey` on the page.
+- **Amounts and dates** follow the language: pass the locale to `formatMoney`, `formatDay` and
+  `formatMonth` (`1.250,50 €` and `18 Νοε 2026` in Greek).
+- **Notifications and live messages** store their values, not finished sentences, so each person
+  reads them in their own language.
+- **Adding a language:** add it to `LOCALES` in `src/i18n/config.js` (with its date and number
+  locales), copy `messages/en` to `messages/<language>`, translate, and add the files to
+  `messages/index.js` and to the check constraint on `user_preference.locale`.
+
 ## Requirements
 
-- [Node.js](https://nodejs.org) 22 or 24 (LTS)
+- [Node.js](https://nodejs.org) 26 (LTS), the version in `.nvmrc`
 - [PostgreSQL 17](https://www.postgresql.org/download/) installed (only its programs are used;
   the project runs its own private database server, so no admin password is needed)
 - Optional: [pgAdmin 4](https://www.pgadmin.org) to browse the database

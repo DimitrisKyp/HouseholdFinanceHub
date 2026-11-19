@@ -1,14 +1,15 @@
 // Presentational: the notification centre's list. Each item opens through openNotificationAction
 // (marks it read, then goes to what it's about), which works without JavaScript too.
-// items: [{ id, type, title, body, readAt, whenLabel }]
+// items: [{ id, type, title, body, readAt, whenLabel }], title and body already in the reader's language.
 import Badge from "@/components/ui/Badge";
 import { openNotificationAction } from "@/lib/actions/notifications";
+import { getTranslations } from "@/i18n/server";
 
-// A word next to each notification, so the kind never depends on colour alone.
-const TYPE_LABELS = { budget: "Budget", goal: "Goal", member: "Members" };
+// A word next to each notification (types.*), so the kind never depends on colour alone.
 const TYPE_TONES = { budget: "warning", goal: "success", member: "violet" };
 
-export default function NotificationList({ items }) {
+export default async function NotificationList({ items }) {
+  const t = await getTranslations("notifications");
   return (
     <ul className="space-y-2">
       {items.map(item => (
@@ -27,8 +28,8 @@ export default function NotificationList({ items }) {
               />
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
-                  <Badge tone={TYPE_TONES[item.type] ?? "neutral"}>{TYPE_LABELS[item.type] ?? "Update"}</Badge>
-                  {item.readAt ? null : <span className="text-[10px] font-semibold tracking-wide text-cyan-300 uppercase">New</span>}
+                  <Badge tone={TYPE_TONES[item.type] ?? "neutral"}>{t(`types.${TYPE_TONES[item.type] ? item.type : "other"}`)}</Badge>
+                  {item.readAt ? null : <span className="text-[10px] font-semibold tracking-wide text-cyan-300 uppercase">{t("new")}</span>}
                   <span className="text-xs text-slate-500">{item.whenLabel}</span>
                 </span>
                 <span className={`mt-1 block font-medium ${item.readAt ? "text-slate-300" : "text-white"}`}>{item.title}</span>

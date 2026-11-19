@@ -1,11 +1,8 @@
 // Calculations behind the Insights page. Pure functions on plain data ("YYYY-MM-DD" strings and
 // numbers), so they're easy to unit-test and safe to import anywhere.
 
-export const INSIGHT_RANGES = [
-  { key: "6m", label: "Last 6 months" },
-  { key: "12m", label: "Last 12 months" },
-  { key: "ytd", label: "This year" },
-];
+/** The periods the Insights page offers; their names are in the "insights" messages (ranges.<key>). */
+export const INSIGHT_RANGES = [{ key: "6m" }, { key: "12m" }, { key: "ytd" }];
 
 const pad = n => String(n).padStart(2, "0");
 const addMonths = (year, month, delta) => {
@@ -57,13 +54,16 @@ export function monthlySeries({ months, spending, baseline, today }) {
   });
 }
 
-/** The largest categories, with the rest folded into "Other", each with its share of the total. */
-export function topCategories(rows, limit = 7) {
+/**
+ * The largest categories, with the rest folded into "Other", each with its share of the total.
+ * otherName(count) names the folded row in the UI language.
+ */
+export function topCategories(rows, limit = 7, otherName = count => `Other (${count})`) {
   const total = rows.reduce((sum, row) => sum + row.total, 0);
   const head = rows.slice(0, limit);
   const tail = rows.slice(limit);
   const list = tail.length
-    ? [...head, { id: "other", name: `Other (${tail.length})`, total: cents(tail.reduce((s, r) => s + r.total, 0)) }]
+    ? [...head, { id: "other", name: otherName(tail.length), total: cents(tail.reduce((s, r) => s + r.total, 0)) }]
     : head;
   return list.map(row => ({ ...row, share: total ? Math.round((row.total / total) * 100) : 0 }));
 }

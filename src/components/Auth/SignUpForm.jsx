@@ -5,18 +5,27 @@ import { useActionState } from "react";
 import TextField, { FormError } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/Button";
 import { signUpAction } from "@/lib/actions/auth";
+import { useTranslations } from "@/i18n/client";
 
 export default function SignUpForm() {
   const [state, formAction, pending] = useActionState(signUpAction, {});
   const errors = state.errors ?? {};
+  const t = useTranslations("auth");
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
       <FormError message={state.error} />
-      <TextField id="name" label="Your name" autoComplete="name" required defaultValue={state.values?.name} error={errors.name} />
+      <TextField
+        id="name"
+        label={t("fields.yourName")}
+        autoComplete="name"
+        required
+        defaultValue={state.values?.name}
+        error={errors.name}
+      />
       <TextField
         id="email"
-        label="Email"
+        label={t("fields.email")}
         type="email"
         autoComplete="email"
         required
@@ -25,16 +34,16 @@ export default function SignUpForm() {
       />
       <TextField
         id="password"
-        label="Password"
+        label={t("fields.password")}
         type="password"
         autoComplete="new-password"
         required
-        hint="At least 8 characters."
+        hint={t("fields.passwordHint")}
         error={errors.password}
       />
       <TextField
         id="confirmPassword"
-        label="Confirm password"
+        label={t("fields.confirmPassword")}
         type="password"
         autoComplete="new-password"
         required
@@ -42,20 +51,20 @@ export default function SignUpForm() {
       />
       <TextField
         id="householdName"
-        label="Household name"
-        placeholder="Our home"
+        label={t("fields.householdName")}
+        placeholder={t("fields.householdPlaceholder")}
         required
-        hint="You'll be its owner and can invite family members later."
+        hint={t("signUpPage.householdHint")}
         defaultValue={state.values?.householdName}
         error={errors.householdName}
       />
-      <SubmitButton pending={pending} pendingText="Creating account…">
-        Create account
+      <SubmitButton pending={pending} pendingText={t("signUpPage.creating")}>
+        {t("signUpPage.submit")}
       </SubmitButton>
       <p className="text-center text-sm text-slate-400">
-        Already have an account?{" "}
+        {t("signUpPage.haveAccount")}{" "}
         <Link href="/sign-in" className="text-cyan-300 hover:text-cyan-200">
-          Sign in
+          {t("signIn")}
         </Link>
       </p>
     </form>

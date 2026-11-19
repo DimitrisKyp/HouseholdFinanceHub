@@ -3,19 +3,22 @@
 // One savings goal: progress, money in/out, status changes and recent history.
 import { useActionState } from "react";
 import { InlineMessage } from "@/components/ui/Field";
+import { useTranslations } from "@/i18n/client";
 import { addContributionAction, deleteGoalAction, setGoalStatusAction } from "@/lib/actions/goals";
 
 const smallButton =
   "rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:text-white disabled:opacity-60";
 
+// [message key, badge classes] per status.
 const STATUS_BADGES = {
   active: null,
-  paused: ["Paused", "bg-amber-400/15 text-amber-200"],
-  completed: ["Completed", "bg-emerald-400/15 text-emerald-200"],
+  paused: ["card.paused", "bg-amber-400/15 text-amber-200"],
+  completed: ["card.completed", "bg-emerald-400/15 text-emerald-200"],
 };
 
 function ContributionForm({ goal }) {
   const [state, formAction, pending] = useActionState(addContributionAction, {});
+  const t = useTranslations("goals");
   const errorId = `contribution-${goal.id}-error`;
 
   return (
@@ -23,13 +26,13 @@ function ContributionForm({ goal }) {
       <input type="hidden" name="goalId" value={goal.id} />
       <div className="flex flex-wrap items-start gap-2">
         <label className="sr-only" htmlFor={`amount-${goal.id}`}>
-          Amount for {goal.name}
+          {t("card.amountFor", { name: goal.name })}
         </label>
         <input
           id={`amount-${goal.id}`}
           name="amount"
           inputMode="decimal"
-          placeholder="Amount"
+          placeholder={t("card.amountPlaceholder")}
           defaultValue={state.values?.amount}
           aria-invalid={state.errors?.amount ? true : undefined}
           aria-describedby={state.errors?.amount ? errorId : undefined}
@@ -38,12 +41,12 @@ function ContributionForm({ goal }) {
           }`}
         />
         <label className="sr-only" htmlFor={`note-${goal.id}`}>
-          Note
+          {t("card.note")}
         </label>
         <input
           id={`note-${goal.id}`}
           name="note"
-          placeholder="Note (optional)"
+          placeholder={t("card.notePlaceholder")}
           maxLength={500}
           defaultValue={state.values?.note}
           className="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-950/60 px-3 py-1.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400"
@@ -55,10 +58,10 @@ function ContributionForm({ goal }) {
           disabled={pending}
           className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-slate-950 transition hover:bg-emerald-400 disabled:opacity-60"
         >
-          Add money
+          {t("card.addMoney")}
         </button>
         <button type="submit" name="direction" value="withdraw" disabled={pending} className={`${smallButton} hover:border-rose-400/50`}>
-          Withdraw
+          {t("card.withdraw")}
         </button>
       </div>
       {state.errors?.amount || state.errors?.note ? (
@@ -75,13 +78,14 @@ function ContributionForm({ goal }) {
 function StatusButtons({ goal }) {
   const [statusState, statusAction, statusPending] = useActionState(setGoalStatusAction, {});
   const [deleteState, deleteAction, deletePending] = useActionState(deleteGoalAction, {});
+  const t = useTranslations("goals");
   const options =
     goal.status === "active"
       ? [
-          ["completed", "Mark completed"],
-          ["paused", "Pause"],
+          ["completed", t("card.markCompleted")],
+          ["paused", t("card.pause")],
         ]
-      : [["active", goal.status === "paused" ? "Resume" : "Reopen"]];
+      : [["active", goal.status === "paused" ? t("card.resume") : t("card.reopen")]];
 
   return (
     <div>
@@ -98,12 +102,12 @@ function StatusButtons({ goal }) {
         <form
           action={deleteAction}
           onSubmit={event => {
-            if (!window.confirm(`Delete ${goal.name} and its history? This can't be undone.`)) event.preventDefault();
+            if (!window.confirm(t("card.confirmDelete", { name: goal.name }))) event.preventDefault();
           }}
         >
           <input type="hidden" name="goalId" value={goal.id} />
           <button type="submit" disabled={deletePending} className={`${smallButton} hover:border-rose-400/50 hover:text-rose-200`}>
-            {deletePending ? "Deleting…" : "Delete"}
+            {deletePending ? t("card.deleting") : t("card.delete")}
           </button>
         </form>
       </div>
@@ -113,6 +117,7 @@ function StatusButtons({ goal }) {
 }
 
 export default function GoalCard({ goal, canEdit }) {
+  const t = useTranslations("goals");
   const badge = STATUS_BADGES[goal.status];
 
   return (
@@ -121,16 +126,16 @@ export default function GoalCard({ goal, canEdit }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-medium text-white">{goal.name}</h3>
-            {badge ? <span className={`rounded-full px-2 py-0.5 text-xs ${badge[1]}`}>{badge[0]}</span> : null}
+            {badge ? <span className={`rounded-full px-2 py-0.5 text-xs ${badge[1]}`}>{t(badge[0])}</span> : null}
             {goal.reached && goal.status !== "completed" ? (
-              <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-xs text-emerald-200">Target reached</span>
+              <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-xs text-emerald-200">{t("card.targetReached")}</span>
             ) : null}
           </div>
           {goal.note ? <p className="mt-1 text-xs text-slate-400">{goal.note}</p> : null}
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-semibold text-white">
-            {goal.savedLabel} <span className="font-normal text-slate-400">of {goal.targetLabel}</span>
+            {goal.savedLabel} <span className="font-normal text-slate-400">{t("card.of", { target: goal.targetLabel })}</span>
           </p>
           <p className="text-xs text-slate-400">{goal.percent}%</p>
         </div>
@@ -139,7 +144,7 @@ export default function GoalCard({ goal, canEdit }) {
       <div
         className="mt-3 h-2 rounded-full bg-white/10"
         role="progressbar"
-        aria-label={`${goal.name} progress`}
+        aria-label={t("card.progress", { name: goal.name })}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={goal.percent}
@@ -159,7 +164,7 @@ export default function GoalCard({ goal, canEdit }) {
         {goal.contributions.length ? (
           <details className="min-w-0 flex-1 text-xs">
             <summary className="cursor-pointer text-slate-400 hover:text-slate-200">
-              History ({goal.contributionCount} {goal.contributionCount === 1 ? "entry" : "entries"})
+              {t("card.history", { count: goal.contributionCount })}
             </summary>
             <ul className="mt-2 space-y-1">
               {goal.contributions.map(item => (
@@ -177,7 +182,7 @@ export default function GoalCard({ goal, canEdit }) {
             </ul>
           </details>
         ) : (
-          <p className="text-xs text-slate-500">No money added yet.</p>
+          <p className="text-xs text-slate-500">{t("card.noMoney")}</p>
         )}
         {canEdit ? <StatusButtons goal={goal} /> : null}
       </div>

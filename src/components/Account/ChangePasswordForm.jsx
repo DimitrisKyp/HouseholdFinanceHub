@@ -5,9 +5,12 @@ import { useActionState } from "react";
 import TextField, { FormError } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/Button";
 import { changePasswordAction } from "@/lib/actions/password";
+import { useTranslations } from "@/i18n/client";
 
 export default function ChangePasswordForm() {
   const [state, formAction, pending] = useActionState(changePasswordAction, { signOutOthers: true });
+  const t = useTranslations("account");
+  const common = useTranslations("common");
 
   return (
     // React clears the password fields after each submit; the checkbox keeps the last choice.
@@ -21,28 +24,28 @@ export default function ChangePasswordForm() {
       <div>
         <TextField
           id="currentPassword"
-          label="Current password"
+          label={t("password.current")}
           type="password"
           autoComplete="current-password"
           required
           error={state.errors?.currentPassword}
         />
         <Link href="/forgot-password" className="mt-1 inline-block text-xs text-cyan-300 hover:text-cyan-200">
-          Forgot it?
+          {t("password.forgot")}
         </Link>
       </div>
       <TextField
         id="newPassword"
-        label="New password"
+        label={t("password.new")}
         type="password"
         autoComplete="new-password"
         required
-        hint="At least 8 characters."
+        hint={t("password.newHint")}
         error={state.errors?.newPassword}
       />
       <TextField
         id="confirmPassword"
-        label="Repeat new password"
+        label={t("password.repeat")}
         type="password"
         autoComplete="new-password"
         required
@@ -51,12 +54,12 @@ export default function ChangePasswordForm() {
       <label className="flex items-start gap-3 text-sm text-slate-300">
         <input type="checkbox" name="signOutOthers" defaultChecked={state.signOutOthers} className="mt-0.5 h-4 w-4 accent-cyan-400" />
         <span>
-          Sign out of all other devices
-          <span className="block text-xs text-slate-500">Recommended if you think someone else knows your password.</span>
+          {t("password.signOutOthers")}
+          <span className="block text-xs text-slate-500">{t("password.signOutOthersHint")}</span>
         </span>
       </label>
-      <SubmitButton pending={pending} pendingText="Saving…">
-        Change password
+      <SubmitButton pending={pending} pendingText={common("saving")}>
+        {t("password.submit")}
       </SubmitButton>
     </form>
   );

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { changeMemberRoleAction, removeMemberAction } from "@/lib/actions/members";
-import { ROLE_LABELS } from "@/lib/permissions";
+import { useTranslations } from "@/i18n/client";
 
 const selectClass =
   "rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 disabled:opacity-60";
@@ -28,6 +28,8 @@ function Message({ state }) {
 function MemberRow({ member, canManage, isYou, removeAction, removePending }) {
   const [roleState, roleAction, rolePending] = useActionState(changeMemberRoleAction, {});
   const editable = canManage && member.role !== "owner";
+  const t = useTranslations("members");
+  const common = useTranslations("common");
 
   return (
     <li className="rounded-xl border border-white/5 bg-white/5 px-4 py-3">
@@ -35,10 +37,10 @@ function MemberRow({ member, canManage, isYou, removeAction, removePending }) {
         <div className="min-w-0">
           <p className="truncate font-medium text-white">
             {member.name}
-            {isYou ? <span className="ml-2 text-xs font-normal text-slate-400">(you)</span> : null}
+            {isYou ? <span className="ml-2 text-xs font-normal text-slate-400">{t("list.you")}</span> : null}
           </p>
           <p className="truncate text-sm text-slate-400">{member.email}</p>
-          <p className="text-xs text-slate-500">Joined {member.joinedLabel}</p>
+          <p className="text-xs text-slate-500">{t("list.joined", { date: member.joinedLabel })}</p>
         </div>
 
         {editable ? (
@@ -48,25 +50,25 @@ function MemberRow({ member, canManage, isYou, removeAction, removePending }) {
             <form action={roleAction} className="flex items-center gap-2">
               <input type="hidden" name="memberId" value={member.memberId} />
               <label className="sr-only" htmlFor={`role-${member.memberId}`}>
-                Role for {member.name}
+                {t("list.roleFor", { name: member.name })}
               </label>
               <select id={`role-${member.memberId}`} name="role" defaultValue={member.role} className={selectClass}>
-                <option value="editor">Editor</option>
-                <option value="viewer">Viewer</option>
+                <option value="editor">{common("roles.editor")}</option>
+                <option value="viewer">{common("roles.viewer")}</option>
               </select>
               <button
                 type="submit"
                 disabled={rolePending}
-                aria-label={`Save role for ${member.name}`}
+                aria-label={t("list.saveRoleFor", { name: member.name })}
                 className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-cyan-400/50 hover:text-white disabled:opacity-60"
               >
-                {rolePending ? "…" : "Save"}
+                {rolePending ? t("list.saving") : t("list.save")}
               </button>
             </form>
             <form
               action={removeAction}
               onSubmit={event => {
-                if (!window.confirm(`Remove ${member.name} from the household? They'll lose access immediately.`)) {
+                if (!window.confirm(t("list.confirmRemove", { name: member.name }))) {
                   event.preventDefault();
                 }
               }}
@@ -77,12 +79,12 @@ function MemberRow({ member, canManage, isYou, removeAction, removePending }) {
                 disabled={removePending}
                 className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-rose-400/50 hover:text-rose-200 disabled:opacity-60"
               >
-                {removePending ? "Removing…" : "Remove"}
+                {removePending ? t("list.removing") : t("list.remove")}
               </button>
             </form>
           </div>
         ) : (
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{ROLE_LABELS[member.role]}</span>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{common(`roles.${member.role}`)}</span>
         )}
       </div>
       <Message state={roleState} />

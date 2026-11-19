@@ -3,16 +3,18 @@
 // Theme choice. Applies at once in this browser, then is saved to the account (and a cookie).
 import { useActionState, useRef } from "react";
 import { InlineMessage } from "@/components/ui/Field";
+import { useTranslations } from "@/i18n/client";
 import { updateThemeAction } from "@/lib/actions/account";
 
 export default function ThemeForm({ theme, options }) {
   const [state, formAction, pending] = useActionState(updateThemeAction, { theme });
   const form = useRef(null);
+  const t = useTranslations("account");
 
   return (
     <form ref={form} action={formAction}>
       <fieldset disabled={pending}>
-        <legend className="mb-2 text-sm text-slate-300">Theme</legend>
+        <legend className="mb-2 text-sm text-slate-300">{t("appearance.theme")}</legend>
         <div className="grid gap-2 sm:grid-cols-3">
           {options.map(option => (
             <label

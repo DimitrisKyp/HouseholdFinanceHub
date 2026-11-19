@@ -1,6 +1,9 @@
 // Short messages in the corner of the screen, announced politely to screen readers.
 // Presentational: the caller owns the list and decides when messages go away.
+import { useTranslations } from "@/i18n/client";
+
 export default function ToastStack({ toasts, onDismiss, ...rest }) {
+  const t = useTranslations("common");
   return (
     <div
       role="status"
@@ -18,7 +21,7 @@ export default function ToastStack({ toasts, onDismiss, ...rest }) {
           <button
             type="button"
             onClick={() => onDismiss(toast.id)}
-            aria-label="Dismiss"
+            aria-label={t("dismiss")}
             className="-my-1 rounded-md px-1.5 text-slate-400 transition hover:text-white"
           >
             ×

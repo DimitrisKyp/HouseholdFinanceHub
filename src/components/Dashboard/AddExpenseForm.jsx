@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import TextField, { FormError, FormSuccess, SelectField } from "@/components/ui/Field";
 import { addExpenseAction } from "@/lib/actions/expenses";
 import { buttonClasses } from "@/components/ui/Button";
+import { useTranslations } from "@/i18n/client";
 
 export default function AddExpenseForm({ categories, members, currentUserId, today, onSubmitting }) {
   const [state, formAction, pending] = useActionState(
@@ -15,6 +16,7 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
     { values: { paidByUserId: currentUserId } },
   );
   const values = state.values ?? {};
+  const t = useTranslations("dashboard");
 
   return (
     <form action={formAction} className="grid gap-3 md:grid-cols-6" noValidate>
@@ -26,8 +28,8 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
         <TextField
           id="expense-title"
           name="title"
-          label="Expense"
-          placeholder="School supplies"
+          label={t("form.expense")}
+          placeholder={t("form.expensePlaceholder")}
           maxLength={120}
           defaultValue={values.title}
           error={state.errors?.title}
@@ -37,7 +39,7 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
         <TextField
           id="expense-amount"
           name="amount"
-          label="Amount"
+          label={t("form.amount")}
           inputMode="decimal"
           placeholder="45"
           defaultValue={values.amount}
@@ -50,7 +52,7 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
           key={`date-${values.spentOn}`}
           id="expense-date"
           name="spentOn"
-          label="Date"
+          label={t("form.date")}
           type="date"
           max={today}
           defaultValue={values.spentOn || today}
@@ -62,12 +64,12 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
           key={`category-${values.categoryId}`}
           id="expense-category"
           name="categoryId"
-          label="Category"
+          label={t("form.category")}
           defaultValue={values.categoryId ?? ""}
           error={state.errors?.categoryId}
         >
           <option value="" disabled>
-            Choose…
+            {t("form.choose")}
           </option>
           {categories.map(item => (
             <option key={item.id} value={item.id}>
@@ -81,11 +83,11 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
           key={`payer-${values.paidByUserId}`}
           id="expense-payer"
           name="paidByUserId"
-          label="Paid by"
+          label={t("form.paidBy")}
           defaultValue={values.paidByUserId ?? ""}
           error={state.errors?.paidByUserId}
         >
-          <option value="">Not set</option>
+          <option value="">{t("form.notSet")}</option>
           {members.map(member => (
             <option key={member.userId} value={member.userId}>
               {member.name}
@@ -94,7 +96,7 @@ export default function AddExpenseForm({ categories, members, currentUserId, tod
         </SelectField>
       </div>
       <button type="submit" disabled={pending} className={buttonClasses({ variant: "primary", size: "md", className: "md:col-span-6" })}>
-        {pending ? "Adding…" : "Add expense"}
+        {pending ? t("form.adding") : t("form.add")}
       </button>
     </form>
   );

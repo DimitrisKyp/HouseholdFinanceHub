@@ -4,10 +4,12 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { buttonClasses } from "@/components/ui/Button";
+import { useTranslations } from "@/i18n/client";
 
-export default function RetryButton({ children = "Try again" }) {
+export default function RetryButton({ children }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("errors");
   return (
     <button
       type="button"
@@ -15,7 +17,7 @@ export default function RetryButton({ children = "Try again" }) {
       onClick={() => startTransition(() => router.refresh())}
       className={buttonClasses({ variant: "secondary", size: "xs" })}
     >
-      {pending ? "Trying…" : children}
+      {pending ? t("trying") : (children ?? t("tryAgain"))}
     </button>
   );
 }

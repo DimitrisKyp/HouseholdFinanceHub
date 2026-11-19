@@ -3,6 +3,8 @@
 // terminal instead of being sent, so you can click the link from there.
 import "server-only";
 import nodemailer from "nodemailer";
+import { isLocale } from "@/i18n/config";
+import { getLocale, getTranslations } from "@/i18n/server";
 
 const APP_NAME = "Household Finance Hub";
 
@@ -40,10 +42,10 @@ export async function sendEmail({ to, subject, text, html }) {
 }
 
 // Shared layout: a short message and one button. Plain-text version is always included.
-function linkEmail({ greeting, lines, buttonLabel, url, footer }) {
+function linkEmail({ lang, greeting, lines, buttonLabel, url, footer, fallbackNote }) {
   const text = [greeting, "", ...lines, "", `${buttonLabel}: ${url}`, "", footer].join("\n");
   const html = `<!doctype html>
-<html><body style="margin:0;padding:24px;background:#f4f7f5;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
+<html lang="${lang}"><body style="margin:0;padding:24px;background:#f4f7f5;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
   <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px">
     <p style="margin:0 0 16px;font-size:13px;font-weight:bold;color:#0e7490">${APP_NAME}</p>
     <p style="margin:0 0 16px">${escapeHtml(greeting)}</p>
@@ -51,7 +53,7 @@ function linkEmail({ greeting, lines, buttonLabel, url, footer }) {
     <p style="margin:24px 0">
       <a href="${escapeHtml(url)}" style="display:inline-block;background:#0e7490;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:bold">${escapeHtml(buttonLabel)}</a>
     </p>
-    <p style="margin:0 0 8px;font-size:12px;color:#6b7280">If the button doesn't work, copy this link into your browser:</p>
+    <p style="margin:0 0 8px;font-size:12px;color:#6b7280">${escapeHtml(fallbackNote)}</p>
     <p style="margin:0 0 24px;font-size:12px;word-break:break-all"><a href="${escapeHtml(url)}" style="color:#0e7490">${escapeHtml(url)}</a></p>
     <p style="margin:0;font-size:12px;color:#6b7280">${escapeHtml(footer)}</p>
   </div>
@@ -59,65 +61,46 @@ function linkEmail({ greeting, lines, buttonLabel, url, footer }) {
   return { text, html };
 }
 
-export function sendVerificationEmail({ to, name, url }) {
+/**
+ * Builds and sends one of the emails below from its messages (email.json, section `key`).
+ * Written in `locale` if given, otherwise in the language of the request that triggers it
+ * (the person who asked for it; for an invitation, the person inviting).
+ */
+async function sendLinkEmail({ to, name, url, key, lines = ["line"], params = {}, locale }) {
+  const language = isLocale(locale) ? locale : await getLocale();
+  const t = await getTranslations("email", language);
+  const p = { app: APP_NAME, ...params };
   return sendEmail({
     to,
-    subject: `Confirm your email for ${APP_NAME}`,
+    subject: t(`${key}.subject`, p),
     ...linkEmail({
-      greeting: `Hi ${name},`,
-      lines: ["Please confirm your email address to finish setting up your account. The link works for 24 hours."],
-      buttonLabel: "Confirm email",
+      lang: language,
+      greeting: name ? t("greeting", { name }) : t("greetingNoName"),
+      lines: lines.map(line => t(`${key}.${line}`, p)),
+      buttonLabel: t(`${key}.button`, p),
       url,
-      footer: "If you didn't create an account, you can ignore this email.",
+      footer: t(`${key}.footer`, p),
+      fallbackNote: t("buttonFallback"),
     }),
   });
+}
+
+export function sendVerificationEmail({ to, name, url, locale }) {
+  return sendLinkEmail({ to, name, url, key: "verify", locale });
 }
 
 /** Sent when someone tries to sign up with an email that already has an account. */
-export function sendAccountExistsEmail({ to, name, url }) {
-  return sendEmail({
-    to,
-    subject: `You already have a ${APP_NAME} account`,
-    ...linkEmail({
-      greeting: `Hi ${name},`,
-      lines: ["Someone (hopefully you) tried to create an account with this email, but you already have one."],
-      buttonLabel: "Sign in",
-      url,
-      footer: "If this wasn't you, you can ignore this email. Your account hasn't changed.",
-    }),
-  });
+export function sendAccountExistsEmail({ to, name, url, locale }) {
+  return sendLinkEmail({ to, name, url, key: "accountExists", locale });
 }
 
-export function sendPasswordResetEmail({ to, name, url }) {
-  return sendEmail({
-    to,
-    subject: `Reset your ${APP_NAME} password`,
-    ...linkEmail({
-      greeting: `Hi ${name},`,
-      lines: ["We received a request to reset your password. The link works for 1 hour and can be used once."],
-      buttonLabel: "Choose a new password",
-      url,
-      footer: "If you didn't ask for this, you can ignore this email. Your password stays the same.",
-    }),
-  });
+export function sendPasswordResetEmail({ to, name, url, locale }) {
+  return sendLinkEmail({ to, name, url, key: "reset", locale });
 }
 
 /** Security notice after a password change or reset. */
-export function sendPasswordChangedEmail({ to, name, url }) {
-  return sendEmail({
-    to,
-    subject: `Your ${APP_NAME} password was changed`,
-    ...linkEmail({
-      greeting: `Hi ${name},`,
-      lines: [
-        "The password for your account was just changed.",
-        "If this was you, there's nothing else to do. If it wasn't, reset your password now: that signs everyone else out.",
-      ],
-      buttonLabel: "Reset password",
-      url,
-      footer: "You're receiving this because of a security change to your account.",
-    }),
-  });
+export function sendPasswordChangedEmail({ to, name, url, locale }) {
+  return sendLinkEmail({ to, name, url, key: "passwordChanged", lines: ["line1", "line2"], locale });
 }
 
 /** Absolute URL on this site, for links inside emails. */
@@ -125,19 +108,19 @@ export function siteUrl(path) {
   return new URL(path, process.env.BETTER_AUTH_URL).toString();
 }
 
-export function sendInviteEmail({ to, inviterName, householdName, roleLabel, url, expiresInDays }) {
-  return sendEmail({
+/**
+ * role: "editor" | "viewer". roleLabel (the English label, e.g. "Editor") is still accepted
+ * from older callers and turned back into the role.
+ */
+export async function sendInviteEmail({ to, inviterName, householdName, role, roleLabel, url, expiresInDays, locale }) {
+  const roleKey = role ?? String(roleLabel ?? "").toLowerCase();
+  const common = await getTranslations("common", locale);
+  return sendLinkEmail({
     to,
-    subject: `${inviterName} invited you to "${householdName}" on ${APP_NAME}`,
-    ...linkEmail({
-      greeting: "Hi,",
-      lines: [
-        `${inviterName} invited you to join the household "${householdName}" as ${roleLabel === "Viewer" ? "a" : "an"} ${roleLabel}, to share budgets, expenses and savings goals.`,
-        `Open the link to choose your password and join. It works for ${expiresInDays} days.`,
-      ],
-      buttonLabel: "Accept invitation",
-      url,
-      footer: "If you weren't expecting this, you can ignore this email. Nothing happens unless you accept.",
-    }),
+    url,
+    key: "invite",
+    lines: [roleKey === "viewer" ? "line1Viewer" : "line1Editor", "line2"],
+    params: { inviter: inviterName, household: householdName, role: common(`roles.${roleKey}`), days: expiresInDays },
+    locale,
   });
 }

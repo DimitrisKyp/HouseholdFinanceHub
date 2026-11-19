@@ -1,13 +1,15 @@
 // Shown while MarketPanel waits for the exchange rates and headlines.
 import Panel from "@/components/Panel";
 import { SkeletonBlock } from "@/components/ui/Skeleton";
+import { getTranslations } from "@/i18n/server";
 
-export default function MarketPanelSkeleton() {
+export default async function MarketPanelSkeleton() {
+  const t = await getTranslations("dashboard");
   return (
-    <Panel title="Markets & news" subtitle="Exchange rates and the latest business headlines.">
+    <Panel title={t("market.title")} subtitle={t("market.loadingSubtitle")}>
       <div className="grid gap-5 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <SkeletonBlock label="Loading exchange rates…" lines={4} />
-        <SkeletonBlock label="Loading headlines…" lines={5} />
+        <SkeletonBlock label={t("market.loadingRates")} lines={4} />
+        <SkeletonBlock label={t("market.loadingHeadlines")} lines={5} />
       </div>
     </Panel>
   );

@@ -1,9 +1,12 @@
 // Presentational: this month's latest expenses. A row being saved is marked "Saving…".
+import { useTranslations } from "@/i18n/client";
+
 /** This month's latest expenses. A row being saved shows straight away, marked "Saving…". */
 export default function RecentExpenses({ items }) {
-  if (!items.length) return <p className="text-sm text-slate-500">Nothing logged this month yet.</p>;
+  const t = useTranslations("dashboard");
+  if (!items.length) return <p className="text-sm text-slate-500">{t("recent.empty")}</p>;
   return (
-    <ul aria-label="Recent expenses" className="space-y-1.5">
+    <ul aria-label={t("recent.label")} className="space-y-1.5">
       {items.map(item => (
         <li
           key={item.id}
@@ -14,7 +17,7 @@ export default function RecentExpenses({ items }) {
         >
           <div className="min-w-0">
             <p className="truncate text-white">{item.title}</p>
-            <p className="truncate text-xs text-slate-400">{item.pending ? `Saving… · ${item.detail}` : item.detail}</p>
+            <p className="truncate text-xs text-slate-400">{item.pending ? t("recent.saving", { detail: item.detail }) : item.detail}</p>
           </div>
           <p className="shrink-0 font-medium text-white">{item.amountLabel}</p>
         </li>

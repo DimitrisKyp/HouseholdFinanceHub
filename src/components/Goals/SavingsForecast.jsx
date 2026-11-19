@@ -1,7 +1,10 @@
+"use client";
+
 // Savings forecast on the Goals page: what's likely left over each month, the running total
 // a few months out, and whether that covers what the goals need. Plain numbers, not a chart:
 // with the same amount every month, a chart would only draw a straight line.
 import Link from "next/link";
+import { useTranslations } from "@/i18n/client";
 
 function Tile({ label, value, detail }) {
   return (
@@ -15,17 +18,19 @@ function Tile({ label, value, detail }) {
 
 /**
  * forecast: null, or { monthlyLabel, monthlyNegative, horizons: [{ months, valueLabel, detail }], breakdown, basisNote,
- *   goals: { neededLabel, verdict } | null }
+ *   goals: { neededLabel, verdict } | null } (see forecastView in lib/forecast.js, already in the UI language)
  */
 export default function SavingsForecast({ forecast }) {
+  const t = useTranslations("goals");
+
   if (!forecast) {
     return (
       <p className="text-sm text-slate-400">
-        Add your income and bills on the{" "}
+        {t("forecast.emptyBefore")}{" "}
         <Link href="/budget" className="text-cyan-300 underline-offset-2 hover:underline">
-          Budget page
+          {t("forecast.emptyLink")}
         </Link>{" "}
-        and log a month of expenses (or set category limits) to see a forecast.
+        {t("forecast.emptyAfter")}
       </p>
     );
   }
@@ -34,21 +39,26 @@ export default function SavingsForecast({ forecast }) {
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile
-          label="Left over each month"
+          label={t("forecast.leftOver")}
           value={forecast.monthlyLabel}
-          detail={forecast.monthlyNegative ? "More goes out than comes in" : "Expected, before saving"}
+          detail={forecast.monthlyNegative ? t("forecast.moreOut") : t("forecast.beforeSaving")}
         />
         {forecast.horizons.map(horizon => (
-          <Tile key={horizon.months} label={`In ${horizon.months} months`} value={horizon.valueLabel} detail={horizon.detail} />
+          <Tile
+            key={horizon.months}
+            label={t("forecast.inMonths", { count: horizon.months })}
+            value={horizon.valueLabel}
+            detail={horizon.detail}
+          />
         ))}
         <Tile
-          label="Your goals need"
-          value={forecast.goals ? `${forecast.goals.neededLabel} / month` : "—"}
-          detail={forecast.goals ? forecast.goals.verdict : "No active goals with a target date"}
+          label={t("forecast.goalsNeed")}
+          value={forecast.goals ? t("forecast.perMonth", { amount: forecast.goals.neededLabel }) : "—"}
+          detail={forecast.goals ? forecast.goals.verdict : t("forecast.noGoals")}
         />
       </div>
       <p className="text-xs leading-5 text-slate-400">
-        {forecast.breakdown} {forecast.basisNote} It assumes the coming months look like the recent ones.
+        {forecast.breakdown} {forecast.basisNote} {t("forecast.assumes")}
       </p>
     </div>
   );

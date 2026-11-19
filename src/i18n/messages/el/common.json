@@ -1,0 +1,43 @@
+{
+  "siteDescription": "Σχεδιάστε μαζί τον προϋπολογισμό του νοικοκυριού: κοινά έξοδα, πάγιοι λογαριασμοί, στόχοι αποταμίευσης με προβλέψεις και ειδοποιήσεις όταν μια κατηγορία πλησιάζει το όριό της.",
+  "pageTitle": "{page} · Household Finance Hub",
+  "skipToContent": "Μετάβαση στο περιεχόμενο",
+  "saving": "Αποθήκευση…",
+  "close": "Κλείσιμο",
+  "dismiss": "Κλείσιμο",
+  "language": "Γλώσσα",
+  "nav": {
+    "label": "Κύρια",
+    "dashboard": "Αρχική",
+    "budget": "Μπάτζετ",
+    "transactions": "Κινήσεις",
+    "insights": "Αναλύσεις",
+    "goals": "Στόχοι",
+    "members": "Μέλη",
+    "alerts": "Ειδοποιήσεις",
+    "account": "Λογαριασμός",
+    "more": "Περισσότερα",
+    "unreadTitle": "{label}: {count} μη αναγνωσμένες",
+    "unreadLabel": "{label}, {count} μη αναγνωσμένες"
+  },
+  "roles": {
+    "owner": "Ιδιοκτήτης",
+    "editor": "Συντάκτης",
+    "viewer": "Αναγνώστης"
+  },
+  "topBar": {
+    "leftThisMonth": "Υπόλοιπο μήνα",
+    "yourAccount": "Ο λογαριασμός σας",
+    "signOut": "Αποσύνδεση"
+  },
+  "live": {
+    "householdSettingsUpdated": "{name} ενημέρωσε τις ρυθμίσεις του νοικοκυριού",
+    "memberJoined": "{name} μπήκε στο νοικοκυριό",
+    "budgetUpdated": "{name} ενημέρωσε τον προϋπολογισμό",
+    "goalsUpdated": "{name} ενημέρωσε τους στόχους",
+    "goalAdded": "{name} πρόσθεσε {amount} στον στόχο «{goal}»",
+    "goalWithdrawn": "{name} αφαίρεσε {amount} από τον στόχο «{goal}»",
+    "expenseAdded": "{name} πρόσθεσε το έξοδο «{title}» ({amount})",
+    "expenseDeleted": "{name} διέγραψε το έξοδο «{title}»"
+  }
+}

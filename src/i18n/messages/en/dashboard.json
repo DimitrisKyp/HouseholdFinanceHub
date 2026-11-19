@@ -1,0 +1,94 @@
+{
+  "hero": {
+    "monthlyIncome": "Monthly income",
+    "spentThisMonth": "Spent this month",
+    "leftThisMonth": "Left this month",
+    "savingsRate": "Savings rate",
+    "fixedBills": "Fixed bills / month",
+    "incomeSources": "Income sources"
+  },
+  "tracker": {
+    "title": "Expense tracker",
+    "subtitleEdit": "Log household spending as it happens.",
+    "subtitleView": "Day-to-day household spending.",
+    "viewOnly": "You have view-only access. Open the breakdown to see this month's spending.",
+    "noCategoriesBefore": "Add a category on the",
+    "noCategoriesLink": "Budget page",
+    "noCategoriesAfter": "before logging expenses.",
+    "recentThisMonth": "Recent this month",
+    "viewBreakdown": "View budget breakdown & transactions →"
+  },
+  "form": {
+    "expense": "Expense",
+    "expensePlaceholder": "School supplies",
+    "amount": "Amount",
+    "date": "Date",
+    "category": "Category",
+    "choose": "Choose…",
+    "paidBy": "Paid by",
+    "notSet": "Not set",
+    "adding": "Adding…",
+    "add": "Add expense"
+  },
+  "recent": {
+    "label": "Recent expenses",
+    "empty": "Nothing logged this month yet.",
+    "saving": "Saving… · {detail}"
+  },
+  "breakdown": {
+    "title": "Budget breakdown",
+    "description": "{month}: spending by category and transactions",
+    "categories": "Categories",
+    "noLimit": "{spent} · no limit",
+    "noCategories": "No spending or limits yet. Set limits on the Budget page.",
+    "transactions": "Transactions ({count})",
+    "noTransactions": "No transactions this month yet.",
+    "searchAll": "Search all transactions →",
+    "confirmDelete": "Delete {title}?",
+    "deleteLabel": "Delete {title}",
+    "delete": "Delete"
+  },
+  "goals": {
+    "title": "Goals",
+    "subtitle": "Current progress at a glance",
+    "manage": "Manage →",
+    "empty": "No active goals yet."
+  },
+  "market": {
+    "title": "Markets & news",
+    "subtitle": "Exchange rates for {currency} and the latest business headlines from {source}.",
+    "loadingSubtitle": "Exchange rates and the latest business headlines.",
+    "loadingRates": "Loading exchange rates…",
+    "loadingHeadlines": "Loading headlines…",
+    "ratesHeading": "Exchange rates",
+    "headlinesHeading": "Headlines",
+    "updated": "Updated {time}",
+    "notUpToDate": "Not up to date",
+    "staleRates": "Couldn't refresh, showing rates from {time}.",
+    "staleHeadlines": "Couldn't refresh, showing headlines from {time}.",
+    "failedRates": "Couldn't load exchange rates right now.",
+    "failedHeadlines": "Couldn't load headlines right now.",
+    "failedHint": "The service may be busy or unreachable. Everything else works as normal.",
+    "noRates": "No exchange rates are published for {currency}.",
+    "ratesCaption": "Exchange rates for 1 {currency}, and the change over a week",
+    "rateColumn": "Rate",
+    "weekColumn": "Week",
+    "ecbRates": "ECB reference rates.",
+    "ecbRatesFor": "ECB reference rates for {date}.",
+    "noHeadlines": "No headlines right now. Check back later.",
+    "headlinesLabel": "Business headlines",
+    "opensInNewTab": " (opens {source} in a new tab)"
+  },
+  "actions": {
+    "titleMissing": "What was it for?",
+    "titleTooLong": "That description is too long.",
+    "amountInvalid": "Enter an amount above zero, e.g. 45 or 12.50.",
+    "dateInvalid": "Enter a valid date.",
+    "dateFuture": "The date can't be in the future.",
+    "chooseCategory": "Choose a category.",
+    "chooseMember": "Choose a household member.",
+    "added": "{title} ({amount}) added.",
+    "notFound": "This expense no longer exists.",
+    "deleted": "Expense deleted."
+  }
+}

@@ -1,7 +1,14 @@
 // Wording and thresholds for in-app notifications. Pure functions, so they're easy to unit-test;
 // lib/notifications.js decides when to send them and to whom.
+//
+// Each builder returns { title, body, data }. `data` holds the values the message is made of
+// (names, amounts as numbers, the month as "YYYY-MM-01"); it's stored with the notification so
+// renderNotification() can show it in each reader's language. title and body are the English
+// text, kept as a fallback (and for notifications stored before `data` existed).
+import { DEFAULT_LOCALE } from "@/i18n/config";
+import { MESSAGES } from "@/i18n/messages";
+import { createTranslator } from "@/i18n/translate";
 import { formatMoney, formatMonth } from "@/lib/format";
-import { ROLE_LABELS } from "@/lib/permissions";
 
 /** Budget alerts go out when a category reaches these shares of its monthly limit (highest first). */
 export const BUDGET_THRESHOLDS = [100, 80];
@@ -16,53 +23,92 @@ export function budgetThreshold(spent, limit) {
 /** "budget:<categoryId>:2026-11:80": one alert per category, month and threshold. */
 export const budgetDedupeKey = (categoryId, month, threshold) => `budget:${categoryId}:${month.slice(0, 7)}:${threshold}`;
 
-/** Title and body for a budget alert. month: "YYYY-MM-01". */
-export function budgetAlertMessage({ categoryName, spent, limit, month, threshold, currency }) {
-  const money = amount => formatMoney(amount, currency);
-  const period = formatMonth(month);
-  if (threshold === 100) {
-    const over = Math.round((spent - limit) * 100) / 100;
+const cents = value => Math.round(value * 100) / 100;
+
+// Turns stored values into a title and body, per kind of notification.
+const RENDERERS = {
+  budget({ categoryName, spent, limit, month, threshold, currency }, t, locale) {
+    const money = amount => formatMoney(amount, currency, locale);
+    const values = { category: categoryName, spent: money(spent), limit: money(limit), month: formatMonth(month, locale) };
+    if (threshold === 100) {
+      const over = cents(spent - limit);
+      const variant = over > 0 ? "over" : "reached";
+      return {
+        title: t(`messages.budget.${variant}.title`, values),
+        body: t(`messages.budget.${variant}.body`, { ...values, over: money(over) }),
+      };
+    }
     return {
-      title: over > 0 ? `${categoryName} is over budget` : `${categoryName} has reached its budget`,
-      body:
-        over > 0
-          ? `${money(spent)} spent of ${money(limit)} in ${period}: ${money(over)} over.`
-          : `${money(spent)} spent of ${money(limit)} in ${period}.`,
+      title: t("messages.budget.near.title", { ...values, percent: Math.floor((spent / limit) * 100) }),
+      body: t("messages.budget.near.body", { ...values, left: money(cents(limit - spent)) }),
     };
-  }
-  return {
-    title: `${categoryName} is at ${Math.floor((spent / limit) * 100)}% of its budget`,
-    body: `${money(spent)} spent of ${money(limit)} in ${period}, ${money(Math.round((limit - spent) * 100) / 100)} left.`,
-  };
+  },
+  goalReached({ goalName, saved, targetAmount, currency }, t, locale) {
+    return {
+      title: t("messages.goalReached.title", { goal: goalName }),
+      body: t("messages.goalReached.body", {
+        saved: formatMoney(saved, currency, locale),
+        target: formatMoney(targetAmount, currency, locale),
+      }),
+    };
+  },
+  memberJoined({ memberName, role, householdName }, t, _locale, roles) {
+    return {
+      title: t("messages.memberJoined.title", { name: memberName, household: householdName }),
+      body: t("messages.memberJoined.body", { role: roles(role) }),
+    };
+  },
+  welcome({ householdName, role, inviterName }, t, _locale, roles) {
+    return {
+      title: t("messages.welcome.title", { household: householdName }),
+      body: t(`messages.welcome.body.${role === "viewer" ? "viewer" : "editor"}`, {
+        inviter: inviterName ?? t("messages.welcome.someone"),
+        role: roles(role),
+      }),
+    };
+  },
+  roleChanged({ role, householdName }, t, _locale, roles) {
+    const variant = role === "viewer" ? "viewer" : "editor";
+    return {
+      title: t(`messages.roleChanged.title.${variant}`, { role: roles(role), household: householdName }),
+      body: t(`messages.roleChanged.body.${variant}`),
+    };
+  },
+};
+
+/**
+ * A notification's title and body in the given language. Uses the stored values (`data`) when
+ * there are any, otherwise the stored English title and body.
+ */
+export function renderNotification({ data, title, body }, locale = DEFAULT_LOCALE) {
+  const render = data && RENDERERS[data.kind];
+  if (!render) return { title, body };
+  const messages = MESSAGES[locale] ?? MESSAGES[DEFAULT_LOCALE];
+  const t = createTranslator(locale, messages, "notifications");
+  const common = createTranslator(locale, messages, "common");
+  return render(data, t, locale, role => common(`roles.${role}`));
+}
+
+// The English text plus the values, ready to spread into notify().
+const build = data => ({ ...renderNotification({ data }, DEFAULT_LOCALE), data });
+
+/** A budget alert. month: "YYYY-MM-01". */
+export function budgetAlertMessage({ categoryName, spent, limit, month, threshold, currency }) {
+  return build({ kind: "budget", categoryName, spent, limit, month, threshold, currency });
 }
 
 export function goalReachedMessage({ goalName, saved, targetAmount, currency }) {
-  return {
-    title: `Goal reached: ${goalName}`,
-    body: `${formatMoney(saved, currency)} saved of ${formatMoney(targetAmount, currency)}. Mark it as completed on the Goals page when you're ready.`,
-  };
+  return build({ kind: "goalReached", goalName, saved, targetAmount, currency });
 }
 
 export function memberJoinedMessage({ memberName, role, householdName }) {
-  return {
-    title: `${memberName} joined ${householdName}`,
-    body: `They accepted the invitation and joined as ${ROLE_LABELS[role]}.`,
-  };
+  return build({ kind: "memberJoined", memberName, role, householdName });
 }
 
 export function welcomeMessage({ householdName, role, inviterName }) {
-  return {
-    title: `Welcome to ${householdName}`,
-    body: `${inviterName} invited you as ${ROLE_LABELS[role]}. ${role === "viewer" ? "You can see everything but can't make changes." : "You can add expenses and update budgets and goals."}`,
-  };
+  return build({ kind: "welcome", householdName, role, inviterName });
 }
 
 export function roleChangedMessage({ role, householdName }) {
-  return {
-    title: `You're now ${role === "editor" ? "an" : "a"} ${ROLE_LABELS[role]} in ${householdName}`,
-    body:
-      role === "viewer"
-        ? "You can still see everything, but can no longer add or change anything."
-        : "You can now add expenses and update budgets and goals.",
-  };
+  return build({ kind: "roleChanged", role, householdName });
 }

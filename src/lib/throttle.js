@@ -65,4 +65,8 @@ export function countAttempt(key, { windowMs }) {
 /** Forgets the attempts for `key` (e.g. after a successful sign-in). */
 export const clearAttempts = key => attempts.delete(key);
 
-export const tooManyMessage = minutes => `Too many attempts. Please wait ${minutes} minute${minutes === 1 ? "" : "s"} and try again.`;
+/** The "wait N minutes" message. With t (the "auth" translations) it is in the visitor's language. */
+export const tooManyMessage = (minutes, t) =>
+  t
+    ? t("errors.tooMany", { count: minutes })
+    : `Too many attempts. Please wait ${minutes} minute${minutes === 1 ? "" : "s"} and try again.`;

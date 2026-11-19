@@ -13,7 +13,7 @@ const utc = isoDate => {
 };
 const lastDayOfMonth = (year, month) => new Date(Date.UTC(year, month, 0)).getUTCDate();
 
-/** Quick date ranges relative to `today` ("YYYY-MM-DD"). Empty from/to = no limit. */
+/** Quick date ranges relative to `today` ("YYYY-MM-DD"). Empty from/to = no limit. Labels are in the messages, by key. */
 export function datePresets(today) {
   const [year, month] = today.split("-").map(Number);
   const [prevYear, prevMonth] = month === 1 ? [year - 1, 12] : [year, month - 1];
@@ -22,19 +22,17 @@ export function datePresets(today) {
   return [
     {
       key: "this-month",
-      label: "This month",
       from: `${year}-${pad(month)}-01`,
       to: `${year}-${pad(month)}-${lastDayOfMonth(year, month)}`,
     },
     {
       key: "last-month",
-      label: "Last month",
       from: `${prevYear}-${pad(prevMonth)}-01`,
       to: `${prevYear}-${pad(prevMonth)}-${lastDayOfMonth(prevYear, prevMonth)}`,
     },
-    { key: "90-days", label: "Last 90 days", from: iso(ninetyDaysAgo), to: today },
-    { key: "this-year", label: "This year", from: `${year}-01-01`, to: `${year}-12-31` },
-    { key: "all", label: "All time", from: "", to: "" },
+    { key: "90-days", from: iso(ninetyDaysAgo), to: today },
+    { key: "this-year", from: `${year}-01-01`, to: `${year}-12-31` },
+    { key: "all", from: "", to: "" },
   ];
 }
 

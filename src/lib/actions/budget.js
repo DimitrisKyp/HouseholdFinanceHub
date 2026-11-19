@@ -6,9 +6,10 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { category, householdMember, recurringItem } from "@/db/schema";
+import { getTranslations } from "@/i18n/server";
 import { requirePermission } from "@/lib/dal";
 import { FREQUENCIES } from "@/lib/finance";
-import { announce } from "@/lib/live";
+import { announce, liveMessage } from "@/lib/live";
 import { todayIn } from "@/lib/format";
 import { field, isUniqueViolation, parseAmount, UUID_PATTERN } from "@/lib/forms";
 
@@ -19,7 +20,7 @@ const MAX_CATEGORY_NAME_LENGTH = 50;
 async function refreshBudgetPages(context) {
   revalidatePath("/budget");
   revalidatePath("/");
-  await announce(context, "budget", `${context.user.name} updated the budget`);
+  await announce(context, "budget", liveMessage("budgetUpdated", { name: context.user.name }));
 }
 
 /** The category if it belongs to this household (and isn't archived), else null. */
@@ -46,8 +47,9 @@ async function isMember(householdId, userId) {
 
 export async function addRecurringItemAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
   const type = field(formData, "type");
-  if (type !== "income" && type !== "expense") return { error: "Something went wrong. Refresh the page and try again." };
+  if (type !== "income" && type !== "expense") return { error: t("errors.generic") };
 
   const values = {
     title: field(formData, "title"),
@@ -58,23 +60,23 @@ export async function addRecurringItemAction(_previousState, formData) {
   };
 
   const errors = {};
-  if (!values.title) errors.title = type === "income" ? "Describe this income." : "Name this bill.";
-  else if (values.title.length > MAX_TITLE_LENGTH) errors.title = "That name is too long.";
+  if (!values.title) errors.title = type === "income" ? t("errors.describeIncome") : t("errors.nameBill");
+  else if (values.title.length > MAX_TITLE_LENGTH) errors.title = t("errors.nameTooLong");
   const amount = parseAmount(values.amount);
-  if (amount === null) errors.amount = "Enter an amount above zero, e.g. 1250 or 12.50.";
-  if (!FREQUENCIES.includes(values.frequency)) errors.frequency = "Choose how often.";
+  if (amount === null) errors.amount = t("errors.amount");
+  if (!FREQUENCIES.includes(values.frequency)) errors.frequency = t("errors.chooseFrequency");
 
   let categoryId = null;
   if (type === "expense") {
     const found = await findCategory(context.householdId, values.categoryId);
-    if (!found) errors.categoryId = "Choose a category.";
+    if (!found) errors.categoryId = t("errors.chooseCategory");
     else categoryId = found.id;
   }
 
   let memberUserId = null;
   if (type === "income" && values.memberUserId) {
     if (await isMember(context.householdId, values.memberUserId)) memberUserId = values.memberUserId;
-    else errors.memberUserId = "Choose a household member.";
+    else errors.memberUserId = t("errors.chooseMember");
   }
 
   if (Object.keys(errors).length) return { errors, values };
@@ -92,7 +94,7 @@ export async function addRecurringItemAction(_previousState, formData) {
   await refreshBudgetPages(context);
   // Keep the choices (frequency, category, member) for the next entry; clear the rest.
   return {
-    success: `${values.title} added.`,
+    success: t("success.added", { name: values.title }),
     values: { frequency: values.frequency, categoryId: values.categoryId, memberUserId: values.memberUserId },
   };
 }
@@ -100,52 +102,55 @@ export async function addRecurringItemAction(_previousState, formData) {
 // A bill's category decides which logged expenses it covers (see spendingBeyondBills), so it can be changed.
 export async function updateBillCategoryAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
   const itemId = field(formData, "itemId");
-  if (!UUID_PATTERN.test(itemId)) return { error: "This bill no longer exists." };
+  if (!UUID_PATTERN.test(itemId)) return { error: t("errors.billGone") };
   const found = await findCategory(context.householdId, field(formData, "categoryId"));
-  if (!found) return { error: "Choose a category." };
+  if (!found) return { error: t("errors.chooseCategory") };
 
   const updated = await db
     .update(recurringItem)
     .set({ categoryId: found.id })
     .where(and(eq(recurringItem.id, itemId), eq(recurringItem.householdId, context.householdId), eq(recurringItem.type, "expense")))
     .returning({ id: recurringItem.id });
-  if (!updated.length) return { error: "This bill no longer exists." };
+  if (!updated.length) return { error: t("errors.billGone") };
   await refreshBudgetPages(context);
-  return { success: `Now in ${found.name}.` };
+  return { success: t("success.movedTo", { category: found.name }) };
 }
 
 export async function deleteRecurringItemAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
   const itemId = field(formData, "itemId");
-  if (!UUID_PATTERN.test(itemId)) return { error: "This item no longer exists." };
+  if (!UUID_PATTERN.test(itemId)) return { error: t("errors.itemGone") };
 
   const removed = await db
     .delete(recurringItem)
     .where(and(eq(recurringItem.id, itemId), eq(recurringItem.householdId, context.householdId)))
     .returning({ id: recurringItem.id });
-  if (!removed.length) return { error: "This item no longer exists." };
+  if (!removed.length) return { error: t("errors.itemGone") };
   await refreshBudgetPages(context);
-  return { success: "Removed." };
+  return { success: t("success.removed") };
 }
 
 // ── Categories ───────────────────────────────────────────────────────────────
 
 // "" means "no limit"; otherwise a non-negative amount.
-function parseLimit(raw) {
+function parseLimit(raw, t) {
   if (raw === "") return { limit: null };
   const limit = parseAmount(raw, { allowZero: true });
-  return limit === null ? { error: "Enter an amount, e.g. 300, or leave it empty for no limit." } : { limit };
+  return limit === null ? { error: t("errors.limit") } : { limit };
 }
 
 export async function addCategoryAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
   const values = { name: field(formData, "name"), monthlyLimit: field(formData, "monthlyLimit") };
 
   const errors = {};
-  if (!values.name) errors.name = "Name the category.";
-  else if (values.name.length > MAX_CATEGORY_NAME_LENGTH) errors.name = `Use at most ${MAX_CATEGORY_NAME_LENGTH} characters.`;
-  const { limit, error: limitError } = parseLimit(values.monthlyLimit);
+  if (!values.name) errors.name = t("errors.nameCategory");
+  else if (values.name.length > MAX_CATEGORY_NAME_LENGTH) errors.name = t("errors.categoryNameLength", { max: MAX_CATEGORY_NAME_LENGTH });
+  const { limit, error: limitError } = parseLimit(values.monthlyLimit, t);
   if (limitError) errors.monthlyLimit = limitError;
   if (Object.keys(errors).length) return { errors, values };
 
@@ -153,35 +158,37 @@ export async function addCategoryAction(_previousState, formData) {
     await db.insert(category).values({ householdId: context.householdId, name: values.name, monthlyLimit: limit });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { values, errors: { name: "A category with this name already exists (it may be archived)." } };
+      return { values, errors: { name: t("errors.categoryExists") } };
     }
     throw error;
   }
   await refreshBudgetPages(context);
-  return { success: `${values.name} added.`, values: {} };
+  return { success: t("success.added", { name: values.name }), values: {} };
 }
 
 export async function updateCategoryLimitAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
   const found = await findCategory(context.householdId, field(formData, "categoryId"));
-  if (!found) return { error: "This category no longer exists." };
+  if (!found) return { error: t("errors.categoryGone") };
 
-  const { limit, error } = parseLimit(field(formData, "monthlyLimit"));
+  const { limit, error } = parseLimit(field(formData, "monthlyLimit"), t);
   if (error) return { error };
 
   await db.update(category).set({ monthlyLimit: limit }).where(eq(category.id, found.id));
   await refreshBudgetPages(context);
-  return { success: "Saved." };
+  return { success: t("success.saved") };
 }
 
 // Archived categories disappear from pickers and the budget breakdown, but past expenses keep them.
 export async function setCategoryArchivedAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
   const found = await findCategory(context.householdId, field(formData, "categoryId"), { allowArchived: true });
-  if (!found) return { error: "This category no longer exists." };
+  if (!found) return { error: t("errors.categoryGone") };
 
   const archived = field(formData, "archived") === "true";
   await db.update(category).set({ isArchived: archived }).where(eq(category.id, found.id));
   await refreshBudgetPages(context);
-  return { success: archived ? `${found.name} archived.` : `${found.name} restored.` };
+  return { success: archived ? t("success.archived", { name: found.name }) : t("success.restored", { name: found.name }) };
 }

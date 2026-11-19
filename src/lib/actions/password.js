@@ -7,22 +7,25 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { requireUser } from "@/lib/dal";
 import { sendPasswordChangedEmail, siteUrl } from "@/lib/email";
-import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, newPasswordErrors, passwordField } from "@/lib/forms";
+import { getTranslations } from "@/i18n/server";
+import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, passwordField } from "@/lib/forms";
+import { translatedPasswordErrors } from "@/lib/password-errors";
 import { clientIp } from "@/lib/request";
 import { blockedFor, clearAttempts, countAttempt, isTooSoon, LIMITS, tooManyMessage, withMinimumDuration } from "@/lib/throttle";
 
 /** "Forgot password": emails a reset link if the account exists. Always answers the same way. */
 export async function requestPasswordResetAction(_previousState, formData) {
+  const t = await getTranslations("auth");
   const values = { email: field(formData, "email").toLowerCase() };
   if (!EMAIL_PATTERN.test(values.email)) {
-    return { values, errors: { email: "Enter a valid email address." } };
+    return { values, errors: { email: t("errors.emailInvalid") } };
   }
   const ipKey = `reset-request:${await clientIp()}`;
   const wait = blockedFor(ipKey, LIMITS.resetRequestPerIp);
-  if (wait) return { values, error: tooManyMessage(wait) };
+  if (wait) return { values, error: tooManyMessage(wait, t) };
   countAttempt(ipKey, LIMITS.resetRequestPerIp);
   if (isTooSoon(`reset:${values.email}`, EMAIL_COOLDOWN_MS)) {
-    return { values, error: "We just sent one. Please wait a minute before asking again." };
+    return { values, error: t("errors.justSent") };
   }
 
   try {
@@ -30,7 +33,7 @@ export async function requestPasswordResetAction(_previousState, formData) {
     await withMinimumDuration(1500, () => auth.api.requestPasswordReset({ body: { email: values.email, redirectTo: "/reset-password" } }));
   } catch (error) {
     console.error("Password reset request failed", error);
-    return { values, error: "We couldn't send the email. Please try again later." };
+    return { values, error: t("errors.sendFailed") };
   }
 
   return { values, sent: true };
@@ -38,15 +41,16 @@ export async function requestPasswordResetAction(_previousState, formData) {
 
 /** Sets a new password using the token from the reset link. */
 export async function resetPasswordAction(_previousState, formData) {
+  const t = await getTranslations("auth");
   const token = field(formData, "token");
   const password = passwordField(formData, "password");
-  const errors = newPasswordErrors(password, passwordField(formData, "confirmPassword"));
-  if (!token) return { error: "This reset link isn't valid.", linkInvalid: true };
+  const errors = translatedPasswordErrors(t, password, passwordField(formData, "confirmPassword"));
+  if (!token) return { error: t("errors.resetLinkInvalid"), linkInvalid: true };
   if (Object.keys(errors).length) return { errors };
 
   const ipKey = `reset:${await clientIp()}`;
   const wait = blockedFor(ipKey, LIMITS.resetPerIp);
-  if (wait) return { error: tooManyMessage(wait) };
+  if (wait) return { error: tooManyMessage(wait, t) };
   countAttempt(ipKey, LIMITS.resetPerIp);
 
   try {
@@ -54,10 +58,10 @@ export async function resetPasswordAction(_previousState, formData) {
     await auth.api.resetPassword({ body: { token, newPassword: password } });
   } catch (error) {
     if (error instanceof APIError && error.body?.code === "INVALID_TOKEN") {
-      return { error: "This reset link has expired or has already been used.", linkInvalid: true };
+      return { error: t("errors.resetLinkExpired"), linkInvalid: true };
     }
     console.error("Password reset failed", error);
-    return { error: "We couldn't change your password. Please try again." };
+    return { error: t("errors.changeFailed") };
   }
 
   redirect("/sign-in?reset=1");
@@ -66,21 +70,22 @@ export async function resetPasswordAction(_previousState, formData) {
 /** Signed-in password change. Needs the current password. */
 export async function changePasswordAction(_previousState, formData) {
   const user = await requireUser();
+  const t = await getTranslations("auth");
   const currentPassword = passwordField(formData, "currentPassword");
   const newPassword = passwordField(formData, "newPassword");
   const signOutOthers = formData.get("signOutOthers") === "on";
 
-  const errors = newPasswordErrors(newPassword, passwordField(formData, "confirmPassword"), "newPassword");
-  if (!currentPassword) errors.currentPassword = "Enter your current password.";
+  const errors = translatedPasswordErrors(t, newPassword, passwordField(formData, "confirmPassword"), "newPassword");
+  if (!currentPassword) errors.currentPassword = t("errors.currentPasswordMissing");
   else if (!errors.newPassword && newPassword === currentPassword) {
-    errors.newPassword = "Choose a password different from your current one.";
+    errors.newPassword = t("errors.samePassword");
   }
   if (Object.keys(errors).length) return { errors, signOutOthers };
 
   // Guessing the current password on an unlocked device is limited too.
   const userKey = `change-password:${user.id}`;
   const wait = blockedFor(userKey, LIMITS.changePasswordPerUser);
-  if (wait) return { error: tooManyMessage(wait), signOutOthers };
+  if (wait) return { error: tooManyMessage(wait, t), signOutOthers };
 
   try {
     // With revokeOtherSessions, every session is deleted and this browser gets a new one.
@@ -91,10 +96,10 @@ export async function changePasswordAction(_previousState, formData) {
   } catch (error) {
     if (error instanceof APIError && error.body?.code === "INVALID_PASSWORD") {
       countAttempt(userKey, LIMITS.changePasswordPerUser);
-      return { errors: { currentPassword: "That's not your current password." }, signOutOthers };
+      return { errors: { currentPassword: t("errors.currentPasswordWrong") }, signOutOthers };
     }
     console.error("Changing password failed", error);
-    return { error: "We couldn't change your password. Please try again.", signOutOthers };
+    return { error: t("errors.changeFailed"), signOutOthers };
   }
 
   clearAttempts(userKey);
@@ -105,7 +110,7 @@ export async function changePasswordAction(_previousState, formData) {
   }
 
   return {
-    success: signOutOthers ? "Password changed. Other devices have been signed out." : "Password changed.",
+    success: signOutOthers ? t("passwordChangedSignedOut") : t("passwordChanged"),
     signOutOthers,
   };
 }

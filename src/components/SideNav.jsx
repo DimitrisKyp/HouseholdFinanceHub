@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useId, useRef, useState } from "react";
 import { useDismiss } from "@/hooks/useDismiss";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
+import { useTranslations } from "@/i18n/client";
 
 const NOTIFICATIONS_HREF = "/notifications";
 
@@ -14,7 +15,7 @@ const PHONE_BAR = new Set(["/", "/transactions", "/insights", "/goals", NOTIFICA
 const navItems = [
   {
     href: "/",
-    label: "Dashboard",
+    labelKey: "dashboard",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path
@@ -27,7 +28,7 @@ const navItems = [
   },
   {
     href: "/budget",
-    label: "Budget",
+    labelKey: "budget",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path
@@ -40,7 +41,7 @@ const navItems = [
   },
   {
     href: "/transactions",
-    label: "Transactions",
+    labelKey: "transactions",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h10" />
@@ -49,7 +50,7 @@ const navItems = [
   },
   {
     href: "/insights",
-    label: "Insights",
+    labelKey: "insights",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 20V10m6 10V4m6 16v-7m4 7H2" />
@@ -58,7 +59,7 @@ const navItems = [
   },
   {
     href: "/goals",
-    label: "Goals",
+    labelKey: "goals",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path
@@ -71,7 +72,7 @@ const navItems = [
   },
   {
     href: "/members",
-    label: "Members",
+    labelKey: "members",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path
@@ -84,7 +85,7 @@ const navItems = [
   },
   {
     href: NOTIFICATIONS_HREF,
-    label: "Alerts",
+    labelKey: "alerts",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path
@@ -97,7 +98,7 @@ const navItems = [
   },
   {
     href: "/account",
-    label: "Account",
+    labelKey: "account",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path
@@ -139,7 +140,7 @@ const MORE_ICON = (
 );
 
 /** Phones only: the pages that don't fit in the bar, in a menu. Closes on navigation, Escape or a click outside. */
-function MoreMenu({ items, pathname }) {
+function MoreMenu({ items, pathname, label }) {
   const [open, setOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(pathname);
   const menuId = useId();
@@ -164,7 +165,7 @@ function MoreMenu({ items, pathname }) {
         }`}
       >
         <NavIcon icon={MORE_ICON} active={active} />
-        <span className="text-[10px] leading-none font-medium">More</span>
+        <span className="text-[10px] leading-none font-medium">{label}</span>
       </button>
       {open ? (
         <ul
@@ -198,19 +199,21 @@ function MoreMenu({ items, pathname }) {
 export default function SideNav({ unreadCount = 0 }) {
   const pathname = usePathname();
   const unread = useUnreadCount(unreadCount, pathname);
+  const t = useTranslations("common");
+  const items = navItems.map(item => ({ ...item, label: t(`nav.${item.labelKey}`) }));
 
   return (
     <nav className="relative h-full rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl shadow-black/30">
       <div className="relative z-10 flex h-full flex-row items-center justify-around gap-1 md:flex-col md:justify-center md:gap-3">
-        {navItems.map(({ href, label, icon }) => {
+        {items.map(({ href, label, icon }) => {
           const isActive = isActivePath(pathname, href);
           const badge = href === NOTIFICATIONS_HREF && unread > 0 ? (unread > 99 ? "99+" : String(unread)) : null;
           return (
             <Link
               key={href}
               href={href}
-              title={badge ? `${label}: ${unread} unread` : label}
-              aria-label={badge ? `${label}, ${unread} unread` : undefined}
+              title={badge ? t("nav.unreadTitle", { label, count: unread }) : label}
+              aria-label={badge ? t("nav.unreadLabel", { label, count: unread }) : undefined}
               aria-current={isActive ? "page" : undefined}
               className={`group min-w-0 flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-all ${
                 PHONE_BAR.has(href) ? "flex" : "hidden md:flex"
@@ -221,7 +224,7 @@ export default function SideNav({ unreadCount = 0 }) {
             </Link>
           );
         })}
-        <MoreMenu items={navItems.filter(item => !PHONE_BAR.has(item.href))} pathname={pathname} />
+        <MoreMenu items={items.filter(item => !PHONE_BAR.has(item.href))} pathname={pathname} label={t("nav.more")} />
       </div>
     </nav>
   );

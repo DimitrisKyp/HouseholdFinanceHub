@@ -1,21 +1,27 @@
+"use client";
+
 import Link from "next/link";
 import DeleteExpenseButton from "@/components/Transactions/DeleteExpenseButton";
+import { useTranslations } from "@/i18n/client";
 import { sortHref, transactionsHref } from "@/lib/transaction-filters";
 
+// labelKey: under "table" in the transactions messages.
 const COLUMNS = [
-  { key: "date", label: "Date" },
-  { key: "title", label: "Description" },
-  { key: "category", label: "Category" },
-  { key: null, label: "Paid by" },
-  { key: "amount", label: "Amount", align: "right" },
+  { key: "date", labelKey: "date" },
+  { key: "title", labelKey: "description" },
+  { key: "category", labelKey: "category" },
+  { key: null, labelKey: "paidBy" },
+  { key: "amount", labelKey: "amount", align: "right" },
 ];
 
 function SortHeader({ column, filters }) {
+  const t = useTranslations("transactions");
+  const label = t(`table.${column.labelKey}`);
   const align = column.align === "right" ? "text-right" : "text-left";
   if (!column.key) {
     return (
       <th scope="col" className={`px-3 py-2 font-medium ${align}`}>
-        {column.label}
+        {label}
       </th>
     );
   }
@@ -27,7 +33,7 @@ function SortHeader({ column, filters }) {
         href={sortHref(filters, column.key)}
         className={`inline-flex items-center gap-1 transition hover:text-white ${active ? "text-cyan-200" : ""}`}
       >
-        {column.label}
+        {label}
         <span aria-hidden="true" className="text-[10px]">
           {active ? (filters.dir === "asc" ? "▲" : "▼") : "↕"}
         </span>
@@ -37,23 +43,22 @@ function SortHeader({ column, filters }) {
 }
 
 function Pagination({ filters, pageCount }) {
+  const t = useTranslations("transactions");
   if (pageCount <= 1) return null;
   const linkClass = "rounded-lg border border-white/10 px-3 py-1.5 text-xs transition hover:border-cyan-400/40 hover:text-white";
   return (
-    <nav aria-label="Pages" className="mt-4 flex items-center justify-between gap-3 text-sm text-slate-400">
+    <nav aria-label={t("table.pages")} className="mt-4 flex items-center justify-between gap-3 text-sm text-slate-400">
       {filters.page > 1 ? (
         <Link href={transactionsHref(filters, { page: filters.page - 1 })} className={linkClass}>
-          ← Newer
+          {t("table.newer")}
         </Link>
       ) : (
         <span />
       )}
-      <span>
-        Page {filters.page} of {pageCount}
-      </span>
+      <span>{t("table.pageOf", { page: filters.page, pageCount })}</span>
       {filters.page < pageCount ? (
         <Link href={transactionsHref(filters, { page: filters.page + 1 })} className={linkClass}>
-          Older →
+          {t("table.older")}
         </Link>
       ) : (
         <span />
@@ -63,12 +68,9 @@ function Pagination({ filters, pageCount }) {
 }
 
 export default function TransactionsTable({ rows, filters, pageCount, canEdit }) {
+  const t = useTranslations("transactions");
   if (!rows.length) {
-    return (
-      <p className="rounded-xl border border-white/5 bg-white/5 px-4 py-6 text-center text-sm text-slate-400">
-        No transactions match these filters.
-      </p>
-    );
+    return <p className="rounded-xl border border-white/5 bg-white/5 px-4 py-6 text-center text-sm text-slate-400">{t("table.empty")}</p>;
   }
 
   return (
@@ -78,11 +80,11 @@ export default function TransactionsTable({ rows, filters, pageCount, canEdit })
           <thead className="bg-white/5 text-xs text-slate-400">
             <tr>
               {COLUMNS.map(column => (
-                <SortHeader key={column.label} column={column} filters={filters} />
+                <SortHeader key={column.labelKey} column={column} filters={filters} />
               ))}
               {canEdit ? (
                 <th scope="col" className="px-3 py-2">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("table.actions")}</span>
                 </th>
               ) : null}
             </tr>

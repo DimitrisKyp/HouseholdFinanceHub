@@ -18,7 +18,8 @@ export const LIVE_KINDS = ["expenses", "budget", "goals", "members", "notificati
 /**
  * Announces a change to everyone connected in the household.
  * event: { householdId, kind, actorId?, message?, userIds? } — userIds limits who receives it
- * (used for notifications); message is a short sentence shown to the others ("Sam added Bakery (€30)").
+ * (used for notifications); message is a short sentence shown to the others ("Sam added Bakery (€30)"),
+ * built with liveMessage() so each browser shows it in its own language.
  * executor: db, or a transaction to announce it only once that commits.
  */
 export async function publish(event, executor = db) {
@@ -31,6 +32,13 @@ export async function publish(event, executor = db) {
     console.error("Publishing a live update failed", error);
   }
 }
+
+/**
+ * A message for the other members' screens: a key under "live" in the common messages, and its
+ * values. An { amount, currency } pair is shown as money in the reader's language, e.g.
+ * liveMessage("expenseAdded", { name: "Sam", title: "Bakery", amount: 30, currency: "EUR" }).
+ */
+export const liveMessage = (key, params = {}) => ({ key, params });
 
 /** publish() for a Server Action: the household and who made the change come from the DAL context. */
 export const announce = (context, kind, message = null) =>

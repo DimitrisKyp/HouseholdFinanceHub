@@ -11,7 +11,8 @@ import { householdMember, invite, user } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { requirePermission, requireUser } from "@/lib/dal";
 import { sendInviteEmail, siteUrl } from "@/lib/email";
-import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, isUniqueViolation, newPasswordErrors, passwordField, UUID_PATTERN } from "@/lib/forms";
+import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, isUniqueViolation, passwordField, UUID_PATTERN } from "@/lib/forms";
+import { translatedPasswordErrors } from "@/lib/password-errors";
 import {
   acceptInviteAsExistingUser,
   acceptInviteAsNewUser,
@@ -25,7 +26,7 @@ import {
 import { announce } from "@/lib/live";
 import { roleChangedMessage } from "@/lib/notification-messages";
 import { notify } from "@/lib/notifications";
-import { ROLE_LABELS } from "@/lib/permissions";
+import { getTranslations } from "@/i18n/server";
 import { isTooSoon } from "@/lib/throttle";
 
 const MAX_NAME_LENGTH = 100;
@@ -33,8 +34,9 @@ const MAX_NAME_LENGTH = 100;
 // Creates the invite (or refreshes the open one for that email with a new link and expiry)
 // and emails it. Returns a message for the form.
 async function issueInvite(context, email, role) {
+  const t = await getTranslations("members");
   if (isTooSoon(`invite:${context.householdId}:${email}`, EMAIL_COOLDOWN_MS)) {
-    return { error: "An invitation was just sent to this address. Please wait a minute." };
+    return { error: t("errors.inviteTooSoon") };
   }
 
   const token = newInviteToken();
@@ -59,7 +61,7 @@ async function issueInvite(context, email, role) {
       else await tx.insert(invite).values({ ...values, householdId: context.householdId, email });
     });
   } catch (error) {
-    if (isUniqueViolation(error)) return { error: "This address was invited at the same moment. Refresh the page." };
+    if (isUniqueViolation(error)) return { error: t("errors.inviteRace") };
     throw error;
   }
   revalidatePath("/members");
@@ -69,24 +71,25 @@ async function issueInvite(context, email, role) {
       to: email,
       inviterName: context.user.name,
       householdName: context.householdName,
-      roleLabel: ROLE_LABELS[role],
+      role,
       url: siteUrl(`/invite/${token}`),
       expiresInDays: INVITE_TTL_DAYS,
     });
   } catch (error) {
     console.error("Sending invite email failed", error);
-    return { error: `The invitation was saved, but the email to ${email} couldn't be sent. Use "Resend" to try again.` };
+    return { error: t("errors.emailFailed", { email }) };
   }
-  return { success: `Invitation sent to ${email}.` };
+  return { success: t("success.inviteSent", { email }) };
 }
 
 export async function inviteMemberAction(_previousState, formData) {
   const context = await requirePermission("members:manage");
+  const t = await getTranslations("members");
   const values = { email: field(formData, "email").toLowerCase(), role: field(formData, "role") };
 
   const errors = {};
-  if (!EMAIL_PATTERN.test(values.email) || values.email.length > 255) errors.email = "Enter a valid email address.";
-  if (!INVITABLE_ROLES.includes(values.role)) errors.role = "Choose Editor or Viewer.";
+  if (!EMAIL_PATTERN.test(values.email) || values.email.length > 255) errors.email = t("errors.invalidEmail");
+  if (!INVITABLE_ROLES.includes(values.role)) errors.role = t("errors.chooseRole");
   if (Object.keys(errors).length) return { errors, values };
 
   const [alreadyMember] = await db
@@ -94,7 +97,7 @@ export async function inviteMemberAction(_previousState, formData) {
     .from(householdMember)
     .innerJoin(user, eq(user.id, householdMember.userId))
     .where(and(eq(householdMember.householdId, context.householdId), sql`lower(${user.email}) = ${values.email}`));
-  if (alreadyMember) return { values, errors: { email: "This person is already a member of your household." } };
+  if (alreadyMember) return { values, errors: { email: t("errors.alreadyMember") } };
 
   const result = await issueInvite(context, values.email, values.role);
   // Clear the email after a success; keep what was typed after an error.
@@ -114,17 +117,17 @@ async function findOpenInvite(householdId, inviteId) {
 export async function resendInviteAction(_previousState, formData) {
   const context = await requirePermission("members:manage");
   const open = await findOpenInvite(context.householdId, field(formData, "inviteId"));
-  if (!open) return { error: "This invitation no longer exists." };
+  if (!open) return { error: (await getTranslations("members"))("errors.inviteGone") };
   return issueInvite(context, open.email.toLowerCase(), open.role);
 }
 
 export async function revokeInviteAction(_previousState, formData) {
   const context = await requirePermission("members:manage");
   const open = await findOpenInvite(context.householdId, field(formData, "inviteId"));
-  if (!open) return { error: "This invitation no longer exists." };
+  if (!open) return { error: (await getTranslations("members"))("errors.inviteGone") };
   await db.update(invite).set({ revokedAt: new Date() }).where(eq(invite.id, open.id));
   revalidatePath("/members");
-  return { success: "Invitation cancelled." };
+  return { success: (await getTranslations("members"))("success.inviteCancelled") };
 }
 
 // Member rows are identified by household_member.id; the owner's row can never be changed here.
@@ -135,14 +138,15 @@ export async function changeMemberRoleAction(_previousState, formData) {
   const context = await requirePermission("members:manage");
   const memberId = field(formData, "memberId");
   const role = field(formData, "role");
-  if (!INVITABLE_ROLES.includes(role) || !UUID_PATTERN.test(memberId)) return { error: "Choose Editor or Viewer." };
+  const [t, common] = await Promise.all([getTranslations("members"), getTranslations("common")]);
+  if (!INVITABLE_ROLES.includes(role) || !UUID_PATTERN.test(memberId)) return { error: t("errors.chooseRole") };
 
   const updated = await db
     .update(householdMember)
     .set({ role })
     .where(nonOwnerMemberOf(context.householdId, memberId))
     .returning({ id: householdMember.id, userId: householdMember.userId });
-  if (!updated.length) return { error: "This member can't be changed." };
+  if (!updated.length) return { error: t("errors.cantChange") };
   await announce(context, "members");
   await notify(db, {
     householdId: context.householdId,
@@ -152,24 +156,25 @@ export async function changeMemberRoleAction(_previousState, formData) {
     link: "/members",
   });
   revalidatePath("/members");
-  return { success: `Role changed to ${ROLE_LABELS[role]}.` };
+  return { success: t("success.roleChanged", { role: common(`roles.${role}`) }) };
 }
 
 export async function removeMemberAction(_previousState, formData) {
   const context = await requirePermission("members:manage");
   const memberId = field(formData, "memberId");
-  if (!UUID_PATTERN.test(memberId)) return { error: "This member can't be removed." };
+  const t = await getTranslations("members");
+  if (!UUID_PATTERN.test(memberId)) return { error: t("errors.cantRemove") };
 
   // Their account stays; they just lose access to this household (checked on every request).
   const removed = await db
     .delete(householdMember)
     .where(nonOwnerMemberOf(context.householdId, memberId))
     .returning({ id: householdMember.id, userId: householdMember.userId });
-  if (!removed.length) return { error: "This member can't be removed." };
+  if (!removed.length) return { error: t("errors.cantRemove") };
   const [gone] = await db.select({ name: user.name }).from(user).where(eq(user.id, removed[0].userId));
   await announce(context, "members");
   revalidatePath("/members");
-  return { success: `${gone?.name ?? "The member"} was removed from the household.` };
+  return { success: t("success.removed", { name: gone?.name ?? t("success.theMember") }) };
 }
 
 /** Invite link, new person: choose a name and password, join, and get signed in. */
@@ -178,9 +183,10 @@ export async function acceptInviteWithNewAccountAction(_previousState, formData)
   const values = { name: field(formData, "name") };
   const password = passwordField(formData, "password");
 
-  const errors = newPasswordErrors(password, passwordField(formData, "confirmPassword"));
-  if (!values.name) errors.name = "Enter your name.";
-  else if (values.name.length > MAX_NAME_LENGTH) errors.name = "That name is too long.";
+  const t = await getTranslations("members");
+  const errors = translatedPasswordErrors(await getTranslations("auth"), password, passwordField(formData, "confirmPassword"));
+  if (!values.name) errors.name = t("errors.nameMissing");
+  else if (values.name.length > MAX_NAME_LENGTH) errors.name = t("errors.nameTooLong");
   if (Object.keys(errors).length) return { errors, values };
 
   let email;
@@ -189,10 +195,10 @@ export async function acceptInviteWithNewAccountAction(_previousState, formData)
   } catch (error) {
     if (error instanceof InviteError) return { values, error: error.message };
     if (isUniqueViolation(error)) {
-      return { values, error: "An account with this email already exists. Sign in to accept the invitation." };
+      return { values, error: t("errors.accountExists") };
     }
     console.error("Accepting invite failed", error);
-    return { values, error: "We couldn't create your account. Please try again." };
+    return { values, error: t("errors.createFailed") };
   }
 
   let signedIn = true;
@@ -214,7 +220,7 @@ export async function acceptInviteAction(_previousState, formData) {
   } catch (error) {
     if (error instanceof InviteError) return { error: error.message };
     console.error("Accepting invite failed", error);
-    return { error: "We couldn't accept the invitation. Please try again." };
+    return { error: (await getTranslations("members"))("errors.acceptFailed") };
   }
   redirect("/");
 }

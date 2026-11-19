@@ -16,9 +16,9 @@ import { forecastView, goalPace, LOOKBACK_MONTHS, monthStart, savingsForecast, t
 
 /**
  * The forecast panel's labels (null when there's nothing to forecast), plus the goals and each goal's
- * recent pace (Map of goalId → pace or null), which the Goals page reuses for its cards.
+ * recent pace (Map of goalId → pace or null), which the Goals page reuses for its cards. Labels are in `locale`.
  */
-export async function loadSavingsForecast(householdId, { today, timezone, currency }) {
+export async function loadSavingsForecast(householdId, { today, timezone, currency, locale }) {
   // The last few full months (not the current one, which is still in progress).
   const history = { from: monthStart(today, -LOOKBACK_MONTHS), to: monthStart(today) };
   const [goals, recurring, categories, spending, firstExpenseOn, contributions] = await Promise.all([
@@ -57,6 +57,7 @@ export async function loadSavingsForecast(householdId, { today, timezone, curren
     goalsNeeded: needed.length ? Math.round(needed.reduce((sum, amount) => sum + amount * 100, 0)) / 100 : null,
     goalList: goals.map(item => ({ ...item, pace: paces.get(item.id) })),
     currency,
+    locale,
   });
   return { forecast, goals, paces };
 }

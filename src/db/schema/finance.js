@@ -7,6 +7,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -231,8 +232,12 @@ export const notification = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     type: varchar("type", { length: 40 }).notNull(),
+    // English text, kept for notifications created before `data` existed.
     title: varchar("title", { length: 160 }).notNull(),
     body: text("body"),
+    // The values the message is built from (names, amounts...), so it's shown in each
+    // reader's language. See renderNotification in lib/notification-messages.js.
+    data: jsonb("data"),
     link: text("link"),
     // Stops scheduled jobs from sending the same alert twice,
     // e.g. "budget:<categoryId>:2026-11:90".

@@ -5,6 +5,9 @@ import MarketPanelSkeleton from "@/components/Dashboard/MarketPanelSkeleton";
 import GoalsRemindersPanel from "@/components/Dashboard/GoalsRemindersPanel";
 import HeroSection from "@/components/Dashboard/HeroSection";
 import TopBar from "@/components/TopBar";
+import { dateLocale } from "@/i18n/config";
+import Messages from "@/i18n/MessagesProvider";
+import { getLocale } from "@/i18n/server";
 import { requireHousehold } from "@/lib/dal";
 import {
   billsByCategory,
@@ -26,7 +29,8 @@ const DASHBOARD_GOALS = 4;
 export default async function DashboardPage() {
   const { user, householdId, householdName, role, currency, timezone } = await requireHousehold();
   const canEdit = can(role, "finance:write");
-  const money = amount => formatMoney(amount, currency);
+  const locale = await getLocale();
+  const money = amount => formatMoney(amount, currency, locale);
   const today = todayIn(timezone);
   const month = currentMonthRange(timezone);
 
@@ -58,66 +62,68 @@ export default async function DashboardPage() {
     id: item.id,
     title: item.title,
     amountLabel: money(item.amount),
-    detail: [formatDay(item.spentOn), item.categoryName, item.paidByName].filter(Boolean).join(" · "),
+    detail: [formatDay(item.spentOn, locale), item.categoryName, item.paidByName].filter(Boolean).join(" · "),
   }));
   const goalRows = goals
     .filter(item => item.status === "active")
     .slice(0, DASHBOARD_GOALS)
-    .map(item => goalView(item, { currency, today }));
+    .map(item => goalView(item, { currency, today, locale }));
 
-  const dateLabel = new Intl.DateTimeFormat("en-GB", {
+  const dateLabel = new Intl.DateTimeFormat(dateLocale(locale), {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
     timeZone: timezone,
   }).format(new Date());
-  const monthLabel = formatMonth(month.start);
+  const monthLabel = formatMonth(month.start, locale);
 
   return (
-    <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
-      <main className="mx-auto flex w-full flex-col gap-4">
-        <TopBar
-          balanceLabel={money(net)}
-          balanceNegative={net < 0}
-          dateLabel={dateLabel}
-          currentUser={{ name: user.name, avatarUrl: user.image ?? null, role, householdName }}
-        />
-        <HeroSection
-          monthLabel={monthLabel}
-          incomeLabel={money(totals.income)}
-          spentLabel={money(spent)}
-          billsLabel={money(totals.expenses)}
-          netLabel={money(net)}
-          savingsRate={savingsRate}
-          incomeSourcesCount={recurring.filter(item => item.type === "income").length}
-        />
+    <Messages namespaces={["dashboard"]}>
+      <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
+        <main className="mx-auto flex w-full flex-col gap-4">
+          <TopBar
+            balanceLabel={money(net)}
+            balanceNegative={net < 0}
+            dateLabel={dateLabel}
+            currentUser={{ name: user.name, avatarUrl: user.image ?? null, role, householdName }}
+          />
+          <HeroSection
+            monthLabel={monthLabel}
+            incomeLabel={money(totals.income)}
+            spentLabel={money(spent)}
+            billsLabel={money(totals.expenses)}
+            netLabel={money(net)}
+            savingsRate={savingsRate}
+            incomeSourcesCount={recurring.filter(item => item.type === "income").length}
+          />
 
-        <section className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
-          <div className="min-h-0 space-y-4">
-            <ExpenseSection
-              categories={categories.map(({ id, name }) => ({ id, name }))}
-              members={members.map(({ userId, name }) => ({ userId, name }))}
-              currentUserId={user.id}
-              today={today}
-              canEdit={canEdit}
-              monthLabel={monthLabel}
-              categoryTotals={categoryTotals}
-              expenses={expenseRows}
-              currency={currency}
-            />
-          </div>
+          <section className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
+            <div className="min-h-0 space-y-4">
+              <ExpenseSection
+                categories={categories.map(({ id, name }) => ({ id, name }))}
+                members={members.map(({ userId, name }) => ({ userId, name }))}
+                currentUserId={user.id}
+                today={today}
+                canEdit={canEdit}
+                monthLabel={monthLabel}
+                categoryTotals={categoryTotals}
+                expenses={expenseRows}
+                currency={currency}
+              />
+            </div>
 
-          <div className="min-h-0 space-y-4">
-            <GoalsRemindersPanel goals={goalRows} />
-          </div>
-        </section>
+            <div className="min-h-0 space-y-4">
+              <GoalsRemindersPanel goals={goalRows} />
+            </div>
+          </section>
 
-        {/* Other services: streamed separately, so they never hold up the rest of the page. */}
-        <Suspense fallback={<MarketPanelSkeleton />}>
-          <MarketPanel currency={currency} timezone={timezone} />
-        </Suspense>
-      </main>
-    </div>
+          {/* Other services: streamed separately, so they never hold up the rest of the page. */}
+          <Suspense fallback={<MarketPanelSkeleton />}>
+            <MarketPanel currency={currency} timezone={timezone} />
+          </Suspense>
+        </main>
+      </div>
+    </Messages>
   );
 }

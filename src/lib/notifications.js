@@ -13,14 +13,15 @@ import { budgetAlertMessage, budgetDedupeKey, budgetThreshold } from "@/lib/noti
 export const NOTIFICATIONS_SHOWN = 50;
 
 /**
- * Sends one notification to each user. executor: db or a transaction. Users who already have a
+ * Sends one notification to each user. executor: db or a transaction. title/body are English;
+ * data (from lib/notification-messages.js) lets it be shown in each reader's language. Users who already have a
  * notification with the same dedupeKey are skipped. Returns true if anything was sent.
  */
-export async function notify(executor, { householdId, userIds, type, title, body = null, link = null, dedupeKey = null }) {
+export async function notify(executor, { householdId, userIds, type, title, body = null, data = null, link = null, dedupeKey = null }) {
   if (!userIds.length) return false;
   const sent = await executor
     .insert(notification)
-    .values(userIds.map(userId => ({ householdId, userId, type, title, body, link, dedupeKey })))
+    .values(userIds.map(userId => ({ householdId, userId, type, title, body, data, link, dedupeKey })))
     .onConflictDoNothing()
     .returning({ id: notification.id });
   if (!sent.length) return false;
@@ -105,6 +106,7 @@ export async function listNotifications(userId, householdId, { limit = NOTIFICAT
       type: notification.type,
       title: notification.title,
       body: notification.body,
+      data: notification.data,
       link: notification.link,
       readAt: notification.readAt,
       createdAt: notification.createdAt,

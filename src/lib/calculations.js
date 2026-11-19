@@ -1,11 +1,10 @@
 // Budget and goal calculations on plain data. No database or server-only imports, so these can be
 // used anywhere and unit-tested directly. The queries that feed them live in lib/finance.js.
-import { goalProjection, plural } from "@/lib/forecast";
+import { goalProjection } from "@/lib/forecast";
 import { formatDay, formatMoney, formatMonth } from "@/lib/format";
+import { goalsTranslator } from "@/lib/goal-messages";
 
 export const FREQUENCIES = ["weekly", "monthly", "yearly"];
-
-export const FREQUENCY_LABELS = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" };
 
 // How many times per month something with this frequency happens, on average.
 const PER_MONTH = { weekly: 52 / 12, monthly: 1, yearly: 1 / 12 };
@@ -66,40 +65,40 @@ export function monthlyNeeded(item, today) {
 }
 
 /** "At your recent pace (about €120 a month) you'd reach it in March 2027, in time for the target date." */
-function projectionLabel(projection, pace, money) {
-  if (projection.status === "new") return "A projected date appears after its first full month.";
-  if (projection.status === "stalled") {
-    return `Nothing added in the last ${plural(pace.months, "full month")}, so there's no projected date yet.`;
-  }
-  const when = `At your recent pace (about ${money(pace.monthly)} a month) you'd reach it in ${formatMonth(projection.reachMonth)}`;
-  if (projection.monthsLate === null) return `${when}.`;
-  if (projection.monthsLate === 0) return `${when}, in time for the target date.`;
-  return `${when}, ${plural(projection.monthsLate, "month")} after the target date.`;
+function projectionLabel(projection, pace, money, t, locale) {
+  if (projection.status === "new") return t("view.projectionNew");
+  if (projection.status === "stalled") return t("view.stalled", { count: pace.months });
+  const values = { amount: money(pace.monthly), month: formatMonth(projection.reachMonth, locale) };
+  if (projection.monthsLate === null) return t("view.reach", values);
+  if (projection.monthsLate === 0) return t("view.reachInTime", values);
+  return t("view.reachLate", { ...values, count: projection.monthsLate });
 }
 
 /**
  * A goal with display labels (money in the household currency, dates, progress, plan and,
- * when `pace` is given (see lib/forecast.js goalPace), a projected date).
+ * when `pace` is given (see lib/forecast.js goalPace), a projected date), in the UI language `locale`.
  */
-export function goalView(item, { currency, today, pace }) {
-  const money = amount => formatMoney(amount, currency);
+export function goalView(item, { currency, today, pace, locale }) {
+  const t = goalsTranslator(locale);
+  const money = amount => formatMoney(amount, currency, locale);
+  const day = isoDate => formatDay(isoDate, locale);
   const remaining = Math.max(0, item.targetAmount - item.saved);
   const reached = item.saved >= item.targetAmount;
 
   let planLabel = null;
   const needed = monthlyNeeded(item, today);
   if (needed !== null) {
-    planLabel = `Save about ${money(needed)} a month to reach it by ${formatDay(item.targetDate)}.`;
+    planLabel = t("view.saveAbout", { amount: money(needed), date: day(item.targetDate) });
   } else if (item.targetDate && !reached && item.status === "active") {
-    planLabel = `Target date ${formatDay(item.targetDate)} has passed; ${money(remaining)} still to go.`;
+    planLabel = t("view.datePassed", { date: day(item.targetDate), amount: money(remaining) });
   } else if (item.targetDate && !reached) {
-    planLabel = `Target date ${formatDay(item.targetDate)}.`;
+    planLabel = t("view.targetDate", { date: day(item.targetDate) });
   }
 
   let forecastLabel = null;
   if (pace !== undefined && !reached && item.status === "active") {
     const projection = goalProjection({ saved: item.saved, targetAmount: item.targetAmount, targetDate: item.targetDate, pace, today });
-    forecastLabel = projectionLabel(projection, pace, money);
+    forecastLabel = projectionLabel(projection, pace, money, t, locale);
   }
 
   return {
@@ -118,7 +117,7 @@ export function goalView(item, { currency, today, pace }) {
       id: entry.id,
       amount: entry.amount,
       amountLabel: `${entry.amount < 0 ? "−" : "+"}${money(Math.abs(entry.amount))}`,
-      dayLabel: formatDay(entry.contributedOn),
+      dayLabel: day(entry.contributedOn),
       userName: entry.userName,
       note: entry.note,
     })),

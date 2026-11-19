@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { signOutAction } from "@/lib/actions/auth";
-import { ROLE_LABELS } from "@/lib/permissions";
+import { useTranslations } from "@/i18n/client";
 
 function InitialsAvatar({ name, avatarUrl }) {
   const initials = name
@@ -26,10 +26,11 @@ function InitialsAvatar({ name, avatarUrl }) {
 
 // Labels (balance, date) are computed on the server in the household's currency and timezone.
 export default function TopBar({ balanceLabel, balanceNegative, dateLabel, currentUser }) {
+  const t = useTranslations("common");
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
-        <p className="text-xs font-medium tracking-widest text-slate-500 uppercase">Left this month</p>
+        <p className="text-xs font-medium tracking-widest text-slate-500 uppercase">{t("topBar.leftThisMonth")}</p>
         <p className={`text-2xl leading-tight font-bold ${balanceNegative ? "text-rose-300" : "text-emerald-300"}`}>{balanceLabel}</p>
       </div>
 
@@ -38,13 +39,13 @@ export default function TopBar({ balanceLabel, balanceNegative, dateLabel, curre
       <div className="flex shrink-0 items-center gap-2">
         <Link
           href="/account"
-          title="Your account"
+          title={t("topBar.yourAccount")}
           className="group flex items-center gap-3 rounded-2xl px-4 py-2 transition hover:border-cyan-400/30 hover:bg-white/10"
         >
           <div className="text-right">
             <p className="text-sm leading-tight font-semibold text-white transition-colors group-hover:text-cyan-300">{currentUser.name}</p>
             <p className="text-xs text-slate-400">
-              {[currentUser.householdName, ROLE_LABELS[currentUser.role]].filter(Boolean).join(" · ")}
+              {[currentUser.householdName, currentUser.role && t(`roles.${currentUser.role}`)].filter(Boolean).join(" · ")}
             </p>
           </div>
           <InitialsAvatar name={currentUser.name} avatarUrl={currentUser.avatarUrl} />
@@ -54,7 +55,7 @@ export default function TopBar({ balanceLabel, balanceNegative, dateLabel, curre
             type="submit"
             className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-rose-400/40 hover:text-white"
           >
-            Sign out
+            {t("topBar.signOut")}
           </button>
         </form>
       </div>

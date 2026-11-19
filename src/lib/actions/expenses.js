@@ -5,11 +5,12 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
+import { getLocale, getTranslations } from "@/i18n/server";
 import { category, expense, householdMember } from "@/db/schema";
 import { requirePermission } from "@/lib/dal";
 import { formatMoney, todayIn } from "@/lib/format";
 import { field, parseAmount, parseDate, UUID_PATTERN } from "@/lib/forms";
-import { announce } from "@/lib/live";
+import { announce, liveMessage } from "@/lib/live";
 import { checkBudgetAlert } from "@/lib/notifications";
 
 const MAX_TITLE_LENGTH = 120;
@@ -24,15 +25,16 @@ export async function addExpenseAction(_previousState, formData) {
     spentOn: field(formData, "spentOn"),
   };
   const today = todayIn(context.timezone);
+  const t = await getTranslations("dashboard");
 
   const errors = {};
-  if (!values.title) errors.title = "What was it for?";
-  else if (values.title.length > MAX_TITLE_LENGTH) errors.title = "That description is too long.";
+  if (!values.title) errors.title = t("actions.titleMissing");
+  else if (values.title.length > MAX_TITLE_LENGTH) errors.title = t("actions.titleTooLong");
   const amount = parseAmount(values.amount);
-  if (amount === null) errors.amount = "Enter an amount above zero, e.g. 45 or 12.50.";
+  if (amount === null) errors.amount = t("actions.amountInvalid");
   const spentOn = values.spentOn ? parseDate(values.spentOn) : today;
-  if (!spentOn) errors.spentOn = "Enter a valid date.";
-  else if (spentOn > today) errors.spentOn = "The date can't be in the future.";
+  if (!spentOn) errors.spentOn = t("actions.dateInvalid");
+  else if (spentOn > today) errors.spentOn = t("actions.dateFuture");
 
   const [foundCategory] = UUID_PATTERN.test(values.categoryId)
     ? await db
@@ -40,7 +42,7 @@ export async function addExpenseAction(_previousState, formData) {
         .from(category)
         .where(and(eq(category.id, values.categoryId), eq(category.householdId, context.householdId), eq(category.isArchived, false)))
     : [];
-  if (!foundCategory) errors.categoryId = "Choose a category.";
+  if (!foundCategory) errors.categoryId = t("actions.chooseCategory");
 
   let paidByUserId = null;
   if (values.paidByUserId) {
@@ -49,7 +51,7 @@ export async function addExpenseAction(_previousState, formData) {
       .from(householdMember)
       .where(and(eq(householdMember.householdId, context.householdId), eq(householdMember.userId, values.paidByUserId)));
     if (member) paidByUserId = member.userId;
-    else errors.paidByUserId = "Choose a household member.";
+    else errors.paidByUserId = t("actions.chooseMember");
   }
 
   if (Object.keys(errors).length) return { errors, values };
@@ -77,26 +79,31 @@ export async function addExpenseAction(_previousState, formData) {
   }
   revalidatePath("/");
   revalidatePath("/transactions");
-  await announce(context, "expenses", `${context.user.name} added ${values.title} (${formatMoney(amount, context.currency)})`);
+  await announce(
+    context,
+    "expenses",
+    liveMessage("expenseAdded", { name: context.user.name, title: values.title, amount, currency: context.currency }),
+  );
   // Keep category, payer and date for the next entry (people often log several at once).
   return {
-    success: `${values.title} (${formatMoney(amount, context.currency)}) added.`,
+    success: t("actions.added", { title: values.title, amount: formatMoney(amount, context.currency, await getLocale()) }),
     values: { categoryId: values.categoryId, paidByUserId: values.paidByUserId, spentOn: values.spentOn },
   };
 }
 
 export async function deleteExpenseAction(_previousState, formData) {
   const context = await requirePermission("finance:write");
+  const t = await getTranslations("dashboard");
   const expenseId = field(formData, "expenseId");
-  if (!UUID_PATTERN.test(expenseId)) return { error: "This expense no longer exists." };
+  if (!UUID_PATTERN.test(expenseId)) return { error: t("actions.notFound") };
 
   const removed = await db
     .delete(expense)
     .where(and(eq(expense.id, expenseId), eq(expense.householdId, context.householdId)))
     .returning({ id: expense.id, title: expense.title });
-  if (!removed.length) return { error: "This expense no longer exists." };
+  if (!removed.length) return { error: t("actions.notFound") };
   revalidatePath("/");
   revalidatePath("/transactions");
-  await announce(context, "expenses", `${context.user.name} deleted ${removed[0].title}`);
-  return { success: "Expense deleted." };
+  await announce(context, "expenses", liveMessage("expenseDeleted", { name: context.user.name, title: removed[0].title }));
+  return { success: t("actions.deleted") };
 }

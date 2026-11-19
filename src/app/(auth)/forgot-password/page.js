@@ -1,15 +1,21 @@
 import ForgotPasswordForm from "@/components/Auth/ForgotPasswordForm";
+import Messages from "@/i18n/MessagesProvider";
+import { getTranslations } from "@/i18n/server";
 
-export const metadata = { title: "Forgot password · Household Finance Hub" };
+export async function generateMetadata() {
+  const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
+  return { title: common("pageTitle", { page: t("meta.forgotPassword") }) };
+}
 
 export default async function ForgotPasswordPage({ searchParams }) {
   const { email } = await searchParams;
+  const t = await getTranslations("auth");
 
   return (
-    <>
-      <h1 className="text-2xl font-semibold text-slate-300">Forgot your password?</h1>
-      <p className="mt-1 mb-6 text-sm text-slate-400">Enter your email and we’ll send you a link to choose a new one.</p>
+    <Messages namespaces={["auth"]}>
+      <h1 className="text-2xl font-semibold text-slate-300">{t("forgot.title")}</h1>
+      <p className="mt-1 mb-6 text-sm text-slate-400">{t("forgot.intro")}</p>
       <ForgotPasswordForm email={typeof email === "string" ? email : ""} />
-    </>
+    </Messages>
   );
 }

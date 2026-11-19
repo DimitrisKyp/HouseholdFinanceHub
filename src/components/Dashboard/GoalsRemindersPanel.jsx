@@ -1,18 +1,20 @@
 import Link from "next/link";
+import { getTranslations } from "@/i18n/server";
 
-export default function GoalsCompactPanel({ goals }) {
+export default async function GoalsCompactPanel({ goals }) {
+  const t = await getTranslations("dashboard");
   return (
     <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl shadow-black/10 backdrop-blur">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-white">Goals</h2>
-          <p className="mt-0.5 text-xs text-slate-400">Current progress at a glance</p>
+          <h2 className="text-base font-semibold text-white">{t("goals.title")}</h2>
+          <p className="mt-0.5 text-xs text-slate-400">{t("goals.subtitle")}</p>
         </div>
         <Link
           href="/goals"
           className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-400/40 hover:text-white"
         >
-          Manage →
+          {t("goals.manage")}
         </Link>
       </div>
       {goals.length ? (
@@ -35,7 +37,7 @@ export default function GoalsCompactPanel({ goals }) {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-slate-500">No active goals yet.</p>
+        <p className="text-sm text-slate-500">{t("goals.empty")}</p>
       )}
     </section>
   );

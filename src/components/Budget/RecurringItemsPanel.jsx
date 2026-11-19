@@ -4,33 +4,15 @@
 import { useActionState } from "react";
 import TextField, { FormError, FormSuccess, InlineMessage, SelectField } from "@/components/ui/Field";
 import { buttonClasses } from "@/components/ui/Button";
+import { useTranslations } from "@/i18n/client";
 import { addRecurringItemAction, deleteRecurringItemAction, updateBillCategoryAction } from "@/lib/actions/budget";
 
-const FREQUENCY_OPTIONS = [
-  ["monthly", "Monthly"],
-  ["weekly", "Weekly"],
-  ["yearly", "Yearly"],
-];
+const FREQUENCIES = ["monthly", "weekly", "yearly"];
 
+// Texts per type are under recurring.income / recurring.expense in the "budget" messages.
 const COPY = {
-  income: {
-    titleLabel: "Description",
-    titlePlaceholder: "Main salary",
-    amountPlaceholder: "2400",
-    submit: "Add income",
-    button: "success",
-    amountColor: "text-emerald-200",
-    empty: "No income added yet.",
-  },
-  expense: {
-    titleLabel: "Bill",
-    titlePlaceholder: "Rent",
-    amountPlaceholder: "850",
-    submit: "Add bill",
-    button: "danger",
-    amountColor: "text-rose-200",
-    empty: "No recurring bills added yet.",
-  },
+  income: { amountPlaceholder: "2400", button: "success", amountColor: "text-emerald-200" },
+  expense: { amountPlaceholder: "850", button: "danger", amountColor: "text-rose-200" },
 };
 
 function AddItemForm({ type, categories, members }) {
@@ -38,6 +20,8 @@ function AddItemForm({ type, categories, members }) {
   const [state, formAction, pending] = useActionState(addRecurringItemAction, { values: { frequency: "monthly" } });
   const values = state.values ?? {};
   const prefix = `${type}-`;
+  const t = useTranslations("budget");
+  const common = useTranslations("common");
 
   return (
     <form action={formAction} className="grid gap-3 md:grid-cols-2" noValidate>
@@ -49,8 +33,8 @@ function AddItemForm({ type, categories, members }) {
       <TextField
         id={`${prefix}title`}
         name="title"
-        label={copy.titleLabel}
-        placeholder={copy.titlePlaceholder}
+        label={t(`recurring.${type}.titleLabel`)}
+        placeholder={t(`recurring.${type}.titlePlaceholder`)}
         maxLength={120}
         defaultValue={values.title}
         error={state.errors?.title}
@@ -58,7 +42,7 @@ function AddItemForm({ type, categories, members }) {
       <TextField
         id={`${prefix}amount`}
         name="amount"
-        label="Amount"
+        label={t("recurring.amount")}
         inputMode="decimal"
         placeholder={copy.amountPlaceholder}
         defaultValue={values.amount}
@@ -68,13 +52,13 @@ function AddItemForm({ type, categories, members }) {
         key={`frequency-${values.frequency}`}
         id={`${prefix}frequency`}
         name="frequency"
-        label="How often"
+        label={t("recurring.howOften")}
         defaultValue={values.frequency ?? "monthly"}
         error={state.errors?.frequency}
       >
-        {FREQUENCY_OPTIONS.map(([value, label]) => (
+        {FREQUENCIES.map(value => (
           <option key={value} value={value}>
-            {label}
+            {t(`recurring.frequencies.${value}`)}
           </option>
         ))}
       </SelectField>
@@ -83,12 +67,12 @@ function AddItemForm({ type, categories, members }) {
           key={`category-${values.categoryId}`}
           id={`${prefix}category`}
           name="categoryId"
-          label="Category"
+          label={t("recurring.category")}
           defaultValue={values.categoryId ?? ""}
           error={state.errors?.categoryId}
         >
           <option value="" disabled>
-            Choose…
+            {t("recurring.choose")}
           </option>
           {categories.map(item => (
             <option key={item.id} value={item.id}>
@@ -101,11 +85,11 @@ function AddItemForm({ type, categories, members }) {
           key={`member-${values.memberUserId}`}
           id={`${prefix}member`}
           name="memberUserId"
-          label="Whose income"
+          label={t("recurring.whoseIncome")}
           defaultValue={values.memberUserId ?? ""}
           error={state.errors?.memberUserId}
         >
-          <option value="">Shared / not set</option>
+          <option value="">{t("recurring.shared")}</option>
           {members.map(member => (
             <option key={member.userId} value={member.userId}>
               {member.name}
@@ -114,7 +98,7 @@ function AddItemForm({ type, categories, members }) {
         </SelectField>
       )}
       <button type="submit" disabled={pending} className={buttonClasses({ variant: copy.button, className: "md:col-span-2" })}>
-        {pending ? "Saving…" : copy.submit}
+        {pending ? common("saving") : t(`recurring.${type}.submit`)}
       </button>
     </form>
   );
@@ -125,16 +109,18 @@ const smallButton =
 
 // Change which category a bill belongs to: logged expenses in that category count against it.
 function BillCategoryForm({ item, categories, formAction, pending }) {
+  const t = useTranslations("budget");
   // An archived category isn't in the list; keep it selectable so the form shows the truth.
   const options =
     categories.some(category => category.id === item.categoryId) || !item.categoryId
       ? categories
-      : [...categories, { id: item.categoryId, name: item.categoryName ?? "Archived category" }];
+      : [...categories, { id: item.categoryId, name: item.categoryName ?? t("recurring.archivedCategory") }];
   return (
     <form action={formAction} className="mt-2 flex items-center gap-2">
       <input type="hidden" name="itemId" value={item.id} />
       <label className="text-xs text-slate-400" htmlFor={`bill-category-${item.id}`}>
-        Category<span className="sr-only"> for {item.title}</span>
+        {t("recurring.category")}
+        <span className="sr-only">{t("recurring.categoryFor", { title: item.title })}</span>
       </label>
       <select
         id={`bill-category-${item.id}`}
@@ -144,7 +130,7 @@ function BillCategoryForm({ item, categories, formAction, pending }) {
       >
         {item.categoryId ? null : (
           <option value="" disabled>
-            Choose…
+            {t("recurring.choose")}
           </option>
         )}
         {options.map(category => (
@@ -153,8 +139,8 @@ function BillCategoryForm({ item, categories, formAction, pending }) {
           </option>
         ))}
       </select>
-      <button type="submit" disabled={pending} aria-label={`Save category for ${item.title}`} className={smallButton}>
-        {pending ? "…" : "Save"}
+      <button type="submit" disabled={pending} aria-label={t("recurring.saveCategoryFor", { title: item.title })} className={smallButton}>
+        {pending ? "…" : t("recurring.save")}
       </button>
     </form>
   );
@@ -163,6 +149,7 @@ function BillCategoryForm({ item, categories, formAction, pending }) {
 function ItemRow({ item, canEdit, amountColor, categories }) {
   const [state, formAction, pending] = useActionState(deleteRecurringItemAction, {});
   const [categoryState, categoryAction, categoryPending] = useActionState(updateBillCategoryAction, {});
+  const t = useTranslations("budget");
 
   return (
     <li className="rounded-xl border border-white/5 bg-white/5 px-4 py-3">
@@ -174,23 +161,25 @@ function ItemRow({ item, canEdit, amountColor, categories }) {
         <div className="flex shrink-0 items-center gap-3">
           <div className="text-right">
             <p className={`font-semibold ${amountColor}`}>{item.amountLabel}</p>
-            {item.monthlyLabel ? <p className="text-xs text-slate-500">≈ {item.monthlyLabel} / month</p> : null}
+            {item.monthlyLabel ? (
+              <p className="text-xs text-slate-500">{t("recurring.monthlyEquivalent", { amount: item.monthlyLabel })}</p>
+            ) : null}
           </div>
           {canEdit ? (
             <form
               action={formAction}
               onSubmit={event => {
-                if (!window.confirm(`Remove ${item.title}?`)) event.preventDefault();
+                if (!window.confirm(t("recurring.confirmRemove", { title: item.title }))) event.preventDefault();
               }}
             >
               <input type="hidden" name="itemId" value={item.id} />
               <button
                 type="submit"
                 disabled={pending}
-                aria-label={`Remove ${item.title}`}
+                aria-label={t("recurring.removeItem", { title: item.title })}
                 className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-rose-400/50 hover:text-rose-200 disabled:opacity-60"
               >
-                {pending ? "…" : "Remove"}
+                {pending ? "…" : t("recurring.remove")}
               </button>
             </form>
           ) : null}
@@ -206,6 +195,7 @@ function ItemRow({ item, canEdit, amountColor, categories }) {
 
 export default function RecurringItemsPanel({ type, title, subtitle, totalLabel, items, categories = [], members = [], canEdit }) {
   const copy = COPY[type];
+  const t = useTranslations("budget");
 
   return (
     <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
@@ -216,7 +206,7 @@ export default function RecurringItemsPanel({ type, title, subtitle, totalLabel,
         </div>
         <div className="shrink-0 text-right">
           <p className={`font-semibold ${copy.amountColor}`}>{totalLabel}</p>
-          <p className="text-xs text-slate-500">per month</p>
+          <p className="text-xs text-slate-500">{t("recurring.perMonth")}</p>
         </div>
       </div>
 
@@ -239,7 +229,7 @@ export default function RecurringItemsPanel({ type, title, subtitle, totalLabel,
           ))}
         </ul>
       ) : (
-        <p className="mt-4 text-sm text-slate-500">{copy.empty}</p>
+        <p className="mt-4 text-sm text-slate-500">{t(`recurring.${type}.empty`)}</p>
       )}
     </section>
   );

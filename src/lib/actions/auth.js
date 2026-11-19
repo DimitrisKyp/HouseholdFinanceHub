@@ -10,22 +10,25 @@ import { db } from "@/db";
 import { user as userTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getMembership, requireUser } from "@/lib/dal";
-import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, newPasswordErrors, passwordField } from "@/lib/forms";
+import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, passwordField } from "@/lib/forms";
 import { createHouseholdWithOwner } from "@/lib/households";
+import { translatedPasswordErrors } from "@/lib/password-errors";
 import { checkEmailPath, safeRedirectPath, verificationCallbackPath } from "@/lib/redirects";
 import { clientIp } from "@/lib/request";
 import { blockedFor, clearAttempts, countAttempt, isTooSoon, LIMITS, tooManyMessage, withMinimumDuration } from "@/lib/throttle";
-import { rememberTheme, savedTheme } from "@/lib/preferences";
+import { getLocale, getTranslations, rememberLocale } from "@/i18n/server";
+import { rememberTheme, saveLocale, savedLocale, savedTheme } from "@/lib/preferences";
 
 const MAX_NAME_LENGTH = 100;
 
-function validateHouseholdName(name) {
-  if (!name) return 'Give your household a name, e.g. "Our home".';
-  if (name.length > MAX_NAME_LENGTH) return `Keep it under ${MAX_NAME_LENGTH} characters.`;
+function validateHouseholdName(name, t) {
+  if (!name) return t("errors.householdNameMissing");
+  if (name.length > MAX_NAME_LENGTH) return t("errors.householdNameTooLong", { max: MAX_NAME_LENGTH });
   return null;
 }
 
 export async function signUpAction(_previousState, formData) {
+  const t = await getTranslations("auth");
   const values = {
     name: field(formData, "name"),
     email: field(formData, "email").toLowerCase(),
@@ -34,17 +37,17 @@ export async function signUpAction(_previousState, formData) {
   const password = passwordField(formData, "password");
   const confirmPassword = passwordField(formData, "confirmPassword");
 
-  const errors = newPasswordErrors(password, confirmPassword);
-  if (!values.name) errors.name = "Enter your name.";
-  else if (values.name.length > MAX_NAME_LENGTH) errors.name = "That name is too long.";
-  if (!EMAIL_PATTERN.test(values.email)) errors.email = "Enter a valid email address.";
-  const householdError = validateHouseholdName(values.householdName);
+  const errors = translatedPasswordErrors(t, password, confirmPassword);
+  if (!values.name) errors.name = t("errors.nameMissing");
+  else if (values.name.length > MAX_NAME_LENGTH) errors.name = t("errors.nameTooLong");
+  if (!EMAIL_PATTERN.test(values.email)) errors.email = t("errors.emailInvalid");
+  const householdError = validateHouseholdName(values.householdName, t);
   if (householdError) errors.householdName = householdError;
   if (Object.keys(errors).length) return { errors, values };
 
   const ipKey = `signup:${await clientIp()}`;
   const waitSignUp = blockedFor(ipKey, LIMITS.signUpPerIp);
-  if (waitSignUp) return { values, error: tooManyMessage(waitSignUp) };
+  if (waitSignUp) return { values, error: tooManyMessage(waitSignUp, t) };
   countAttempt(ipKey, LIMITS.signUpPerIp);
 
   let result;
@@ -58,7 +61,7 @@ export async function signUpAction(_previousState, formData) {
     });
   } catch (error) {
     console.error("Sign-up failed", error);
-    return { values, error: "We couldn't create your account. Please try again." };
+    return { values, error: t("errors.signUpFailed") };
   }
 
   // Only a real, newly created user gets a household (the fake one isn't in the database).
@@ -70,6 +73,12 @@ export async function signUpAction(_previousState, formData) {
       // Not fatal: after confirming their email they land on onboarding and can retry.
       console.error("Creating household failed", error);
     }
+    // Keep the language they signed up in, so it follows them to other devices.
+    try {
+      await saveLocale(created.id, await getLocale());
+    } catch (error) {
+      console.error("Saving the language failed", error);
+    }
   }
 
   // Same page either way.
@@ -77,18 +86,19 @@ export async function signUpAction(_previousState, formData) {
 }
 
 export async function signInAction(_previousState, formData) {
+  const t = await getTranslations("auth");
   const values = { email: field(formData, "email").toLowerCase() };
   const password = passwordField(formData, "password");
 
   if (!values.email || !password) {
-    return { values, error: "Enter your email and password." };
+    return { values, error: t("errors.signInMissing") };
   }
 
   // Password guessing: limited per account and per address (only failed attempts count).
   const emailKey = `signin:email:${values.email}`;
   const ipKey = `signin:ip:${await clientIp()}`;
   const wait = Math.max(blockedFor(emailKey, LIMITS.signInPerEmail), blockedFor(ipKey, LIMITS.signInPerIp));
-  if (wait) return { values, error: tooManyMessage(wait) };
+  if (wait) return { values, error: tooManyMessage(wait, t) };
 
   const next = safeRedirectPath(formData.get("next"));
   let needsVerification = false;
@@ -109,24 +119,27 @@ export async function signInAction(_previousState, formData) {
       countAttempt(emailKey, LIMITS.signInPerEmail);
       countAttempt(ipKey, LIMITS.signInPerIp);
       // Same message whether the email or the password is wrong, so accounts can't be probed.
-      return { values, error: "Incorrect email or password." };
+      return { values, error: t("errors.signInWrong") };
     }
   }
 
   clearAttempts(emailKey);
   if (needsVerification) redirect(checkEmailPath(values.email, "sign-in"));
-  // Bring the theme chosen on another device to this browser.
+  // Bring the theme and language chosen on another device to this browser.
   const theme = signedIn?.user ? await savedTheme(signedIn.user.id) : null;
   if (theme) await rememberTheme(theme);
+  const locale = signedIn?.user ? await savedLocale(signedIn.user.id) : null;
+  if (locale) await rememberLocale(locale);
   redirect(next);
 }
 
 export async function resendVerificationAction(_previousState, formData) {
+  const t = await getTranslations("auth");
   const email = field(formData, "email").toLowerCase();
-  if (!EMAIL_PATTERN.test(email)) return { error: "Enter a valid email address." };
+  if (!EMAIL_PATTERN.test(email)) return { error: t("errors.emailInvalid") };
 
   if (isTooSoon(`verify:${email}`, EMAIL_COOLDOWN_MS)) {
-    return { error: "We just sent one. Please wait a minute before asking again." };
+    return { error: t("errors.justSent") };
   }
 
   try {
@@ -135,7 +148,7 @@ export async function resendVerificationAction(_previousState, formData) {
     await withMinimumDuration(1500, () => auth.api.sendVerificationEmail({ body: { email, callbackURL: verificationCallbackPath() } }));
   } catch (error) {
     console.error("Resending verification email failed", error);
-    return { error: "We couldn't send the email. Please try again later." };
+    return { error: t("errors.sendFailed") };
   }
 
   return { sent: true };
@@ -150,15 +163,16 @@ export async function createHouseholdAction(_previousState, formData) {
   const user = await requireUser();
   if (await getMembership(user.id)) redirect("/");
 
+  const t = await getTranslations("auth");
   const values = { householdName: field(formData, "householdName") };
-  const householdError = validateHouseholdName(values.householdName);
+  const householdError = validateHouseholdName(values.householdName, t);
   if (householdError) return { values, errors: { householdName: householdError } };
 
   try {
     await createHouseholdWithOwner({ userId: user.id, name: values.householdName });
   } catch (error) {
     console.error("Creating household failed", error);
-    return { values, error: "We couldn't create your household. Please try again." };
+    return { values, error: t("errors.createHouseholdFailed") };
   }
 
   redirect("/");

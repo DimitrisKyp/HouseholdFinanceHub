@@ -1,18 +1,18 @@
 import Link from "next/link";
+import { rich } from "@/components/Auth/rich";
 import { AcceptInviteButton, NewAccountInviteForm } from "@/components/Invite/AcceptInviteForms";
+import Messages from "@/i18n/MessagesProvider";
+import { getTranslations } from "@/i18n/server";
 import { signOutAction } from "@/lib/actions/auth";
 import { getMembership, getSession } from "@/lib/dal";
 import { getInviteByToken } from "@/lib/invites";
-import { ROLE_LABELS } from "@/lib/permissions";
 import { buttonClasses } from "@/components/ui/Button";
 
 // The token is in the URL: don't leak it to other sites through the Referer header.
-export const metadata = { title: "Invitation · Household Finance Hub", referrer: "no-referrer" };
-
-const ROLE_SUMMARY = {
-  editor: "You'll be able to add and edit expenses, budgets and goals.",
-  viewer: "You'll be able to see the household's budgets, expenses and goals.",
-};
+export async function generateMetadata() {
+  const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
+  return { title: common("pageTitle", { page: t("meta.invite") }), referrer: "no-referrer" };
+}
 
 function Notice({ title, children }) {
   return (
@@ -24,48 +24,53 @@ function Notice({ title, children }) {
 }
 
 const linkClass = "text-cyan-300 hover:text-cyan-200";
+const strong = value => <span className="font-medium text-white">{value}</span>;
 
 export default async function InvitePage({ params }) {
   const { token } = await params;
   const invite = await getInviteByToken(token);
+  const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
 
   if (!invite) {
     return (
-      <Notice title="Invitation not found">
-        <p>This link isn’t valid. Make sure you copied the whole link from the email.</p>
+      <Notice title={t("invite.notFoundTitle")}>
+        <p>{t("invite.notFoundBody")}</p>
       </Notice>
     );
   }
   if (invite.status === "accepted") {
     return (
-      <Notice title="Already accepted">
+      <Notice title={t("invite.acceptedTitle")}>
         <p>
-          This invitation has already been used.{" "}
+          {t("invite.acceptedBody")}{" "}
           <Link href="/sign-in" className={linkClass}>
-            Sign in
+            {t("invite.acceptedSignIn")}
           </Link>{" "}
-          to open the household.
+          {t("invite.acceptedRest")}
         </p>
       </Notice>
     );
   }
   if (invite.status === "revoked" || invite.status === "expired") {
+    const expired = invite.status === "expired";
     return (
-      <Notice title={invite.status === "expired" ? "Invitation expired" : "Invitation cancelled"}>
+      <Notice title={expired ? t("invite.expiredTitle") : t("invite.revokedTitle")}>
         <p>
-          {invite.status === "expired" ? "This invitation has expired." : "This invitation was cancelled."} Ask {invite.inviterName} to send
-          you a new one.
+          {expired ? t("invite.expiredBody") : t("invite.revokedBody")} {t("invite.askNew", { name: invite.inviterName })}
         </p>
       </Notice>
     );
   }
 
+  const invitedAs = invite.role === "viewer" ? "invite.invitedAsViewer" : "invite.invitedAsEditor";
   const intro = (
     <>
-      <h1 className="text-2xl font-semibold text-slate-300">Join {invite.householdName}</h1>
+      <h1 className="text-2xl font-semibold text-slate-300">{t("invite.join", { household: invite.householdName })}</h1>
       <p className="mt-1 mb-6 text-sm leading-6 text-slate-400">
-        {invite.inviterName} invited you as {invite.role === "viewer" ? "a" : "an"}{" "}
-        <span className="font-medium text-slate-200">{ROLE_LABELS[invite.role]}</span>. {ROLE_SUMMARY[invite.role]}
+        {rich(t(invitedAs, { inviter: invite.inviterName }), {
+          role: <span className="font-medium text-slate-200">{common(`roles.${invite.role}`)}</span>,
+        })}{" "}
+        {t(`invite.summary.${invite.role === "viewer" ? "viewer" : "editor"}`)}
       </p>
     </>
   );
@@ -79,16 +84,13 @@ export default async function InvitePage({ params }) {
         <>
           {intro}
           <div className="space-y-4 text-sm leading-6 text-slate-300">
-            <p>
-              You’re signed in as <span className="font-medium text-white">{signedInEmail}</span>, but this invitation is for{" "}
-              <span className="font-medium text-white">{invite.email}</span>. Sign out, then open the link from the email again.
-            </p>
+            <p>{rich(t("invite.wrongAccount"), { signedIn: strong(signedInEmail), invited: strong(invite.email) })}</p>
             <form action={signOutAction}>
               <button
                 type="submit"
                 className="w-full rounded-xl border border-white/10 px-4 py-3 font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
               >
-                Sign out
+                {t("signOut")}
               </button>
             </form>
           </div>
@@ -100,19 +102,19 @@ export default async function InvitePage({ params }) {
         <>
           {intro}
           <p className="text-sm leading-6 text-amber-200">
-            Your account already belongs to a household. Being in more than one household isn’t supported yet.{" "}
+            {t("invite.alreadyMember")}{" "}
             <Link href="/" className={linkClass}>
-              Go to your dashboard
+              {t("invite.goToDashboard")}
             </Link>
           </p>
         </>
       );
     }
     return (
-      <>
+      <Messages namespaces={["auth"]}>
         {intro}
         <AcceptInviteButton token={token} householdName={invite.householdName} />
-      </>
+      </Messages>
     );
   }
 
@@ -120,23 +122,21 @@ export default async function InvitePage({ params }) {
     return (
       <>
         {intro}
-        <p className="mb-4 text-sm leading-6 text-slate-300">
-          There’s already an account for <span className="font-medium text-white">{invite.email}</span>. Sign in to accept.
-        </p>
+        <p className="mb-4 text-sm leading-6 text-slate-300">{rich(t("invite.accountExists"), { email: strong(invite.email) })}</p>
         <Link
           href={`/sign-in?next=${encodeURIComponent(`/invite/${token}`)}`}
           className={buttonClasses({ variant: "primary", size: "md", block: true })}
         >
-          Sign in to accept
+          {t("invite.signInToAccept")}
         </Link>
       </>
     );
   }
 
   return (
-    <>
+    <Messages namespaces={["auth"]}>
       {intro}
       <NewAccountInviteForm token={token} email={invite.email} />
-    </>
+    </Messages>
   );
 }

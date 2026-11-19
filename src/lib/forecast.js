@@ -2,6 +2,7 @@
 // the household's recent pace. Pure functions on plain data ("YYYY-MM-DD" strings and numbers),
 // so they're easy to unit-test. The queries that feed them live in lib/finance.js.
 import { formatMoney } from "@/lib/format";
+import { goalsTranslator } from "@/lib/goal-messages";
 
 /** How many full months of history the forecast looks back over. */
 export const LOOKBACK_MONTHS = 3;
@@ -115,20 +116,17 @@ export function goalsOutlook(goals, months) {
   return { later: cents(later), monthly: cents(monthly) };
 }
 
-/** "1 month", "3 months". */
-export const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
-
 /**
  * One "In N months" tile. With goals that have a recent pace, it shows what they'd realistically hold,
  * and what saving everything left over would add; otherwise the left-over total. A shortfall stays a shortfall.
  */
-function horizonView(horizon, outlook, money) {
-  if (horizon.total < 0) return { months: horizon.months, valueLabel: money(horizon.total), detail: "Shortfall if nothing changes" };
-  if (!outlook) return { months: horizon.months, valueLabel: money(horizon.total), detail: "If you put all that's left over aside" };
+function horizonView(horizon, outlook, money, t) {
+  if (horizon.total < 0) return { months: horizon.months, valueLabel: money(horizon.total), detail: t("forecast.shortfall") };
+  if (!outlook) return { months: horizon.months, valueLabel: money(horizon.total), detail: t("forecast.allAside") };
   return {
     months: horizon.months,
     valueLabel: money(outlook.later),
-    detail: `In your goals at your recent pace of ${money(outlook.monthly)} a month. Saving all that's left over would add ${money(horizon.total)}.`,
+    detail: t("forecast.inGoals", { pace: money(outlook.monthly), total: money(horizon.total) }),
   };
 }
 
@@ -136,18 +134,20 @@ function horizonView(horizon, outlook, money) {
  * Display labels for the forecast panel, or null when there's no forecast.
  * goalsNeeded: total a month the active goals with a target date need (null if there are none).
  * goalList: the goals with their pace (see goalsOutlook), for the "In N months" tiles.
+ * locale: the UI language for the wording and amounts.
  */
-export function forecastView({ forecast, income, bills, spending, goalsNeeded, currency, goalList = [] }) {
+export function forecastView({ forecast, income, bills, spending, goalsNeeded, currency, goalList = [], locale }) {
   if (!forecast) return null;
-  const money = amount => formatMoney(amount, currency);
-  const spendingLabel = spending.basis === "history" ? "typical spending" : "planned spending";
+  const t = goalsTranslator(locale);
+  const money = amount => formatMoney(amount, currency, locale);
+  const spendingLabel = spending.basis === "history" ? t("forecast.typical") : t("forecast.planned");
 
   let goals = null;
   if (goalsNeeded !== null) {
     const spare = cents(forecast.monthly - goalsNeeded);
     goals = {
       neededLabel: money(goalsNeeded),
-      verdict: spare >= 0 ? `Covered, with ${money(spare)} a month to spare` : `${money(-spare)} a month more than is left over`,
+      verdict: spare >= 0 ? t("forecast.covered", { amount: money(spare) }) : t("forecast.moreThanLeft", { amount: money(-spare) }),
     };
   }
 
@@ -155,13 +155,16 @@ export function forecastView({ forecast, income, bills, spending, goalsNeeded, c
     monthlyLabel: money(forecast.monthly),
     monthlyNegative: forecast.monthly < 0,
     horizons: forecast.horizons.map(horizon =>
-      horizonView(horizon, forecast.monthly < 0 ? null : goalsOutlook(goalList, horizon.months), money),
+      horizonView(horizon, forecast.monthly < 0 ? null : goalsOutlook(goalList, horizon.months), money, t),
     ),
-    breakdown: `Income ${money(income)} − fixed bills ${money(bills)} − ${spendingLabel} ${money(spending.amount)} = ${money(forecast.monthly)} a month.`,
-    basisNote:
-      spending.basis === "history"
-        ? `Typical spending is the average of the last ${plural(spending.months, "full month")} of logged expenses. In a category with a fixed bill, only spending above the bill counts, so a bill you also log as an expense isn't counted twice.`
-        : "No full month of expenses is logged yet, so your category limits stand in for spending (above any fixed bill in the same category).",
+    breakdown: t("forecast.breakdown", {
+      income: money(income),
+      bills: money(bills),
+      spendingLabel,
+      spending: money(spending.amount),
+      monthly: money(forecast.monthly),
+    }),
+    basisNote: spending.basis === "history" ? t("forecast.basisHistory", { count: spending.months }) : t("forecast.basisLimits"),
     goals,
   };
 }

@@ -1,0 +1,15 @@
+{
+  "loading": "Loading…",
+  "somethingWrong": "Something went wrong",
+  "couldntLoad": "We couldn't load this page.",
+  "temporary": "It may be a temporary problem with the connection or the database. Try again, and if it keeps happening, come back later.",
+  "reference": "Reference: {digest}",
+  "tryAgain": "Try again",
+  "trying": "Trying…",
+  "goToDashboard": "Go to dashboard",
+  "notFound": {
+    "metaTitle": "Page not found",
+    "title": "Page not found",
+    "body": "The page you're looking for doesn't exist or has moved."
+  }
+}

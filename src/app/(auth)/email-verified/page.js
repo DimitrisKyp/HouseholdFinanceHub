@@ -1,19 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import ResendVerificationForm from "@/components/Auth/ResendVerificationForm";
+import Messages from "@/i18n/MessagesProvider";
+import { getTranslations } from "@/i18n/server";
 import { getSession } from "@/lib/dal";
 import { safeRedirectPath } from "@/lib/redirects";
 
-export const metadata = { title: "Confirm email · Household Finance Hub" };
+export async function generateMetadata() {
+  const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
+  return { title: common("pageTitle", { page: t("meta.confirmEmail") }) };
+}
 
 // Better Auth sends the confirmation link here after checking it: with ?error=... if the link
 // was bad, otherwise with the user already logged in.
-const ERROR_MESSAGES = {
-  TOKEN_EXPIRED: "This confirmation link has expired.",
-  INVALID_TOKEN: "This confirmation link isn’t valid. It may have been copied incompletely.",
-  USER_NOT_FOUND: "We couldn’t find the account for this link.",
-  INVALID_USER: "This link belongs to a different account than the one you’re signed in to.",
-};
+const KNOWN_ERRORS = ["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND", "INVALID_USER"];
 
 export default async function EmailVerifiedPage({ searchParams }) {
   const { error, next } = await searchParams;
@@ -24,19 +24,22 @@ export default async function EmailVerifiedPage({ searchParams }) {
     redirect("/sign-in");
   }
 
-  const message = ERROR_MESSAGES[error] ?? "We couldn’t confirm your email with this link.";
+  const t = await getTranslations("auth");
+  const message = t(`emailVerified.errors.${KNOWN_ERRORS.includes(error) ? error : "other"}`);
 
   return (
-    <>
-      <h1 className="text-2xl font-semibold">Link didn’t work</h1>
-      <p className="mt-3 mb-6 text-sm leading-6 text-slate-300">{message} Enter your email and we’ll send you a new one.</p>
+    <Messages namespaces={["auth"]}>
+      <h1 className="text-2xl font-semibold">{t("linkFailed")}</h1>
+      <p className="mt-3 mb-6 text-sm leading-6 text-slate-300">
+        {message} {t("emailVerified.sendNew")}
+      </p>
       <ResendVerificationForm />
       <p className="mt-6 text-center text-sm text-slate-400">
-        Already confirmed?{" "}
+        {t("alreadyConfirmed")}{" "}
         <Link href="/sign-in" className="text-cyan-300 hover:text-cyan-200">
-          Sign in
+          {t("signIn")}
         </Link>
       </p>
-    </>
+    </Messages>
   );
 }

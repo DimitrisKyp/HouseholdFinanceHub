@@ -5,9 +5,11 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { buttonClasses } from "@/components/ui/Button";
+import { useTranslations } from "@/i18n/client";
 import { reportClientError } from "@/lib/telemetry-client";
 
 export default function ErrorState({ error, onRetry, homeHref = "/" }) {
+  const t = useTranslations("errors");
   useEffect(() => {
     console.error(error);
     // Errors caught by an error boundary never reach window.onerror, so report them here.
@@ -16,21 +18,19 @@ export default function ErrorState({ error, onRetry, homeHref = "/" }) {
 
   return (
     <div role="alert" className="mx-auto max-w-md rounded-2xl border border-rose-400/20 bg-rose-400/5 p-6 text-center text-white">
-      <p className="text-sm font-semibold tracking-[0.3em] text-rose-300 uppercase">Something went wrong</p>
-      <h1 className="mt-3 text-xl font-semibold">We couldn&apos;t load this page.</h1>
-      <p className="mt-2 text-sm leading-6 text-slate-300">
-        It may be a temporary problem with the connection or the database. Try again, and if it keeps happening, come back later.
-      </p>
-      {error?.digest ? <p className="mt-3 font-mono text-xs text-slate-500">Reference: {error.digest}</p> : null}
+      <p className="text-sm font-semibold tracking-[0.3em] text-rose-300 uppercase">{t("somethingWrong")}</p>
+      <h1 className="mt-3 text-xl font-semibold">{t("couldntLoad")}</h1>
+      <p className="mt-2 text-sm leading-6 text-slate-300">{t("temporary")}</p>
+      {error?.digest ? <p className="mt-3 font-mono text-xs text-slate-500">{t("reference", { digest: error.digest })}</p> : null}
       <div className="mt-5 flex justify-center gap-3">
         <button type="button" onClick={onRetry} className={buttonClasses({ variant: "primary", size: "sm" })}>
-          Try again
+          {t("tryAgain")}
         </button>
         <Link
           href={homeHref}
           className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-white"
         >
-          Go to dashboard
+          {t("goToDashboard")}
         </Link>
       </div>
     </div>
