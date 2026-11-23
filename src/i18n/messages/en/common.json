@@ -39,5 +39,7 @@
     "goalWithdrawn": "{name} took {amount} from {goal}",
     "expenseAdded": "{name} added {title} ({amount})",
     "expenseDeleted": "{name} deleted {title}"
-  }
+  },
+  "showPassword": "Show password",
+  "hidePassword": "Hide password"
 }

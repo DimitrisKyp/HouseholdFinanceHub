@@ -98,7 +98,7 @@ test("the language chosen on the Account page applies at once and follows you to
   await otherPage.goto("/sign-in");
   await expect(otherPage.locator("html")).toHaveAttribute("lang", "en");
   await otherPage.getByLabel("Email").fill(USERS.owner.email);
-  await otherPage.getByLabel("Password").fill(PASSWORD);
+  await otherPage.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await otherPage.getByRole("button", { name: "Sign in" }).click();
   await expect(otherPage).toHaveURL(/\/$/);
   await expect(otherPage.locator("html")).toHaveAttribute("lang", "el");

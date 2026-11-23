@@ -39,5 +39,7 @@
     "goalWithdrawn": "{name} αφαίρεσε {amount} από τον στόχο «{goal}»",
     "expenseAdded": "{name} πρόσθεσε το έξοδο «{title}» ({amount})",
     "expenseDeleted": "{name} διέγραψε το έξοδο «{title}»"
-  }
+  },
+  "showPassword": "Εμφάνιση κωδικού",
+  "hidePassword": "Απόκρυψη κωδικού"
 }

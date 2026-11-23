@@ -29,7 +29,7 @@ test("the theme applies at once, is remembered, and follows you to another brows
   await otherPage.goto("/sign-in");
   await expect(otherPage.locator("html")).toHaveAttribute("data-theme", "system");
   await otherPage.getByLabel("Email").fill(USERS.owner.email);
-  await otherPage.getByLabel("Password").fill(PASSWORD);
+  await otherPage.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await otherPage.getByRole("button", { name: "Sign in" }).click();
   await expect(otherPage).toHaveURL(/\/$/);
   await expect(otherPage.locator("html")).toHaveAttribute("data-theme", "light");
