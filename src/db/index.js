@@ -8,7 +8,11 @@ import * as schema from "./schema/index.js";
 // Reuse one connection pool across hot reloads in development.
 const globalForDb = globalThis;
 
-const pool = globalForDb.__dbPool ?? new Pool({ connectionString: process.env.DATABASE_URL, max: 10 });
+// Connections per server process. Keep it small on serverless hosting (e.g. 3 on Vercel), where many
+// copies of the app can run at once and share the database's connection limit.
+const poolMax = Number(process.env.DATABASE_POOL_MAX) || 10;
+
+const pool = globalForDb.__dbPool ?? new Pool({ connectionString: process.env.DATABASE_URL, max: poolMax });
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.__dbPool = pool;

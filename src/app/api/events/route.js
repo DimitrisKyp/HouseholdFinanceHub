@@ -18,6 +18,10 @@ async function stillMember(householdId, userId) {
 
 const HEARTBEAT_MS = 25_000; // keeps proxies from closing an idle connection
 
+// Serverless hosts (Vercel) end a request after a time limit; ask for the longest one. When it ends,
+// the browser reconnects and catches up (hooks/useLiveUpdates.js). `npm start` on a server ignores this.
+export const maxDuration = 300;
+
 export async function GET(request) {
   const session = await getSession();
   if (!session) return new Response("Not signed in", { status: 401 });

@@ -87,6 +87,11 @@
 Things that work locally but must be done or changed on the real server
 (VPS + Coolify + own domain).
 
+- [ ] **Now: Vercel + Supabase** (free, personal use; README, "Hosting on Vercel + Supabase"). Keep the
+      code host-neutral (no Vercel or Supabase libraries) so the move to a VPS stays a settings
+      change: `DATABASE_URL` = Supabase transaction pooler, `LIVE_DATABASE_URL` = session pooler,
+      `DATABASE_POOL_MAX=3`, Vercel region fra1. Make your own backups (free Supabase has none).
+      On the VPS later, drop `LIVE_DATABASE_URL` and `DATABASE_POOL_MAX`.
 - [x] **Temporary, personal use:** `nestestia.com` served from the PC through VS Code port forwarding
       and a Cloudflare Worker that shows an "offline" page when the PC is off (README, "Running the
       app on nestestia.com from your PC"; `deploy/cloudflare-worker.js`). When moving to a server:
@@ -130,7 +135,8 @@ Things that work locally but must be done or changed on the real server
 
 - [ ] **Live updates need a direct database connection** for `LISTEN` (`src/lib/live.js`). If a
       connection pooler such as PgBouncer is ever put in front of PostgreSQL, it must not be in
-      transaction mode for this app, or give `live.js` its own direct connection string.
+      transaction mode for this app, or set `LIVE_DATABASE_URL` to a direct (or session mode)
+      address: `live.js` uses it for its listening connection.
 - [ ] **Don't buffer `/api/events`** in the reverse proxy (Server-Sent Events). Coolify's Traefik
       streams by default; the route also sends `X-Accel-Buffering: no` for nginx. If a proxy
       closes idle connections sooner than every 25 s (the heartbeat), raise its timeout.

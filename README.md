@@ -92,10 +92,80 @@ added aren't confirmed yet. Sign in once, and a fresh link appears in the termin
   (7 days, single use), choose their own password and join as **Editor** or **Viewer**.
   Locally, the invite link appears in the terminal.
 
+## Hosting on Vercel + Supabase
+
+The current plan for nestestia.com (free, personal use): the app runs on **Vercel**, the database on
+**Supabase**, DNS and email records stay at **Cloudflare**, email goes through **Resend**. Nothing in
+the code is specific to Vercel or Supabase: it's a normal Next.js app talking to a normal PostgreSQL
+database through environment variables, so moving to a VPS later only means changing settings.
+
+### Supabase (the database)
+
+1. Create a project in **EU (Frankfurt)** and keep its database password.
+2. **Connect** (top of the project page) shows the connection strings. Use the **pooler** ones (the
+   direct connection needs IPv6):
+   - **Transaction pooler** (port **6543**) → `DATABASE_URL` on Vercel.
+   - **Session pooler** (port **5432**) → `LIVE_DATABASE_URL` on Vercel (live updates need a
+     connection of their own), and for running migrations and copying data from your PC.
+3. Create the tables, from the project folder in PowerShell (a variable set like this wins over
+   `.env.local`, and only lasts for that terminal):
+   ```powershell
+   $env:DATABASE_URL = "<session pooler>"; npm run db:migrate; Remove-Item Env:DATABASE_URL
+   ```
+
+Free plan limits that matter: the project **pauses after a week without use** (restore it from the
+dashboard), and there are **no downloadable backups**, so make your own (see "Backups" below).
+
+### Vercel (the app)
+
+1. **Add New → Project** → import the GitHub repo. Framework: Next.js (detected).
+2. **Settings → Environment Variables** (Production):
+
+   | Variable             | Value                                                 |
+   | -------------------- | ----------------------------------------------------- |
+   | `DATABASE_URL`       | Supabase transaction pooler (port 6543)               |
+   | `LIVE_DATABASE_URL`  | Supabase session pooler (port 5432)                   |
+   | `DATABASE_POOL_MAX`  | `3`                                                   |
+   | `BETTER_AUTH_SECRET` | a new random secret (see `.env.example`)              |
+   | `BETTER_AUTH_URL`    | `https://nestestia.com`                               |
+   | `SMTP_URL`           | `smtps://resend:<API key>@smtp.resend.com:465`        |
+   | `EMAIL_FROM`         | `Household Finance Hub <no-reply@mail.nestestia.com>` |
+
+3. **Settings → Functions → Function Region**: **Frankfurt (fra1)**, next to the database.
+4. **Settings → Domains**: add `nestestia.com` and `www.nestestia.com` (redirect www to the bare
+   domain), then add the DNS records Vercel shows in Cloudflare, set to **DNS only** (grey cloud).
+   Remove the Cloudflare Worker's custom domains first (Workers & Pages → nestestia → Settings →
+   Domains & Routes), or the Worker keeps answering.
+5. **Migrations**: run `npm run db:migrate` against the session pooler (step 3 above) before
+   deploying code that adds one (a new file in `drizzle/`).
+
+How the app copes with serverless hosting: live updates reconnect every few minutes (Vercel ends long
+requests; the browser catches up by itself), the sign-in attempt limits and the markets cache are per
+copy of the app, and Vercel keeps logs only briefly.
+
+### Backups
+
+Supabase's free plan has none you can download. From your PC, now and then (PostgreSQL's tools are
+installed with the local database):
+
+```bash
+pg_dump --no-owner --no-acl -n public -n drizzle -Fc -f backup-YYYY-MM-DD.dump "<session pooler>"
+```
+
+### Moving to a VPS later
+
+1. Set up the server and Coolify, with a PostgreSQL database (TODO.md, "Deployment checklist").
+2. Copy the data: `pg_dump` from Supabase as above, then
+   `pg_restore --no-owner --no-acl -d "<new database>" backup.dump`.
+3. In Coolify, set the same variables as on Vercel, but `DATABASE_URL` = the new database, and leave
+   out `LIVE_DATABASE_URL` and `DATABASE_POOL_MAX`.
+4. Point `nestestia.com` at the server in Cloudflare (instead of Vercel's records), then delete the
+   Vercel project and, once you're happy, the Supabase project.
+
 ## Running the app on nestestia.com from your PC
 
-A temporary setup for development and personal use, until the app has a real server (see TODO.md,
-"Deployment checklist"). Nothing is installed on the PC: VS Code's built-in port forwarding makes
+The setup used before Vercel + Supabase, kept as a fallback. For development and personal use, until
+the app has a real server (see TODO.md, "Deployment checklist"). Nothing is installed on the PC: VS Code's built-in port forwarding makes
 the app reachable, and a free Cloudflare Worker in front of `nestestia.com` passes visits to it. When
 the PC, VS Code or the app is off, the Worker shows an "offline" page in English and Greek instead.
 

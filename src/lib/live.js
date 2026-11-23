@@ -48,7 +48,10 @@ export const announce = (context, kind, message = null) =>
 const state = (globalThis.__liveUpdates ??= { client: null, connecting: null, listeners: new Map() });
 
 async function connect() {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  // LISTEN needs a connection of its own for as long as it runs, which a connection pooler in
+  // "transaction" mode doesn't give. If DATABASE_URL goes through one (e.g. Supabase's port 6543),
+  // set LIVE_DATABASE_URL to a direct or "session" mode address (Supabase's port 5432).
+  const client = new Client({ connectionString: process.env.LIVE_DATABASE_URL || process.env.DATABASE_URL });
   client.on("notification", message => {
     let event;
     try {
