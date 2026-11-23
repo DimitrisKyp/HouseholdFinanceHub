@@ -132,7 +132,7 @@ Things that work locally but must be done or changed on the real server
 - [x] Add `.env.example` listing every variable (no values), with an exception in `.gitignore`.
 - [ ] `scripts/local-db.mjs` and the `db:init/start/stop/status` commands are for local
       development only. Don't use them on the server.
-- [x] Rename the package from `learning-hub` in `package.json` (now `household-finance-hub`).
+- [x] Rename the package from `learning-hub` in `package.json` (then `household-finance-hub`, now `household-hub`).
 
 - [ ] **Live updates need a direct database connection** for `LISTEN` (`src/lib/live.js`). If a
       connection pooler such as PgBouncer is ever put in front of PostgreSQL, it must not be in

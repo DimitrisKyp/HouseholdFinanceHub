@@ -1,4 +1,4 @@
-# Household Finance Hub
+# Household Hub
 
 A household finance app: track expenses, budgets and savings goals, and share them with the
 people you live with. Built with [Next.js](https://nextjs.org), PostgreSQL and
@@ -64,6 +64,8 @@ npm run db:migrate   # create the tables
 - Generates passwords and writes `DATABASE_URL` to `.env.local`, which is never committed.
 - Saves the database admin (`postgres`) password in
   `%LOCALAPPDATA%\household-finance-hub\postgres-superuser-password.txt`.
+- The folder and the database (`household_finance_hub`) keep the project's original name, from
+  before it became Household Hub, so existing local databases keep working.
 
 Every setting the app reads is listed, with what it's for, in [`.env.example`](.env.example). Copy the
 ones you need into `.env.local` (development) or set them in Coolify (production).
@@ -121,15 +123,15 @@ dashboard), and there are **no downloadable backups**, so make your own (see "Ba
 1. **Add New → Project** → import the GitHub repo. Framework: Next.js (detected).
 2. **Settings → Environment Variables** (Production):
 
-   | Variable             | Value                                                 |
-   | -------------------- | ----------------------------------------------------- |
-   | `DATABASE_URL`       | Supabase transaction pooler (port 6543)               |
-   | `LIVE_DATABASE_URL`  | Supabase session pooler (port 5432)                   |
-   | `DATABASE_POOL_MAX`  | `3`                                                   |
-   | `BETTER_AUTH_SECRET` | a new random secret (see `.env.example`)              |
-   | `BETTER_AUTH_URL`    | `https://nestestia.com`                               |
-   | `SMTP_URL`           | `smtps://resend:<API key>@smtp.resend.com:465`        |
-   | `EMAIL_FROM`         | `Household Finance Hub <no-reply@mail.nestestia.com>` |
+   | Variable             | Value                                          |
+   | -------------------- | ---------------------------------------------- |
+   | `DATABASE_URL`       | Supabase transaction pooler (port 6543)        |
+   | `LIVE_DATABASE_URL`  | Supabase session pooler (port 5432)            |
+   | `DATABASE_POOL_MAX`  | `3`                                            |
+   | `BETTER_AUTH_SECRET` | a new random secret (see `.env.example`)       |
+   | `BETTER_AUTH_URL`    | `https://nestestia.com`                        |
+   | `SMTP_URL`           | `smtps://resend:<API key>@smtp.resend.com:465` |
+   | `EMAIL_FROM`         | `Household Hub <no-reply@mail.nestestia.com>`  |
 
 3. **Settings → Functions → Function Region**: **Frankfurt (fra1)**, next to the database.
 4. **Settings → Domains**: add `nestestia.com` and `www.nestestia.com` (redirect www to the bare
@@ -224,10 +226,10 @@ Close it with Ctrl+C (or close VS Code), and the site shows "Currently offline".
 
 ## Email
 
-| Variable     | What it does                                                                       |
-| ------------ | ---------------------------------------------------------------------------------- |
-| `SMTP_URL`   | Mail server to send through, e.g. `smtps://user:password@smtp.example.com:465`     |
-| `EMAIL_FROM` | Sender shown to recipients, e.g. `Household Finance Hub <no-reply@yourdomain.com>` |
+| Variable     | What it does                                                                   |
+| ------------ | ------------------------------------------------------------------------------ |
+| `SMTP_URL`   | Mail server to send through, e.g. `smtps://user:password@smtp.example.com:465` |
+| `EMAIL_FROM` | Sender shown to recipients, e.g. `Household Hub <no-reply@yourdomain.com>`     |
 
 - **Without `SMTP_URL`** (local development): emails are printed in the `npm run dev` terminal.
 - **In production `SMTP_URL` is required.** The app refuses to print emails there, so links
@@ -305,7 +307,7 @@ npm run db:init-test  # once: creates the test database and adds TEST_DATABASE_U
 
 1. Make sure the database is running: `npm run db:status`. If it isn't, run `npm run db:start`.
 2. In pgAdmin, right-click **Servers** → **Register** → **Server...**
-3. **General** tab: **Name** `Household Finance Hub (local)`
+3. **General** tab: **Name** `Household Hub (local)`
 4. **Connection** tab:
    | Field | Value |
    | -------------------- | ------------------------------------------------------------------ |
@@ -316,7 +318,7 @@ npm run db:init-test  # once: creates the test database and adds TEST_DATABASE_U
    | Password | contents of `%LOCALAPPDATA%\household-finance-hub\postgres-superuser-password.txt` |
    | Save password? | on |
 5. Click **Save**.
-6. Browse to **Household Finance Hub (local)** → **Databases** → **household_finance_hub** →
+6. Browse to **Household Hub (local)** → **Databases** → **household_finance_hub** →
    **Schemas** → **public** → **Tables**.
    - To see rows, right-click a table → **View/Edit Data** → **All Rows**.
    - To write SQL, select the database, then **Tools** → **Query Tool**.

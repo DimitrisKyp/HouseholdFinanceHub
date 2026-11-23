@@ -6,7 +6,7 @@ import nodemailer from "nodemailer";
 import { isLocale } from "@/i18n/config";
 import { getLocale, getTranslations } from "@/i18n/server";
 
-const APP_NAME = "Household Finance Hub";
+const APP_NAME = "Household Hub";
 
 let transporter;
 function getTransporter() {

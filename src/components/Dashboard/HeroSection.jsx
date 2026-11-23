@@ -19,7 +19,7 @@ export default async function HeroSection({ monthLabel, incomeLabel, spentLabel,
     <section className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 shadow-xl shadow-black/20 backdrop-blur">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-2xl font-semibold tracking-[0.35em] text-cyan-300 uppercase">Household Finance Hub</p>
+          <p className="text-2xl font-semibold tracking-[0.35em] text-cyan-300 uppercase">Household Hub</p>
           <p className="mt-1 text-sm text-slate-400">{monthLabel}</p>
         </div>
 

@@ -17,7 +17,7 @@ export default function GlobalError({ error, unstable_retry }) {
   return (
     <html lang="en" className="h-full">
       <body className="flex h-full items-center bg-slate-950 px-4 text-white">
-        <title>Something went wrong · Household Finance Hub</title>
+        <title>Something went wrong · Household Hub</title>
         <div role="alert" className="mx-auto max-w-md rounded-2xl border border-rose-400/20 bg-rose-400/5 p-6 text-center text-white">
           <h1 className="text-xl font-semibold">We couldn&apos;t load this page.</h1>
           <p className="mt-2 text-sm leading-6 text-slate-300">Please try again in a moment.</p>

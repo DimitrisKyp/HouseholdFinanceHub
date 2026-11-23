@@ -4,7 +4,7 @@ import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 export default function manifest() {
   return {
     name: SITE_NAME,
-    short_name: "Finance Hub",
+    short_name: "Household Hub",
     description: SITE_DESCRIPTION,
     start_url: "/",
     display: "standalone",

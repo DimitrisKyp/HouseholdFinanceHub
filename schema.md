@@ -1,4 +1,4 @@
-# Household Finance Hub – Database Schema
+# Household Hub – Database Schema
 
 PostgreSQL 17, managed with [Drizzle ORM](https://orm.drizzle.team).
 

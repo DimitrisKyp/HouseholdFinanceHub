@@ -22,7 +22,7 @@ test.describe("signed out", () => {
     const image = await request.get(new URL(await page.locator('meta[property="og:image"]').getAttribute("content")).pathname);
     expect(image.headers()["content-type"]).toBe("image/png");
     const manifest = await (await request.get("/manifest.webmanifest")).json();
-    expect(manifest).toMatchObject({ name: "Household Finance Hub", display: "standalone" });
+    expect(manifest).toMatchObject({ name: "Household Hub", display: "standalone" });
   });
 });
 

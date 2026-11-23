@@ -21,7 +21,7 @@ async function fetchFrom(url) {
   const response = await fetch(url, {
     cache: "no-store",
     signal: AbortSignal.timeout(TIMEOUT_MS),
-    headers: { "User-Agent": "HouseholdFinanceHub/1.0" },
+    headers: { "User-Agent": "HouseholdHub/1.0" },
   });
   if (!response.ok) throw new Error(`${url} answered ${response.status}`);
   return response;
