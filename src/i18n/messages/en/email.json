@@ -1,0 +1,38 @@
+{
+  "greeting": "Hi {name},",
+  "greetingNoName": "Hi,",
+  "buttonFallback": "If the button doesn't work, copy this link into your browser:",
+  "verify": {
+    "subject": "Confirm your email for {app}",
+    "line": "Please confirm your email address to finish setting up your account. The link works for 24 hours.",
+    "button": "Confirm email",
+    "footer": "If you didn't create an account, you can ignore this email."
+  },
+  "accountExists": {
+    "subject": "You already have a {app} account",
+    "line": "Someone (hopefully you) tried to create an account with this email, but you already have one.",
+    "button": "Sign in",
+    "footer": "If this wasn't you, you can ignore this email. Your account hasn't changed."
+  },
+  "reset": {
+    "subject": "Reset your {app} password",
+    "line": "We received a request to reset your password. The link works for 1 hour and can be used once.",
+    "button": "Choose a new password",
+    "footer": "If you didn't ask for this, you can ignore this email. Your password stays the same."
+  },
+  "passwordChanged": {
+    "subject": "Your {app} password was changed",
+    "line1": "The password for your account was just changed.",
+    "line2": "If this was you, there's nothing else to do. If it wasn't, reset your password now: that signs everyone else out.",
+    "button": "Reset password",
+    "footer": "You're receiving this because of a security change to your account."
+  },
+  "invite": {
+    "subject": "{inviter} invited you to \"{household}\" on {app}",
+    "line1Editor": "{inviter} invited you to join the household \"{household}\" as an {role}, to share budgets, expenses and savings goals.",
+    "line1Viewer": "{inviter} invited you to join the household \"{household}\" as a {role}, to share budgets, expenses and savings goals.",
+    "line2": "Open the link to choose your password and join. It works for {days} days.",
+    "button": "Accept invitation",
+    "footer": "If you weren't expecting this, you can ignore this email. Nothing happens unless you accept."
+  }
+}

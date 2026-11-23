@@ -1,36 +1,332 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Household Hub
 
-## Getting Started
+A household finance app: track expenses, budgets and savings goals, and share them with the
+people you live with. Built with [Next.js](https://nextjs.org), PostgreSQL and
+[Drizzle ORM](https://orm.drizzle.team).
 
-First, run the development server:
+## How the code is organised
+
+- **Server pages are the containers.** Each `src/app/(app)/*/page.js` checks access through the Data
+  Access Layer (`src/lib/dal.js`), loads data with the queries in `src/lib/finance.js` and friends, and
+  turns it into ready-to-show labels (money, dates) with the pure functions in `src/lib`.
+- **Presentational components** in `src/components` receive those labels as props and only render
+  (e.g. `RecentExpenses`, `NotificationList`, `ToastStack`, the charts).
+- **Client containers** hold browser state and wire it to presentational parts: e.g.
+  `ExpenseTrackerPanel` (form + optimistic list), `LiveUpdates` (live connection + messages), `SideNav`.
+- **Custom hooks** in `src/hooks` keep that logic reusable and testable on its own:
+  `useLiveUpdates`, `useUnreadCount`, `usePendingExpenses` (optimistic UI), `useDismiss`.
+- **Server Actions** in `src/lib/actions` change data; each one checks permissions itself.
+
+## Languages
+
+The app is in English and Greek. Each person picks a language on the Account page (saved to their
+account and a cookie, like the theme); visitors who haven't chosen get their browser's language, and
+the sign-in pages have a language switch.
+
+- **Messages** are in `src/i18n/messages/<language>/<area>.json`, one file per area of the app. Every
+  message must exist in both languages with the same `{placeholders}`: a unit test checks this.
+- **Server Components and Server Actions** translate with `const t = await getTranslations("budget")`
+  (`src/i18n/server.js`). **Client Components** use `useTranslations("budget")` and `useLocale()`
+  (`src/i18n/client.jsx`).
+- **A page sends the browser only the messages its Client Components need**: wrap it in
+  `<Messages namespaces={["budget"]}>` (`src/i18n/MessagesProvider.jsx`). The root layout already
+  provides `common` and `errors`. A missing message shows as `budget.someKey` on the page.
+- **Amounts and dates** follow the language: pass the locale to `formatMoney`, `formatDay` and
+  `formatMonth` (`1.250,50 €` and `18 Νοε 2026` in Greek).
+- **Notifications and live messages** store their values, not finished sentences, so each person
+  reads them in their own language.
+- **Adding a language:** add it to `LOCALES` in `src/i18n/config.js` (with its date and number
+  locales), copy `messages/en` to `messages/<language>`, translate, and add the files to
+  `messages/index.js` and to the check constraint on `user_preference.locale`.
+
+## Requirements
+
+- [Node.js](https://nodejs.org) 26 (LTS), the version in `.nvmrc`
+- [PostgreSQL 17](https://www.postgresql.org/download/) installed (only its programs are used;
+  the project runs its own private database server, so no admin password is needed)
+- Optional: [pgAdmin 4](https://www.pgadmin.org) to browse the database
+
+The scripts expect PostgreSQL in `C:\Program Files\PostgreSQL\17\bin`. If yours is elsewhere,
+set the `PG_BIN` environment variable to its `bin` folder.
+
+## First-time setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # install dependencies
+npm run db:init      # create the local database server, user and database (once per computer)
+npm run db:migrate   # create the tables
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`db:init` does the following:
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- Creates a PostgreSQL server for this project in
+  `%LOCALAPPDATA%\household-hub\pgdata`, listening on **localhost:5433**.
+- Generates passwords and writes `DATABASE_URL` to `.env.local`, which is never committed.
+- Saves the database admin (`postgres`) password in
+  `%LOCALAPPDATA%\household-hub\postgres-superuser-password.txt`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Every setting the app reads is listed, with what it's for, in [`.env.example`](.env.example). Copy the
+ones you need into `.env.local` (development) or set them in Coolify (production).
 
-## Learn More
+## Starting the app (every day)
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run db:start     # start the database (needed after every computer restart)
+npm run dev          # start the website
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The first time, choose **Create an account**. Signing up creates your household and makes you
+its **owner**. Every page except sign-in and sign-up requires you to be signed in.
 
-## Deploy on Vercel
+New accounts must **confirm their email** before they can sign in. Locally, no email is really
+sent: the email, including the confirmation link, is printed in the terminal running
+`npm run dev`. Ctrl+click the link to open it. Accounts created before email confirmation was
+added aren't confirmed yet. Sign in once, and a fresh link appears in the terminal.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Forgot your password?** Use the link on the sign-in page. The reset link (in the terminal
+  locally) works once, for 1 hour, and signs you out on every device.
+- **Change your password** on the **Account** page (side menu, or click your name).
+- **Invite household members** on the **Members** page (owner only). They get an email link
+  (7 days, single use), choose their own password and join as **Editor** or **Viewer**.
+  Locally, the invite link appears in the terminal.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Hosting on Vercel + Supabase
+
+The current plan for nestestia.com (free, personal use): the app runs on **Vercel**, the database on
+**Supabase**, DNS and email records stay at **Cloudflare**, email goes through **Resend**. Nothing in
+the code is specific to Vercel or Supabase: it's a normal Next.js app talking to a normal PostgreSQL
+database through environment variables, so moving to a VPS later only means changing settings.
+
+### Supabase (the database)
+
+1. Create a project in **EU (Frankfurt)** and keep its database password.
+2. **Connect** (top of the project page) shows the connection strings. Use the **pooler** ones (the
+   direct connection needs IPv6):
+   - **Transaction pooler** (port **6543**) → `DATABASE_URL` on Vercel.
+   - **Session pooler** (port **5432**) → `LIVE_DATABASE_URL` on Vercel (live updates need a
+     connection of their own), and for running migrations and copying data from your PC.
+3. Create the tables, from the project folder in PowerShell (a variable set like this wins over
+   `.env.local`, and only lasts for that terminal):
+   ```powershell
+   $env:DATABASE_URL = "<session pooler>"; npm run db:migrate; Remove-Item Env:DATABASE_URL
+   ```
+
+Free plan limits that matter: the project **pauses after a week without use** (restore it from the
+dashboard), and there are **no downloadable backups**, so make your own (see "Backups" below).
+
+### Vercel (the app)
+
+1. **Add New → Project** → import the GitHub repo. Framework: Next.js (detected).
+2. **Settings → Environment Variables** (Production):
+
+   | Variable             | Value                                          |
+   | -------------------- | ---------------------------------------------- |
+   | `DATABASE_URL`       | Supabase transaction pooler (port 6543)        |
+   | `LIVE_DATABASE_URL`  | Supabase session pooler (port 5432)            |
+   | `DATABASE_POOL_MAX`  | `3`                                            |
+   | `BETTER_AUTH_SECRET` | a new random secret (see `.env.example`)       |
+   | `BETTER_AUTH_URL`    | `https://nestestia.com`                        |
+   | `SMTP_URL`           | `smtps://resend:<API key>@smtp.resend.com:465` |
+   | `EMAIL_FROM`         | `Household Hub <no-reply@mail.nestestia.com>`  |
+
+3. **Settings → Functions → Function Region**: **Frankfurt (fra1)**, next to the database.
+4. **Settings → Domains**: add `nestestia.com` and `www.nestestia.com` (redirect www to the bare
+   domain), then add the DNS records Vercel shows in Cloudflare, set to **DNS only** (grey cloud).
+   Remove the Cloudflare Worker's custom domains first (Workers & Pages → nestestia → Settings →
+   Domains & Routes), or the Worker keeps answering.
+5. **Migrations**: run `npm run db:migrate` against the session pooler (step 3 above) before
+   deploying code that adds one (a new file in `drizzle/`).
+
+How the app copes with serverless hosting: live updates reconnect every few minutes (Vercel ends long
+requests; the browser catches up by itself), the sign-in attempt limits and the markets cache are per
+copy of the app, and Vercel keeps logs only briefly.
+
+### Backups
+
+Supabase's free plan has none you can download. From your PC, now and then (PostgreSQL's tools are
+installed with the local database):
+
+```bash
+pg_dump --no-owner --no-acl -n public -n drizzle -Fc -f backup-YYYY-MM-DD.dump "<session pooler>"
+```
+
+### Moving to a VPS later
+
+1. Set up the server and Coolify, with a PostgreSQL database (TODO.md, "Deployment checklist").
+2. Copy the data: `pg_dump` from Supabase as above, then
+   `pg_restore --no-owner --no-acl -d "<new database>" backup.dump`.
+3. In Coolify, set the same variables as on Vercel, but `DATABASE_URL` = the new database, and leave
+   out `LIVE_DATABASE_URL` and `DATABASE_POOL_MAX`.
+4. Point `nestestia.com` at the server in Cloudflare (instead of Vercel's records), then delete the
+   Vercel project and, once you're happy, the Supabase project.
+
+## Running the app on nestestia.com from your PC
+
+The setup used before Vercel + Supabase, kept as a fallback. For development and personal use, until
+the app has a real server (see TODO.md, "Deployment checklist"). Nothing is installed on the PC: VS Code's built-in port forwarding makes
+the app reachable, and a free Cloudflare Worker in front of `nestestia.com` passes visits to it. When
+the PC, VS Code or the app is off, the Worker shows an "offline" page in English and Greek instead.
+
+```
+browser → nestestia.com (Cloudflare Worker) → VS Code tunnel (*.devtunnels.ms) → npm start on your PC
+```
+
+### One-time setup
+
+1. **Cloudflare account** (free plan) at cloudflare.com: **Add a domain** → `nestestia.com`. Cloudflare
+   shows two name servers. At papaki.com, open the domain's **Name servers** and replace papaki's
+   with Cloudflare's. The domain stays registered at papaki; DNS (including the email records for
+   Resend) is now managed in Cloudflare. The switch can take a few hours.
+2. **Public address of the app**: create `.env.production.local` (git-ignored, read only by
+   `npm run build` and `npm start`, not by `npm run dev`) with:
+   ```
+   BETTER_AUTH_URL=https://nestestia.com
+   ```
+   Add `SMTP_URL` and `EMAIL_FROM` there too once email is set up (see [Email](#email)). Until then
+   the app sends no emails in this mode, so invitations and password resets won't arrive; signing
+   in with an existing, confirmed account works. It uses the database from `.env.local`.
+3. **Forward the port** once to get the tunnel address: start the app (below), then in VS Code open
+   the **Ports** panel (next to Terminal) → **Forward a Port** → `3000`. Right-click it →
+   **Port Visibility** → **Public**. Copy the **Forwarded Address**, e.g.
+   `https://abc123-3000.euw.devtunnels.ms`. VS Code asks you to sign in with GitHub the first time.
+4. **The Worker**: in Cloudflare, **Workers & Pages** → **Create** → **Hello World** worker, name it
+   e.g. `nestestia`, **Deploy**, then **Edit code**. Replace the code with the whole of
+   [`deploy/cloudflare-worker.js`](deploy/cloudflare-worker.js) and **Deploy**. Then in the Worker:
+   - **Settings → Variables and Secrets → Add**: `TUNNEL_URL` = the forwarded address from step 3.
+   - **Settings → Domains & Routes → Add → Custom domain**: `nestestia.com`, and again for
+     `www.nestestia.com` (the Worker redirects www to the bare domain).
+5. **Keep it private** (recommended, since this is for personal use): Cloudflare **Zero Trust**
+   (free up to 50 people) → **Access → Applications → Add → Self-hosted**, domain `nestestia.com`,
+   with a policy **Allow** → **Emails** → your own address(es). Visitors then have to enter a code
+   sent to an allowed email before they see anything, even the sign-in page.
+
+### Every time you want the site online
+
+```bash
+npm run db:start
+npm run build        # again after code changes, and after the browser tests (they rebuild it)
+npm start
+```
+
+Then make sure VS Code's **Ports** panel shows port 3000 forwarded, and open https://nestestia.com.
+Close it with Ctrl+C (or close VS Code), and the site shows "Currently offline".
+
+- **Use https://nestestia.com, not localhost**, while running this way: sign-in only accepts the
+  address in `BETTER_AUTH_URL`. For everyday development keep using `npm run dev` and localhost.
+- **If the forwarded address changes** (VS Code gives a new one), update `TUNNEL_URL` in the Worker.
+- **How the Worker spots the app**: every app response carries the header `x-household-app`
+  (`next.config.mjs`). Anything else (no answer, or the tunnel's own error page) means offline.
+- The tunnel address itself is public too, but hard to guess, and every page still needs a sign-in.
+- **Moving to a real server later**: delete the Worker's custom domains (or the Worker), point
+  `nestestia.com` at the server, and delete `.env.production.local`.
+
+## Email
+
+| Variable     | What it does                                                                   |
+| ------------ | ------------------------------------------------------------------------------ |
+| `SMTP_URL`   | Mail server to send through, e.g. `smtps://user:password@smtp.example.com:465` |
+| `EMAIL_FROM` | Sender shown to recipients, e.g. `Household Hub <no-reply@yourdomain.com>`     |
+
+- **Without `SMTP_URL`** (local development): emails are printed in the `npm run dev` terminal.
+- **In production `SMTP_URL` is required.** The app refuses to print emails there, so links
+  never end up in server logs. Any SMTP provider works (Resend, Brevo, Postmark, your mail host).
+  Most providers have a free tier, but they need you to verify your domain first.
+- To see emails as a real inbox locally, run [Mailpit](https://mailpit.axllent.org) (one
+  program, no install or admin rights needed). Then add `SMTP_URL=smtp://localhost:1025` to
+  `.env.local` and open http://localhost:8025.
+- If a password in `SMTP_URL` contains special characters (`@`, `:`, `/`, `#`), URL-encode them.
+- **"self-signed certificate in certificate chain" when sending** means antivirus or a company network
+  is inspecting the mail connection (e.g. Kaspersky does this on ports 465 and 587). Resend also
+  listens on **2465** (SSL) and **2587** (STARTTLS), which such tools usually leave alone:
+  `SMTP_URL=smtps://resend:<API key>@smtp.resend.com:2465`.
+
+`.env.local` also holds `BETTER_AUTH_SECRET` (signs login sessions; keep it secret, and use a
+different one in production) and `BETTER_AUTH_URL` (the site's address, `http://localhost:3000`
+locally).
+
+If the app shows `ECONNREFUSED ... 5433` errors, the database isn't running. Run
+`npm run db:start`.
+
+## Market data on the dashboard
+
+The "Markets & news" panel uses public services that need no API key: ECB exchange rates through
+[Frankfurter](https://frankfurter.dev) and the BBC News Business RSS feed. Answers are cached on the
+server for 15 minutes (`MARKET_CACHE_SECONDS`); if a refresh fails, the last good copy is shown and
+marked as not up to date. To use other sources, set `RATES_API_URL`, `NEWS_FEED_URL` and
+`NEWS_SOURCE_NAME`. The browser tests use a local stand-in (`e2e/market-stub.mjs`) instead.
+
+On a network that inspects HTTPS with its own certificate (common on company networks), Node.js
+rejects the connection and the panel says it couldn't load. Node has to be told to trust Windows'
+certificates **before it starts**, so this goes in your Windows user environment, not in `.env.local`:
+with Node.js 22.15 or newer, run `setx NODE_OPTIONS "--use-system-ca"` once and open a new terminal.
+(On older Node.js, export the company root certificate and point `NODE_EXTRA_CA_CERTS` at the file instead.)
+
+## Database commands
+
+| Command                | What it does                                                |
+| ---------------------- | ----------------------------------------------------------- |
+| `npm run db:start`     | Start the local database server                             |
+| `npm run db:stop`      | Stop it                                                     |
+| `npm run db:status`    | Show whether it is running                                  |
+| `npm run db:migrate`   | Apply new migrations (run after pulling schema changes)     |
+| `npm run db:generate`  | After editing `src/db/schema/`, create a new migration file |
+| `npm run db:studio`    | Browse and edit data in the browser (Drizzle Studio)        |
+| `npm run db:init-test` | Create the separate database the browser tests use (once)   |
+
+See [schema.md](schema.md) for the tables and the permission rules.
+
+## Tests
+
+| Command              | What it does                                                         |
+| -------------------- | -------------------------------------------------------------------- |
+| `npm test`           | Unit and component tests (Vitest), a few seconds, no database needed |
+| `npm run test:watch` | The same, re-running as you edit                                     |
+| `npm run test:e2e`   | Browser tests (Playwright) of the main user flows, about 2 minutes   |
+
+The browser tests build the app, start it on port 3100 and use it like a person would, signed in
+as an owner, an editor and a viewer. They use their own database, `household_hub_test`, and
+wipe it on every run, so your own data is never touched. Before the first run:
+
+```bash
+npm run db:start      # if it isn't running
+npm run db:init-test  # once: creates the test database and adds TEST_DATABASE_URL to .env.local
+```
+
+- Tests live in `e2e/`. Each file starts from a fresh test household (`e2e/helpers/db.mjs`).
+- Locally they run in Microsoft Edge. To use Playwright's own Chromium instead, run
+  `npx playwright install chromium` and set `E2E_BROWSER_CHANNEL=chromium`.
+- After a failure, `npx playwright show-report` opens the report with screenshots and a
+  step-by-step trace of each failed test.
+- CI runs all of them on every push and pull request (`.github/workflows/ci.yml`).
+
+## Viewing the database in pgAdmin 4
+
+1. Make sure the database is running: `npm run db:status`. If it isn't, run `npm run db:start`.
+2. In pgAdmin, right-click **Servers** → **Register** → **Server...**
+3. **General** tab: **Name** `Household Hub (local)`
+4. **Connection** tab:
+   | Field | Value |
+   | -------------------- | ------------------------------------------------------------------ |
+   | Host name/address | `localhost` |
+   | Port | `5433` |
+   | Maintenance database | `postgres` |
+   | Username | `postgres` |
+   | Password | contents of `%LOCALAPPDATA%\household-hub\postgres-superuser-password.txt` |
+   | Save password? | on |
+5. Click **Save**.
+6. Browse to **Household Hub (local)** → **Databases** → **household_hub** →
+   **Schemas** → **public** → **Tables**.
+   - To see rows, right-click a table → **View/Edit Data** → **All Rows**.
+   - To write SQL, select the database, then **Tools** → **Query Tool**.
+
+Notes:
+
+- Port **5433** is this project's server. A PostgreSQL on port 5432 is a different server
+  (for example one installed by IT) and doesn't contain this project's data.
+- `postgres` is the admin account, so pgAdmin lets you change anything. Be careful when editing
+  or deleting rows by hand.
+- Change tables through Drizzle (`src/db/schema/` → `db:generate` → `db:migrate`), not in
+  pgAdmin. Otherwise the migration history and the real database drift apart.
+- The `drizzle` schema holds the migration history. Don't edit it.

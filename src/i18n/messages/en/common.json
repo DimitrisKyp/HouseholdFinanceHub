@@ -1,0 +1,43 @@
+{
+  "siteDescription": "Plan a household budget together: shared expenses, fixed bills, savings goals with forecasts, and alerts when a category nears its limit.",
+  "pageTitle": "{page} · Household Hub",
+  "skipToContent": "Skip to content",
+  "saving": "Saving…",
+  "close": "Close",
+  "dismiss": "Dismiss",
+  "language": "Language",
+  "nav": {
+    "label": "Main",
+    "dashboard": "Dashboard",
+    "budget": "Budget",
+    "transactions": "Transactions",
+    "insights": "Insights",
+    "goals": "Goals",
+    "members": "Members",
+    "alerts": "Alerts",
+    "account": "Account",
+    "more": "More",
+    "unreadTitle": "{label}: {count} unread",
+    "unreadLabel": "{label}, {count} unread"
+  },
+  "roles": {
+    "owner": "Owner",
+    "editor": "Editor",
+    "viewer": "Viewer"
+  },
+  "topBar": {
+    "leftThisMonth": "Left this month",
+    "yourAccount": "Your account",
+    "signOut": "Sign out"
+  },
+  "live": {
+    "householdSettingsUpdated": "{name} updated the household settings",
+    "memberJoined": "{name} joined the household",
+    "budgetUpdated": "{name} updated the budget",
+    "goalsUpdated": "{name} updated the goals",
+    "goalAdded": "{name} added {amount} to {goal}",
+    "goalWithdrawn": "{name} took {amount} from {goal}",
+    "expenseAdded": "{name} added {title} ({amount})",
+    "expenseDeleted": "{name} deleted {title}"
+  }
+}

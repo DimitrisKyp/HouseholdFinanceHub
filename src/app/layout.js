@@ -1,6 +1,11 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
+import WebVitals from "@/components/WebVitals";
+import { OG_LOCALES } from "@/i18n/config";
+import Messages from "@/i18n/MessagesProvider";
+import { getLocale, getTranslations } from "@/i18n/server";
+import { currentTheme } from "@/lib/preferences";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
-import Providers from "@/components/providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,19 +17,52 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "Household Finance Hub",
-  description: "A finance dashboard, expense tracker, and family manager",
+// Geist has no Greek letters. Inter fills in for those only: in the stack below it comes after
+// Geist, so it's used just for characters Geist lacks, and browsers download its Greek file
+// only on pages that contain Greek text.
+const greek = Inter({ subsets: ["greek"], preload: false, adjustFontFallback: false, fallback: [] });
+const [geistFamily, ...geistFallbacks] = geistSans.style.fontFamily.split(",").map(name => name.trim());
+const textFontStack = [geistFamily, greek.style.fontFamily, ...geistFallbacks].join(", ");
+
+export async function generateMetadata() {
+  const locale = await getLocale();
+  const description = (await getTranslations("common", locale))("siteDescription");
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: SITE_NAME,
+    description,
+    applicationName: SITE_NAME,
+    openGraph: { type: "website", siteName: SITE_NAME, title: SITE_NAME, description, locale: OG_LOCALES[locale] },
+    twitter: { card: "summary_large_image", title: SITE_NAME, description },
+  };
+}
+
+export const viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+  ],
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // The theme comes from a cookie (set on the Account page), so it applies before anything loads.
+  const theme = await currentTheme();
+  // The language comes from a cookie too (chosen on the Account page), or the browser's preference.
+  const locale = await getLocale();
   return (
     <html
-      lang="en"
+      lang={locale}
+      data-theme={theme}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      style={{ "--font-text": textFontStack }}
     >
-      <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+      <body className="h-full overflow-hidden bg-slate-950 text-white">
+        <WebVitals />
+        <Messages namespaces={["common", "errors"]}>
+          <div className="h-full" style={{ backgroundImage: "var(--page-gradient)" }}>
+            {children}
+          </div>
+        </Messages>
       </body>
     </html>
   );

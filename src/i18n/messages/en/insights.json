@@ -1,0 +1,58 @@
+{
+  "metaTitle": "Insights",
+  "eyebrow": "Insights",
+  "heading": "Where the money goes.",
+  "intro": "Spending over time, what's left each month, and the biggest categories.",
+  "backToDashboard": "Back to dashboard",
+  "period": "Period",
+  "ranges": {
+    "6m": "Last 6 months",
+    "12m": "Last 12 months",
+    "ytd": "This year"
+  },
+  "rangesInline": {
+    "6m": "last 6 months",
+    "12m": "last 12 months",
+    "ytd": "this year"
+  },
+  "monthInProgress": "month in progress",
+  "tiles": {
+    "spent": "Spent, {range}",
+    "months_one": "{count} month",
+    "months_other": "{count} months",
+    "average": "Average per month",
+    "noCompleted": "No completed month in this period yet",
+    "completedOnly": "Completed months only",
+    "thisMonth": "This month so far",
+    "lastMonth": "{amount} last month",
+    "biggest": "Biggest category",
+    "share": "{amount} · {share}% of spending",
+    "noSpending": "No spending yet"
+  },
+  "spending": {
+    "title": "Spending per month",
+    "subtitle": "Logged expenses. The dashed line is your monthly income from the Budget page.",
+    "valueHeading": "Spent",
+    "income": "Income {amount}"
+  },
+  "leftOver": {
+    "title": "Left over each month",
+    "subtitle": "Income minus fixed bills (both from your current Budget) minus other spending. Expenses in a bill's category only count above that bill, so nothing is subtracted twice. Red means more went out than came in. The current month is still in progress.",
+    "valueHeading": "Left over"
+  },
+  "categories": {
+    "title": "Spending by category",
+    "subtitle": "Largest first, {range}. Smaller categories are grouped as “Other”.",
+    "other": "Other ({count})",
+    "empty": "No spending in this period.",
+    "listLabel": "Spending by category, largest first"
+  },
+  "forecast": {
+    "title": "Savings forecast",
+    "subtitle": "Looking ahead from the last 3 full months, whatever period is chosen above. Your goals and what they need are on the Goals page."
+  },
+  "chart": {
+    "showTable": "Show as table",
+    "month": "Month"
+  }
+}

@@ -1,26 +1,189 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens
+ * ─────────────
+ * The UI is written with Tailwind's palette (slate for surfaces and ink, cyan for the accent,
+ * emerald / rose / amber / violet for meaning). Tailwind exposes each colour as a CSS variable,
+ * so a theme is a set of overrides of those variables plus a few semantic tokens:
+ *
+ *   dark  (default)  the palette as designed
+ *   light            slate and white are inverted (white = strongest ink, slate-950 = page), and
+ *                    the accent and status shades are darkened so text keeps >= 4.5:1 contrast
+ *   system           follows the operating system (prefers-color-scheme)
+ *
+ * The theme is chosen per user on the Account page and rendered as <html data-theme="…">.
+ * Shared UI pieces (src/components/ui) use the semantic tokens below.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --page-gradient: radial-gradient(circle at top, #1e293b 0%, #0f172a 45%, #020617 100%);
+  --focus-ring: var(--color-cyan-300);
+
+  /* Charts: validated with the dataviz palette checker on the panel surface (#1b2335). */
+  --chart-positive: #3987e5;
+  --chart-negative: #e66767;
+  --chart-reference: #c3c2b7;
+  --chart-grid: #2a3346;
+  --chart-baseline: #475569;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Light theme values. Written twice below: once for an explicit choice, once for "system". */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page-gradient: radial-gradient(circle at top, #ffffff 0%, #f1f5f9 50%, #e2e8f0 100%);
+  --focus-ring: #0e7490;
+  --chart-positive: #2a78d6; /* validated on the light panel surface (#e5e9ee) */
+  --chart-negative: #e34948;
+  --chart-reference: #57534e;
+  --chart-grid: #cfd6df;
+  --chart-baseline: #64748b;
+
+  --color-white: #0f172a;
+  --color-slate-100: #0f172a;
+  --color-slate-200: #1e293b;
+  --color-slate-300: #334155;
+  --color-slate-400: #475569;
+  --color-slate-500: #526073;
+  --color-slate-900: #f1f5f9;
+  --color-slate-950: #f8fafc;
+  --color-cyan-200: #155e75;
+  --color-cyan-300: #0e7490;
+  --color-cyan-400: #155e75;
+  --color-cyan-500: #0e7490;
+  --color-emerald-200: #065f46;
+  --color-emerald-300: #047857;
+  --color-emerald-400: #065f46;
+  --color-emerald-500: #047857;
+  --color-rose-200: #9f1239;
+  --color-rose-300: #be123c;
+  --color-rose-400: #fb7185;
+  --color-rose-500: #fda4af;
+  --color-rose-600: #fda4af;
+  --color-rose-700: #fb7185;
+  --color-amber-200: #92400e;
+  --color-amber-300: #b45309;
+  --color-amber-400: #d97706;
+  --color-violet-200: #5b21b6;
+  --color-violet-400: #7c3aed;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    color-scheme: light;
+    --page-gradient: radial-gradient(circle at top, #ffffff 0%, #f1f5f9 50%, #e2e8f0 100%);
+    --focus-ring: #0e7490;
+    --chart-positive: #2a78d6;
+    --chart-negative: #e34948;
+    --chart-reference: #57534e;
+    --chart-grid: #cfd6df;
+    --chart-baseline: #64748b;
+
+    --color-white: #0f172a;
+    --color-slate-100: #0f172a;
+    --color-slate-200: #1e293b;
+    --color-slate-300: #334155;
+    --color-slate-400: #475569;
+    --color-slate-500: #526073;
+    --color-slate-900: #f1f5f9;
+    --color-slate-950: #f8fafc;
+    --color-cyan-200: #155e75;
+    --color-cyan-300: #0e7490;
+    --color-cyan-400: #155e75;
+    --color-cyan-500: #0e7490;
+    --color-emerald-200: #065f46;
+    --color-emerald-300: #047857;
+    --color-emerald-400: #065f46;
+    --color-emerald-500: #047857;
+    --color-rose-200: #9f1239;
+    --color-rose-300: #be123c;
+    --color-rose-400: #fb7185;
+    --color-rose-500: #fda4af;
+    --color-rose-600: #fda4af;
+    --color-rose-700: #fb7185;
+    --color-amber-200: #92400e;
+    --color-amber-300: #b45309;
+    --color-amber-400: #d97706;
+    --color-violet-200: #5b21b6;
+    --color-violet-400: #7c3aed;
   }
 }
 
+/* Semantic tokens as Tailwind utilities (bg-accent, text-on-accent, rounded-card, …). */
+@theme inline {
+  /* --font-text (root layout) is Geist with Inter for Greek letters. */
+  --font-sans: var(--font-text, var(--font-geist-sans));
+  --font-mono: var(--font-geist-mono);
+
+  --color-accent: var(--color-cyan-500);
+  --color-accent-hover: var(--color-cyan-400);
+  --color-on-accent: var(--color-slate-950);
+  --color-ink: var(--color-white);
+  --color-ink-muted: var(--color-slate-400);
+  --color-surface: var(--color-slate-950);
+  --color-surface-raised: var(--color-slate-900);
+  --color-line: color-mix(in oklab, var(--color-white) 10%, transparent);
+
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-text, var(--font-geist-sans)), Arial, Helvetica, sans-serif;
+  overflow: hidden;
+}
+
+/* ── Accessibility ─────────────────────────────────────────── */
+
+/* A clear focus ring for keyboard users on anything that doesn't draw its own. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Custom scrollbars ─────────────────────────────────────── */
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }

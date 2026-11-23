@@ -1,0 +1,70 @@
+{
+  "metaTitle": "Members",
+  "eyebrow": "Household members",
+  "intro": {
+    "owner": "Invite the people you live with. They choose their own password and can help track expenses and goals, but only you can manage members.",
+    "member": "The people sharing this household. Only the owner can invite or remove members."
+  },
+  "backToDashboard": "Back to dashboard",
+  "list": {
+    "title": "Members ({count})",
+    "subtitleOwner": "Change a role or remove someone.",
+    "subtitleMember": "Who has access.",
+    "you": "(you)",
+    "joined": "Joined {date}",
+    "roleFor": "Role for {name}",
+    "saveRoleFor": "Save role for {name}",
+    "save": "Save",
+    "saving": "…",
+    "confirmRemove": "Remove {name} from the household? They'll lose access immediately.",
+    "remove": "Remove",
+    "removing": "Removing…"
+  },
+  "invite": {
+    "title": "Invite someone",
+    "subtitle": "They'll get an email with a link to choose a password and join. Links work for 7 days.",
+    "email": "Email address",
+    "emailPlaceholder": "name@example.com",
+    "role": "Role",
+    "editorOption": "Editor: can add and edit expenses, budgets and goals",
+    "viewerOption": "Viewer: can only look",
+    "send": "Send invitation",
+    "sending": "Sending…",
+    "pending": "Pending invitations",
+    "none": "No pending invitations.",
+    "expires": "Expires {date}",
+    "expired": "Expired {date}",
+    "resend": "Resend",
+    "cancel": "Cancel"
+  },
+  "roles": {
+    "title": "Roles",
+    "subtitle": "What each role can do.",
+    "owner": "Full control: budgets, members and household settings. There is exactly one owner.",
+    "editor": "Can add and edit expenses, budgets and goals. Can't manage members.",
+    "viewer": "Read-only access, for people who only need to see where things stand."
+  },
+  "errors": {
+    "inviteTooSoon": "An invitation was just sent to this address. Please wait a minute.",
+    "inviteRace": "This address was invited at the same moment. Refresh the page.",
+    "emailFailed": "The invitation was saved, but the email to {email} couldn't be sent. Use \"Resend\" to try again.",
+    "invalidEmail": "Enter a valid email address.",
+    "chooseRole": "Choose Editor or Viewer.",
+    "alreadyMember": "This person is already a member of your household.",
+    "inviteGone": "This invitation no longer exists.",
+    "cantChange": "This member can't be changed.",
+    "cantRemove": "This member can't be removed.",
+    "nameMissing": "Enter your name.",
+    "nameTooLong": "That name is too long.",
+    "accountExists": "An account with this email already exists. Sign in to accept the invitation.",
+    "createFailed": "We couldn't create your account. Please try again.",
+    "acceptFailed": "We couldn't accept the invitation. Please try again."
+  },
+  "success": {
+    "inviteSent": "Invitation sent to {email}.",
+    "inviteCancelled": "Invitation cancelled.",
+    "roleChanged": "Role changed to {role}.",
+    "removed": "{name} was removed from the household.",
+    "theMember": "The member"
+  }
+}

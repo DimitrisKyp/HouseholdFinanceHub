@@ -1,0 +1,61 @@
+{
+  "metaTitle": "Transactions",
+  "eyebrow": "Transactions",
+  "heading": "Every expense, searchable.",
+  "intro": "Filter by date, category or who paid. The filters are part of the address, so you can bookmark or share a view.",
+  "count_one": "{count} transaction",
+  "count_other": "{count} transactions",
+  "summary": "{count} · {range}",
+  "range": {
+    "all": "All time",
+    "between": "{from} – {to}",
+    "since": "Since {from}",
+    "until": "Until {to}"
+  },
+  "backToDashboard": "Back to dashboard",
+  "filtersPanel": {
+    "title": "Filters",
+    "subtitle": "Pick a range, or narrow it down further."
+  },
+  "resultsPanel": {
+    "title": "Results",
+    "subtitle": "Click a column heading to sort."
+  },
+  "filters": {
+    "dateRange": "Date range",
+    "presets": {
+      "this-month": "This month",
+      "last-month": "Last month",
+      "90-days": "Last 90 days",
+      "this-year": "This year",
+      "all": "All time"
+    },
+    "search": "Search",
+    "searchPlaceholder": "e.g. groceries",
+    "from": "From",
+    "to": "To",
+    "category": "Category",
+    "allCategories": "All categories",
+    "archived": "{name} (archived)",
+    "paidBy": "Paid by",
+    "anyone": "Anyone",
+    "apply": "Apply",
+    "reset": "Reset"
+  },
+  "table": {
+    "date": "Date",
+    "description": "Description",
+    "category": "Category",
+    "paidBy": "Paid by",
+    "amount": "Amount",
+    "actions": "Actions",
+    "empty": "No transactions match these filters.",
+    "pages": "Pages",
+    "newer": "← Newer",
+    "older": "Older →",
+    "pageOf": "Page {page} of {pageCount}",
+    "delete": "Delete",
+    "deleteItem": "Delete {title}",
+    "confirmDelete": "Delete {title}?"
+  }
+}

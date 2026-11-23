@@ -1,0 +1,86 @@
+# Household Hub – Database Schema
+
+PostgreSQL 17, managed with [Drizzle ORM](https://orm.drizzle.team).
+
+- **Source of truth:** `src/db/schema/` (`auth.js` for accounts, `finance.js` for the app).
+- **Migrations:** generated SQL in `drizzle/`, committed to git.
+
+## Commands
+
+| Command               | What it does                                                 |
+| --------------------- | ------------------------------------------------------------ |
+| `npm run db:generate` | After editing `src/db/schema/`, writes a new migration file  |
+| `npm run db:migrate`  | Applies pending migrations to the database in `DATABASE_URL` |
+| `npm run db:studio`   | Opens Drizzle Studio (browse and edit data in the browser)   |
+| `npm run db:check`    | Checks the migration files are consistent                    |
+
+`DATABASE_URL` is read from `.env.local` (never committed).
+
+## Tables
+
+### Accounts (managed by Better Auth)
+
+| Table          | Purpose                                                          |
+| -------------- | ---------------------------------------------------------------- |
+| `user`         | One row per person: name, email, avatar, job title               |
+| `session`      | Logged-in sessions                                               |
+| `account`      | Login methods per user (hashed password, future Google login...) |
+| `verification` | Short-lived tokens (email verification, password reset)          |
+
+### Households and access
+
+| Table              | Purpose                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| `household`        | The shared space: name, currency, timezone                              |
+| `household_member` | Who belongs to which household, with role `owner`, `editor` or `viewer` |
+| `invite`           | Pending invitations by email; stores only a hash of the emailed token   |
+
+### Finance
+
+| Table               | Purpose                                                                           |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `category`          | One shared list for expenses, recurring bills and budgets; optional monthly limit |
+| `expense`           | Day-to-day spending: amount, date, category, who paid                             |
+| `recurring_item`    | Repeating income (salary) or expenses (rent, subscriptions)                       |
+| `goal`              | Savings goal with target amount and optional target date                          |
+| `goal_contribution` | Money added to (or withdrawn from) a goal; progress is calculated from these      |
+| `notification`      | In-app messages: budget alerts, goal reminders, invite updates                    |
+
+## Rules enforced by the database
+
+- **Exactly one owner per household.** A second `owner` row is rejected. The owner is the
+  user who created the household.
+- **Invites can never grant ownership** (role must be `editor` or `viewer`).
+- **One open invite per email per household**, case-insensitive. After an invite is accepted or
+  revoked, the same email can be invited again.
+- **Amounts must be positive** for expenses, recurring items and goal targets. Contributions
+  can be negative (withdrawals) but not zero.
+- **Category names are unique per household**, case-insensitive.
+- **A category used by expenses can't be deleted.** Archive it with `is_archived` instead.
+- **Deleting a household deletes all its data** (members, invites, categories, expenses,
+  goals, notifications).
+- **Notifications are de-duplicated** per user by `dedupe_key`, so scheduled alert jobs can run
+  repeatedly without spamming.
+
+## Rules enforced in application code
+
+The database can't know who is logged in, so permissions are checked in server code before
+every read or write:
+
+| Action                                      | owner | editor | viewer |
+| ------------------------------------------- | :---: | :----: | :----: |
+| View household data                         |   ✓   |   ✓    |   ✓    |
+| Add / edit expenses, recurring items, goals |   ✓   |   ✓    |        |
+| Manage categories and budget limits         |   ✓   |   ✓    |        |
+| Invite / remove members, change roles       |   ✓   |        |        |
+| Edit household settings, delete household   |   ✓   |        |        |
+
+## Design notes
+
+- **Money** is `numeric(12,2)` (exact decimal) and arrives in JavaScript as a number.
+- **Monthly reports** filter `expense.spent_on` by date range (indexed together with
+  `household_id`); there is no stored month column.
+- **Budgets** are a monthly limit on each category. Per-month overrides can be added later
+  as a separate table if needed.
+- **Goal progress** is never stored: `sum(goal_contribution.amount) / goal.target_amount`.
+- **Ids:** Better Auth tables use text ids (generated by Better Auth); all app tables use UUIDs.

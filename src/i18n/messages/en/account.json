@@ -1,0 +1,58 @@
+{
+  "metaTitle": "Account",
+  "eyebrow": "Account",
+  "heading": "Your profile, language, theme and security.",
+  "backToDashboard": "Back to dashboard",
+  "profile": {
+    "title": "Profile",
+    "subtitle": "How you appear to your household: {household} · {role}.",
+    "name": "Your name",
+    "email": "Email",
+    "emailHint": "Used to sign in. It can't be changed yet.",
+    "save": "Save name",
+    "saved": "Name saved.",
+    "nameMissing": "Enter your name.",
+    "nameTooLong": "That name is too long."
+  },
+  "appearance": {
+    "title": "Language and appearance",
+    "subtitle": "Saved to your account, so they follow you to other devices.",
+    "language": "Language",
+    "chooseLanguage": "Choose a language.",
+    "languageSaved": "Language saved.",
+    "theme": "Theme",
+    "themes": {
+      "system": "Same as this device",
+      "dark": "Dark",
+      "light": "Light"
+    },
+    "chooseTheme": "Choose a theme.",
+    "themeSaved": "Theme saved."
+  },
+  "household": {
+    "title": "Household settings",
+    "subtitle": "Only the owner can change these.",
+    "name": "Household name",
+    "currency": "Currency",
+    "timezone": "Timezone",
+    "note": "Amounts aren't converted: changing the currency only changes how they're shown.",
+    "save": "Save household settings",
+    "saved": "Household settings saved.",
+    "nameMissing": "Name the household.",
+    "nameTooLong": "That name is too long.",
+    "chooseCurrency": "Choose a currency.",
+    "chooseTimezone": "Choose a timezone."
+  },
+  "password": {
+    "title": "Change password",
+    "subtitle": "We’ll email you when your password changes.",
+    "current": "Current password",
+    "forgot": "Forgot it?",
+    "new": "New password",
+    "newHint": "At least 8 characters.",
+    "repeat": "Repeat new password",
+    "signOutOthers": "Sign out of all other devices",
+    "signOutOthersHint": "Recommended if you think someone else knows your password.",
+    "submit": "Change password"
+  }
+}
