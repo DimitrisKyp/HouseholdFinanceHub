@@ -124,8 +124,9 @@ Things that work locally but must be done or changed on the real server
 
 ### Server setup
 
-- [x] Node.js 26 LTS, set in one place: `.nvmrc` (read by Coolify's builders and by CI) and
-      `engines.node` in `package.json`. To change the version later, edit `.nvmrc`.
+- [x] Node.js 26 LTS, set in two places: `.nvmrc` (read by Coolify's builders and by CI) and
+      `engines.node` = `26.x` in `package.json` (read by Vercel; pinned so it doesn't jump to the
+      next major version by itself). To upgrade later, change both.
 - [ ] After the first deploy, check that Coolify's build log shows Node 26. If it doesn't, set
       the app's environment variable `NIXPACKS_NODE_VERSION=26` in Coolify.
 - [x] Add `.env.example` listing every variable (no values), with an exception in `.gitignore`.
