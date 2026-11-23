@@ -6,7 +6,7 @@ import { openNotificationAction } from "@/lib/actions/notifications";
 import { getTranslations } from "@/i18n/server";
 
 // A word next to each notification (types.*), so the kind never depends on colour alone.
-const TYPE_TONES = { budget: "warning", goal: "success", member: "violet" };
+const TYPE_TONES = { budget: "warning", goal: "success", member: "violet", reminder: "info" };
 
 export default async function NotificationList({ items }) {
   const t = await getTranslations("notifications");

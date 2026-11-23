@@ -7,7 +7,7 @@ import { today } from "./helpers/dates.mjs";
 // Automated WCAG 2.1 A/AA checks (axe-core) on every page, in both themes. axe finds about a third
 // of real accessibility problems (contrast, names, labels, landmarks, ARIA misuse); keyboard use
 // and screen-reader wording are covered by the other tests and by hand.
-const APP_PAGES = ["/", "/budget", "/transactions", "/insights", "/goals", "/members", "/notifications", "/account"];
+const APP_PAGES = ["/", "/budget", "/transactions", "/insights", "/goals", "/reminders", "/members", "/notifications", "/account"];
 const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/forgot-password"];
 
 const setTheme = (context, theme) => context.addCookies([{ name: "theme", value: theme, url: BASE_URL }]);

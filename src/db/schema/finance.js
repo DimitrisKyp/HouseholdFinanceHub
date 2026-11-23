@@ -174,13 +174,46 @@ export const recurringItem = pgTable(
     startsOn: date("starts_on").notNull(),
     endsOn: date("ends_on"),
     isActive: boolean("is_active").notNull().default(true),
+    // Payment reminders for bills (lib/reminders.js). due_on is the first due date: later ones
+    // follow from it by `frequency`. null = no reminder. paid_through is the latest due date
+    // marked as paid, so the next one is the first due date after it.
+    dueOn: date("due_on"),
+    paidThrough: date("paid_through"),
+    // Also remind this many days before the due date (0 = only on the day).
+    remindDaysBefore: integer("remind_days_before").notNull().default(3),
     ...timestamps,
   },
   t => [
     check("recurring_item_amount_chk", sql`${t.amount} > 0`),
     check("recurring_item_day_chk", sql`${t.dayOfMonth} is null or ${t.dayOfMonth} between 1 and 31`),
     check("recurring_item_dates_chk", sql`${t.endsOn} is null or ${t.endsOn} >= ${t.startsOn}`),
+    check("recurring_item_remind_days_chk", sql`${t.remindDaysBefore} between 0 and 30`),
     index("recurring_item_household_idx").on(t.householdId, t.type, t.isActive),
+  ],
+);
+
+// ── Tasks ────────────────────────────────────────────────────────────────────
+
+// One-off things to do for the house ("buy a new kettle"), optionally by a date and for one member.
+export const task = pgTable(
+  "task",
+  {
+    id: id(),
+    householdId: householdId(),
+    title: varchar("title", { length: 120 }).notNull(),
+    // null = whenever; no reminder is sent.
+    dueOn: date("due_on"),
+    remindDaysBefore: integer("remind_days_before").notNull().default(1),
+    // Who should do it; null = anyone (owner and editors get the reminder).
+    assigneeUserId: text("assignee_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    doneAt: timestamp("done_at", { withTimezone: true }),
+    doneByUserId: text("done_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  t => [
+    check("task_remind_days_chk", sql`${t.remindDaysBefore} between 0 and 30`),
+    index("task_household_open_idx").on(t.householdId, t.doneAt),
   ],
 );
 

@@ -7,7 +7,7 @@ import HeroSection from "@/components/Dashboard/HeroSection";
 import TopBar from "@/components/TopBar";
 import { dateLocale } from "@/i18n/config";
 import Messages from "@/i18n/MessagesProvider";
-import { getLocale } from "@/i18n/server";
+import { getLocale, getTranslations } from "@/i18n/server";
 import { requireHousehold } from "@/lib/dal";
 import {
   billsByCategory,
@@ -23,6 +23,8 @@ import {
 import { currentMonthRange, formatDay, formatMoney, formatMonth, todayIn } from "@/lib/format";
 import { listMembers } from "@/lib/invites";
 import { can } from "@/lib/permissions";
+import { upcomingReminders } from "@/lib/reminder-data";
+import { reminderBadge } from "@/lib/reminders";
 
 const DASHBOARD_GOALS = 4;
 
@@ -34,12 +36,14 @@ export default async function DashboardPage() {
   const today = todayIn(timezone);
   const month = currentMonthRange(timezone);
 
-  const [recurring, categories, expenses, goals, members] = await Promise.all([
+  const [recurring, categories, expenses, goals, members, reminders, remindersT] = await Promise.all([
     listRecurringItems(householdId),
     listCategories(householdId),
     listExpenses(householdId, { from: month.start, to: month.end }),
     listGoals(householdId),
     canEdit ? listMembers(householdId) : [],
+    upcomingReminders(householdId, today),
+    getTranslations("reminders"),
   ]);
 
   // This month: recurring income minus fixed bills minus what was spent on top of them (expenses
@@ -68,6 +72,13 @@ export default async function DashboardPage() {
     .filter(item => item.status === "active")
     .slice(0, DASHBOARD_GOALS)
     .map(item => goalView(item, { currency, today, locale }));
+
+  const reminderRows = reminders.map(item => ({
+    key: `${item.kind}-${item.id}`,
+    title: item.title,
+    badge: reminderBadge(item, remindersT, date => formatDay(date, locale)),
+    amountLabel: item.kind === "bill" ? money(item.amount) : null,
+  }));
 
   const dateLabel = new Intl.DateTimeFormat(dateLocale(locale), {
     weekday: "long",
@@ -116,7 +127,7 @@ export default async function DashboardPage() {
             </div>
 
             <div className="flex flex-col gap-4 lg:min-h-0">
-              <GoalsRemindersPanel goals={goalRows} />
+              <GoalsRemindersPanel goals={goalRows} reminders={reminderRows} />
               {/* Other services: streamed separately, so they never hold up the rest of the page. */}
               <Suspense fallback={<MarketPanelSkeleton />}>
                 <MarketPanel currency={currency} timezone={timezone} />

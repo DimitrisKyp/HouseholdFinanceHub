@@ -1,0 +1,216 @@
+"use server";
+
+// Server Actions for reminders: a bill's due date and reminder, marking it paid (optionally logging
+// the expense), and household tasks. Owners and editors may change these; viewers may not.
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { db } from "@/db";
+import { expense, householdMember, recurringItem, task } from "@/db/schema";
+import { getTranslations } from "@/i18n/server";
+import { requirePermission } from "@/lib/dal";
+import { todayIn } from "@/lib/format";
+import { field, parseDate, UUID_PATTERN } from "@/lib/forms";
+import { announce, liveMessage } from "@/lib/live";
+import { checkBudgetAlert } from "@/lib/notifications";
+import { clearReminderAlerts } from "@/lib/reminder-data";
+import { nextDueDate, REMIND_DAY_CHOICES } from "@/lib/reminders";
+
+const MAX_TITLE_LENGTH = 120;
+
+async function refreshReminderPages(context, message, kind = "reminders") {
+  revalidatePath("/reminders");
+  revalidatePath("/");
+  await announce(context, kind, message ?? liveMessage("remindersUpdated", { name: context.user.name }));
+}
+
+/** The user id if they're an owner or editor of this household ("" = nobody), else undefined. */
+async function assignableMember(householdId, userId) {
+  if (!userId) return null;
+  if (userId.length > 64) return undefined;
+  const [row] = await db
+    .select({ userId: householdMember.userId, role: householdMember.role })
+    .from(householdMember)
+    .where(and(eq(householdMember.householdId, householdId), eq(householdMember.userId, userId)));
+  return row && row.role !== "viewer" ? row.userId : undefined;
+}
+
+const parseRemindDays = raw => {
+  const days = Number(raw);
+  return REMIND_DAY_CHOICES.includes(days) ? days : null;
+};
+
+// ── Bills ────────────────────────────────────────────────────────────────────
+
+async function findBill(householdId, itemId) {
+  if (!UUID_PATTERN.test(itemId)) return null;
+  const [row] = await db
+    .select()
+    .from(recurringItem)
+    .where(and(eq(recurringItem.id, itemId), eq(recurringItem.householdId, householdId), eq(recurringItem.type, "expense")));
+  return row ?? null;
+}
+
+/** Sets (or, with an empty due date, removes) a bill's reminder: next due date, days before, who pays. */
+export async function saveBillReminderAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("reminders");
+  const bill = await findBill(context.householdId, field(formData, "itemId"));
+  if (!bill) return { error: t("errors.billGone") };
+
+  if (field(formData, "remove") === "true") {
+    await db.update(recurringItem).set({ dueOn: null, paidThrough: null }).where(eq(recurringItem.id, bill.id));
+    await refreshReminderPages(context);
+    return { success: t("success.reminderRemoved") };
+  }
+
+  const values = {
+    dueOn: field(formData, "dueOn"),
+    remindDaysBefore: field(formData, "remindDaysBefore"),
+    payerUserId: field(formData, "payerUserId"),
+  };
+  const errors = {};
+  const dueOn = parseDate(values.dueOn);
+  if (!dueOn) errors.dueOn = t("errors.dueDate");
+  const remindDaysBefore = parseRemindDays(values.remindDaysBefore);
+  if (remindDaysBefore === null) errors.remindDaysBefore = t("errors.remindDays");
+  const payerUserId = await assignableMember(context.householdId, values.payerUserId);
+  if (payerUserId === undefined) errors.payerUserId = t("errors.chooseMember");
+  if (Object.keys(errors).length) return { errors, values };
+
+  // A new next due date starts the schedule again from there.
+  await db
+    .update(recurringItem)
+    .set({ dueOn, paidThrough: null, remindDaysBefore, memberUserId: payerUserId })
+    .where(eq(recurringItem.id, bill.id));
+  await refreshReminderPages(context);
+  return { success: t("success.reminderSaved", { title: bill.title }) };
+}
+
+/** Marks the bill's next due date as paid; with logExpense, also adds it as today's expense. */
+export async function markBillPaidAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("reminders");
+  const bill = await findBill(context.householdId, field(formData, "itemId"));
+  if (!bill) return { error: t("errors.billGone") };
+  const dueDate = nextDueDate(bill);
+  if (!dueDate) return { error: t("errors.noReminder") };
+  // The page showed this due date; don't skip a second one if someone else just marked it paid.
+  if (field(formData, "dueDate") && field(formData, "dueDate") !== dueDate) return { error: t("errors.alreadyPaid") };
+
+  const today = todayIn(context.timezone);
+  const logExpense = field(formData, "logExpense") === "on" && bill.categoryId;
+  await db.transaction(async tx => {
+    await tx.update(recurringItem).set({ paidThrough: dueDate }).where(eq(recurringItem.id, bill.id));
+    if (logExpense) {
+      await tx.insert(expense).values({
+        householdId: context.householdId,
+        categoryId: bill.categoryId,
+        title: bill.title,
+        amount: bill.amount,
+        spentOn: today,
+        paidByUserId: bill.memberUserId ?? context.user.id,
+        createdByUserId: context.user.id,
+      });
+    }
+  });
+  await clearReminderAlerts(context.householdId, "bill", bill.id, dueDate);
+  if (logExpense) {
+    try {
+      await checkBudgetAlert({
+        householdId: context.householdId,
+        categoryId: bill.categoryId,
+        spentOn: today,
+        today,
+        currency: context.currency,
+      });
+    } catch (error) {
+      console.error("Budget alert check failed", error);
+    }
+    revalidatePath("/transactions");
+  }
+  await refreshReminderPages(
+    context,
+    liveMessage("billPaid", { name: context.user.name, title: bill.title }),
+    logExpense ? "expenses" : "reminders",
+  );
+  return { success: logExpense ? t("success.paidAndLogged", { title: bill.title }) : t("success.paid", { title: bill.title }) };
+}
+
+// ── Tasks ────────────────────────────────────────────────────────────────────
+
+export async function addTaskAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("reminders");
+  const values = {
+    title: field(formData, "title"),
+    dueOn: field(formData, "dueOn"),
+    remindDaysBefore: field(formData, "remindDaysBefore"),
+    assigneeUserId: field(formData, "assigneeUserId"),
+  };
+
+  const errors = {};
+  if (!values.title) errors.title = t("errors.taskTitle");
+  else if (values.title.length > MAX_TITLE_LENGTH) errors.title = t("errors.titleTooLong");
+  const dueOn = values.dueOn ? parseDate(values.dueOn) : null;
+  if (values.dueOn && !dueOn) errors.dueOn = t("errors.dueDate");
+  const remindDaysBefore = values.remindDaysBefore === "" ? 1 : parseRemindDays(values.remindDaysBefore);
+  if (remindDaysBefore === null) errors.remindDaysBefore = t("errors.remindDays");
+  const assigneeUserId = await assignableMember(context.householdId, values.assigneeUserId);
+  if (assigneeUserId === undefined) errors.assigneeUserId = t("errors.chooseMember");
+  if (Object.keys(errors).length) return { errors, values };
+
+  await db.insert(task).values({
+    householdId: context.householdId,
+    title: values.title,
+    dueOn,
+    remindDaysBefore,
+    assigneeUserId,
+    createdByUserId: context.user.id,
+  });
+  await refreshReminderPages(context);
+  // Keep the reminder choice and the person for the next one; clear the rest.
+  return {
+    success: t("success.taskAdded", { title: values.title }),
+    values: { remindDaysBefore: values.remindDaysBefore, assigneeUserId: values.assigneeUserId },
+  };
+}
+
+async function findTask(householdId, taskId) {
+  if (!UUID_PATTERN.test(taskId)) return null;
+  const [row] = await db
+    .select()
+    .from(task)
+    .where(and(eq(task.id, taskId), eq(task.householdId, householdId)));
+  return row ?? null;
+}
+
+/** done=true finishes a task, done=false puts it back on the list. */
+export async function setTaskDoneAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("reminders");
+  const found = await findTask(context.householdId, field(formData, "taskId"));
+  if (!found) return { error: t("errors.taskGone") };
+  const done = field(formData, "done") === "true";
+
+  const updated = await db
+    .update(task)
+    .set(done ? { doneAt: new Date(), doneByUserId: context.user.id } : { doneAt: null, doneByUserId: null })
+    .where(and(eq(task.id, found.id), done ? isNull(task.doneAt) : isNotNull(task.doneAt)))
+    .returning({ id: task.id });
+  if (!updated.length)
+    return { success: done ? t("success.taskDone", { title: found.title }) : t("success.taskReopened", { title: found.title }) };
+  if (done) await clearReminderAlerts(context.householdId, "task", found.id, found.dueOn);
+  await refreshReminderPages(context, done ? liveMessage("taskDone", { name: context.user.name, title: found.title }) : null);
+  return { success: done ? t("success.taskDone", { title: found.title }) : t("success.taskReopened", { title: found.title }) };
+}
+
+export async function deleteTaskAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("reminders");
+  const found = await findTask(context.householdId, field(formData, "taskId"));
+  if (!found) return { error: t("errors.taskGone") };
+  await db.delete(task).where(eq(task.id, found.id));
+  await clearReminderAlerts(context.householdId, "task", found.id, found.dueOn);
+  await refreshReminderPages(context);
+  return { success: t("success.taskDeleted") };
+}

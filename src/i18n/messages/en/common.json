@@ -18,7 +18,8 @@
     "account": "Account",
     "more": "More",
     "unreadTitle": "{label}: {count} unread",
-    "unreadLabel": "{label}, {count} unread"
+    "unreadLabel": "{label}, {count} unread",
+    "reminders": "Reminders"
   },
   "roles": {
     "owner": "Owner",
@@ -38,7 +39,10 @@
     "goalAdded": "{name} added {amount} to {goal}",
     "goalWithdrawn": "{name} took {amount} from {goal}",
     "expenseAdded": "{name} added {title} ({amount})",
-    "expenseDeleted": "{name} deleted {title}"
+    "expenseDeleted": "{name} deleted {title}",
+    "remindersUpdated": "{name} updated the reminders",
+    "billPaid": "{name} marked {title} as paid",
+    "taskDone": "{name} finished {title}"
   },
   "showPassword": "Show password",
   "hidePassword": "Hide password"

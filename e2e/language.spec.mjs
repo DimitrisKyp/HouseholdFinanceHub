@@ -6,7 +6,7 @@ import { today } from "./helpers/dates.mjs";
 
 // English and Greek. The language is a per-user choice (Account page), kept in a cookie; visitors
 // who haven't chosen get their browser's preference.
-const APP_PAGES = ["/", "/budget", "/transactions", "/insights", "/goals", "/members", "/notifications", "/account"];
+const APP_PAGES = ["/", "/budget", "/transactions", "/insights", "/goals", "/reminders", "/members", "/notifications", "/account"];
 const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/forgot-password"];
 // A message that's missing shows as "namespace.key" (see i18n/translate.js).
 const MISSING_MESSAGE =

@@ -24,7 +24,8 @@ export default async function AppLayout({ children }) {
         {t("skipToContent")}
       </a>
       <aside className="shrink-0 md:w-25">
-        <div className="h-full md:py-28 md:pr-0 md:pl-6">
+        {/* From md up: a column centred beside the page, as tall as its items (scrolls on very short screens). */}
+        <div className="h-full md:flex md:items-center md:py-4 md:pr-0 md:pl-6">
           <SideNav unreadCount={unreadCount} />
         </div>
       </aside>

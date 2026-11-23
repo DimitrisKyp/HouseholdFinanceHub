@@ -71,6 +71,19 @@ const navItems = [
     ),
   },
   {
+    href: "/reminders",
+    labelKey: "reminders",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M8 7V3m8 4V3M5 11h14M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1zm4 10l2 2 4-4"
+        />
+      </svg>
+    ),
+  },
+  {
     href: "/members",
     labelKey: "members",
     icon: (
@@ -203,7 +216,7 @@ export default function SideNav({ unreadCount = 0 }) {
   const items = navItems.map(item => ({ ...item, label: t(`nav.${item.labelKey}`) }));
 
   return (
-    <nav className="relative h-full rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl shadow-black/30">
+    <nav className="relative h-full rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl shadow-black/30 md:h-auto md:max-h-full md:overflow-y-auto">
       <div className="relative z-10 flex h-full flex-row items-center justify-around gap-1 md:flex-col md:justify-center md:gap-3">
         {items.map(({ href, label, icon }) => {
           const isActive = isActivePath(pathname, href);

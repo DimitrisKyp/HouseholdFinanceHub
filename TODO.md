@@ -52,8 +52,7 @@ items below are for the move to a real server later (VPS + Coolify + own domain)
 
 ### Later features that depend on deployment
 
-- [ ] In-app budget alerts are sent when an expense is added, so they need no scheduled job.
-      Reminder emails (e.g. a weekly summary, or a goal falling behind) would: a cron task in
-      Coolify calling a protected route.
+- [ ] On the real server, schedule the daily reminders job (README, "Reminders"): a cron task in
+      Coolify calling `/api/cron/reminders` with `CRON_SECRET`.
 - [ ] If profile pictures from other sites are allowed, add their hosts to `images.remotePatterns`
       in `next.config.mjs` (otherwise `next/image` throws an error).

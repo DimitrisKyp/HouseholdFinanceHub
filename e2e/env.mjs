@@ -28,3 +28,6 @@ export function testDatabaseUrl() {
   }
   return url;
 }
+
+/** The daily reminders job's secret on the test server (see playwright.config.mjs). */
+export const E2E_CRON_SECRET = "e2e-cron-secret-not-used-anywhere-else";

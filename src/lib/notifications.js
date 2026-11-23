@@ -17,17 +17,26 @@ export const NOTIFICATIONS_SHOWN = 50;
  * data (from lib/notification-messages.js) lets it be shown in each reader's language. Users who already have a
  * notification with the same dedupeKey are skipped. Returns true if anything was sent.
  */
-export async function notify(executor, { householdId, userIds, type, title, body = null, data = null, link = null, dedupeKey = null }) {
-  if (!userIds.length) return false;
+export async function notify(executor, message) {
+  return (await notifyUsers(executor, message)).length > 0;
+}
+
+/** Like notify(), but returns the ids of the users who got it (not those who already had it). */
+export async function notifyUsers(
+  executor,
+  { householdId, userIds, type, title, body = null, data = null, link = null, dedupeKey = null },
+) {
+  if (!userIds.length) return [];
   const sent = await executor
     .insert(notification)
-    .values(userIds.map(userId => ({ householdId, userId, type, title, body, data, link, dedupeKey })))
+    .values([...new Set(userIds)].map(userId => ({ householdId, userId, type, title, body, data, link, dedupeKey })))
     .onConflictDoNothing()
-    .returning({ id: notification.id });
-  if (!sent.length) return false;
+    .returning({ userId: notification.userId });
+  if (!sent.length) return [];
+  const recipients = sent.map(row => row.userId);
   // Updates the unread badge of the people who got one (after the transaction commits, if in one).
-  await publish({ householdId, kind: "notifications", userIds: [...new Set(userIds)] }, executor);
-  return true;
+  await publish({ householdId, kind: "notifications", userIds: recipients }, executor);
+  return recipients;
 }
 
 /** User ids of the household's members, optionally only some roles. */

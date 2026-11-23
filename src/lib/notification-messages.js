@@ -8,7 +8,7 @@
 import { DEFAULT_LOCALE } from "@/i18n/config";
 import { MESSAGES } from "@/i18n/messages";
 import { createTranslator } from "@/i18n/translate";
-import { formatMoney, formatMonth } from "@/lib/format";
+import { formatDay, formatMoney, formatMonth } from "@/lib/format";
 
 /** Budget alerts go out when a category reaches these shares of its monthly limit (highest first). */
 export const BUDGET_THRESHOLDS = [100, 80];
@@ -67,6 +67,19 @@ const RENDERERS = {
       }),
     };
   },
+  // A bill to pay or a task to do. stage: "upcoming" (days before) or "due" (overdue if it was
+  // already past its date when the alert went out).
+  reminder({ item, title, dueDate, stage, days, overdue, amount, currency }, t, locale) {
+    const date = formatDay(dueDate, locale);
+    const variant = stage === "upcoming" ? "upcoming" : overdue ? "overdue" : "due";
+    return {
+      title: t(`messages.reminder.${variant}`, { title, count: days }),
+      body:
+        item === "bill"
+          ? t("messages.reminder.billBody", { amount: formatMoney(amount, currency, locale), date })
+          : t("messages.reminder.taskBody", { date }),
+    };
+  },
   roleChanged({ role, householdName }, t, _locale, roles) {
     const variant = role === "viewer" ? "viewer" : "editor";
     return {
@@ -107,6 +120,11 @@ export function memberJoinedMessage({ memberName, role, householdName }) {
 
 export function welcomeMessage({ householdName, role, inviterName }) {
   return build({ kind: "welcome", householdName, role, inviterName });
+}
+
+/** A reminder for a bill (with amount and currency) or a task. days: days until due, for "upcoming". */
+export function reminderMessage({ item, title, dueDate, stage, days = 0, overdue = false, amount = null, currency = null }) {
+  return build({ kind: "reminder", item, title, dueDate, stage, days, overdue, amount, currency });
 }
 
 export function roleChangedMessage({ role, householdName }) {

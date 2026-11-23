@@ -132,6 +132,7 @@ dashboard), and there are **no downloadable backups**, so make your own (see "Ba
    | `BETTER_AUTH_URL`    | `https://nestestia.com`                        |
    | `SMTP_URL`           | `smtps://resend:<API key>@smtp.resend.com:465` |
    | `EMAIL_FROM`         | `Household Hub <no-reply@mail.nestestia.com>`  |
+   | `CRON_SECRET`        | a new random secret (for the reminders job)    |
 
 3. **Settings → Functions → Function Region**: **Frankfurt (fra1)**, next to the database.
 4. **Settings → Domains**: add `nestestia.com` and `www.nestestia.com`, then add the DNS records
@@ -232,6 +233,21 @@ Close it with Ctrl+C (or close VS Code), and the site shows "Currently offline".
 - The tunnel address itself is public too, but hard to guess, and every page still needs a sign-in.
 - **Moving to a real server later**: delete the Worker's custom domains (or the Worker), point
   `nestestia.com` at the server, and delete `.env.production.local`.
+
+## Reminders
+
+Bills from the Budget page can get a next due date, and the Reminders page keeps a list of tasks.
+A daily job, `/api/cron/reminders`, sends what's due: an in-app alert per bill or task (on the day, or
+the chosen number of days before), then one email per person with what they got. Each alert is sent
+once, so running the job again, or a day late, is harmless.
+
+- **On Vercel** the job runs by itself every day at 05:00 UTC (`vercel.json`; on the free plan Vercel
+  may run it any time within that hour). Set `CRON_SECRET` in the project's environment variables:
+  Vercel sends it with each call, and the route refuses to run without it.
+- **Elsewhere** (e.g. Coolify), schedule a daily request with the secret:
+  `curl -H "Authorization: Bearer $CRON_SECRET" https://nestestia.com/api/cron/reminders`.
+- **Locally**, set `CRON_SECRET` in `.env.local` and run the same `curl` against
+  `http://localhost:3000`. Without `SMTP_URL` the emails are printed in the `npm run dev` terminal.
 
 ## Email
 

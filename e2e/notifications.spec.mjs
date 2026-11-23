@@ -33,7 +33,7 @@ test.beforeAll(async () => {
 test("starts empty", async ({ page }) => {
   await page.goto("/notifications");
   await expect(alertsLink(page)).toHaveAccessibleName("Alerts");
-  await expect(page.getByText("You'll get one when a category nears its monthly limit")).toBeVisible();
+  await expect(page.getByText("You'll get one when a bill or task is due, a category nears its monthly limit")).toBeVisible();
 });
 
 test("budget alerts at 80% and 100%, once each", async ({ page }) => {

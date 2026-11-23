@@ -34,5 +34,13 @@
     "line2": "Open the link to choose your password and join. It works for {days} days.",
     "button": "Accept invitation",
     "footer": "If you weren't expecting this, you can ignore this email. Nothing happens unless you accept."
+  },
+  "reminders": {
+    "subject_one": "Reminder: {first}",
+    "subject_other": "{count} reminders from {app}",
+    "line_one": "Here's what's due:",
+    "line_other": "Here are {count} things that are due:",
+    "button": "Open reminders",
+    "footer": "You get this email when a bill or task in {app} is due, or a few days before. Assigned reminders go only to that person."
   }
 }
