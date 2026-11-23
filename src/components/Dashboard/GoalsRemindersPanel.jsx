@@ -4,8 +4,8 @@ import { getTranslations } from "@/i18n/server";
 export default async function GoalsCompactPanel({ goals }) {
   const t = await getTranslations("dashboard");
   return (
-    <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl shadow-black/10 backdrop-blur">
-      <div className="mb-4 flex items-center justify-between">
+    <section className="flex flex-col rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl shadow-black/10 backdrop-blur lg:max-h-[50%] lg:min-h-0 lg:shrink-0">
+      <div className="mb-4 flex shrink-0 items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-white">{t("goals.title")}</h2>
           <p className="mt-0.5 text-xs text-slate-400">{t("goals.subtitle")}</p>
@@ -18,7 +18,7 @@ export default async function GoalsCompactPanel({ goals }) {
         </Link>
       </div>
       {goals.length ? (
-        <ul className="space-y-3">
+        <ul aria-label={t("goals.title")} tabIndex={0} className="relative min-h-0 space-y-3 overflow-y-auto rounded-lg">
           {goals.map(goal => (
             <li key={goal.id}>
               <div className="flex items-center justify-between gap-2 text-xs">

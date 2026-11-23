@@ -113,3 +113,27 @@ test.describe("editor", () => {
     await expect(page.locator("main")).toContainText("€163");
   });
 });
+
+test("fits a laptop screen without scrolling the page; long lists scroll inside their panel", async ({ page }) => {
+  const { householdId, categoryIds } = await resetHousehold();
+  for (let i = 1; i <= 30; i += 1) {
+    await sql(`INSERT INTO expense (household_id, category_id, title, amount, spent_on) VALUES ($1, $2, $3, 10, $4)`, [
+      householdId,
+      categoryIds.Groceries,
+      `Shopping ${i}`,
+      today(),
+    ]);
+  }
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("/");
+
+  const overflow = el => el.scrollHeight - el.clientHeight;
+  expect(await page.locator("#content > div").first().evaluate(overflow)).toBeLessThanOrEqual(1);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight - document.documentElement.clientHeight)).toBeLessThanOrEqual(1);
+
+  const recent = page.getByRole("region", { name: "Recent this month" });
+  expect(await recent.evaluate(overflow)).toBeGreaterThan(0);
+  await expect(page.getByRole("button", { name: "Add expense" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: /budget breakdown/ })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "Markets & news" })).toBeInViewport();
+});

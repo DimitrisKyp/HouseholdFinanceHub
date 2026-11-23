@@ -80,8 +80,10 @@ export default async function DashboardPage() {
 
   return (
     <Messages namespaces={["dashboard"]}>
-      <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
-        <main className="mx-auto flex w-full flex-col gap-4">
+      {/* From lg up the dashboard fits the screen: no page scroll, long lists scroll inside their
+          panel. Smaller screens scroll the page as usual. */}
+      <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6 lg:overflow-hidden">
+        <main className="mx-auto flex w-full flex-col gap-4 lg:h-full">
           <TopBar
             balanceLabel={money(net)}
             balanceNegative={net < 0}
@@ -98,8 +100,8 @@ export default async function DashboardPage() {
             incomeSourcesCount={recurring.filter(item => item.type === "income").length}
           />
 
-          <section className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
-            <div className="min-h-0 space-y-4">
+          <section className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[1.4fr_0.9fr] lg:grid-rows-1">
+            <div className="flex flex-col lg:min-h-0">
               <ExpenseSection
                 categories={categories.map(({ id, name }) => ({ id, name }))}
                 members={members.map(({ userId, name }) => ({ userId, name }))}
@@ -113,15 +115,14 @@ export default async function DashboardPage() {
               />
             </div>
 
-            <div className="min-h-0 space-y-4">
+            <div className="flex flex-col gap-4 lg:min-h-0">
               <GoalsRemindersPanel goals={goalRows} />
+              {/* Other services: streamed separately, so they never hold up the rest of the page. */}
+              <Suspense fallback={<MarketPanelSkeleton />}>
+                <MarketPanel currency={currency} timezone={timezone} />
+              </Suspense>
             </div>
           </section>
-
-          {/* Other services: streamed separately, so they never hold up the rest of the page. */}
-          <Suspense fallback={<MarketPanelSkeleton />}>
-            <MarketPanel currency={currency} timezone={timezone} />
-          </Suspense>
         </main>
       </div>
     </Messages>

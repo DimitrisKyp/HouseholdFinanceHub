@@ -125,8 +125,14 @@ export default async function MarketPanel({ currency, timezone }) {
   for (const result of [rates, news]) if (result.status === "rejected") console.error("Market data failed", result.reason);
 
   return (
-    <Panel title={t("market.title")} subtitle={t("market.subtitle", { currency, source: NEWS_SOURCE })}>
-      <div className="grid gap-5 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+    <Panel
+      title={t("market.title")}
+      subtitle={t("market.subtitle", { currency, source: NEWS_SOURCE })}
+      className="flex flex-col lg:min-h-0 lg:flex-1"
+      contentClassName="relative min-h-0 flex-1 overflow-y-auto"
+    >
+      {/* Side by side when there's room; stacked in the dashboard's narrower right column on lg-xl. */}
+      <div className="grid gap-5 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:grid-cols-1 2xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <section aria-labelledby="rates-heading">
           <h3 id="rates-heading" className="mb-2 text-xs font-semibold tracking-[0.2em] text-cyan-300 uppercase">
             {t("market.ratesHeading")}

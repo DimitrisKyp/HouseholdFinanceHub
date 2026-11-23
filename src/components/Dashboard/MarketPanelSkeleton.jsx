@@ -6,8 +6,13 @@ import { getTranslations } from "@/i18n/server";
 export default async function MarketPanelSkeleton() {
   const t = await getTranslations("dashboard");
   return (
-    <Panel title={t("market.title")} subtitle={t("market.loadingSubtitle")}>
-      <div className="grid gap-5 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+    <Panel
+      title={t("market.title")}
+      subtitle={t("market.loadingSubtitle")}
+      className="flex flex-col lg:min-h-0 lg:flex-1"
+      contentClassName="min-h-0 flex-1 overflow-hidden"
+    >
+      <div className="grid gap-5 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:grid-cols-1 2xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <SkeletonBlock label={t("market.loadingRates")} lines={4} />
         <SkeletonBlock label={t("market.loadingHeadlines")} lines={5} />
       </div>
