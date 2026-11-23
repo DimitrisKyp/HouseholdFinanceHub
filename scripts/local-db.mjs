@@ -18,12 +18,12 @@ import os from "node:os";
 import path from "node:path";
 
 const PORT = 5433;
-const DB_NAME = "household_finance_hub";
-const TEST_DB_NAME = "household_finance_test";
+const DB_NAME = "household_hub";
+const TEST_DB_NAME = "household_hub_test";
 const DB_USER = "app";
 
 const PG_BIN = process.env.PG_BIN ?? "C:\\Program Files\\PostgreSQL\\17\\bin";
-const ROOT = process.env.LOCAL_DB_DIR ?? path.join(process.env.LOCALAPPDATA ?? path.join(os.homedir(), ".local"), "household-finance-hub");
+const ROOT = process.env.LOCAL_DB_DIR ?? path.join(process.env.LOCALAPPDATA ?? path.join(os.homedir(), ".local"), "household-hub");
 const DATA_DIR = path.join(ROOT, "pgdata");
 const LOG_FILE = path.join(ROOT, "postgres.log");
 const SUPERUSER_PW_FILE = path.join(ROOT, "postgres-superuser-password.txt");
@@ -111,7 +111,7 @@ function init() {
   if (status !== 0) throw new Error("initdb failed");
 
   // Listen only on this machine, on our own port.
-  fs.appendFileSync(path.join(DATA_DIR, "postgresql.conf"), `\n# household-finance-hub\nport = ${PORT}\nlisten_addresses = 'localhost'\n`);
+  fs.appendFileSync(path.join(DATA_DIR, "postgresql.conf"), `\n# household-hub\nport = ${PORT}\nlisten_addresses = 'localhost'\n`);
 
   start();
 

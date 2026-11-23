@@ -60,12 +60,10 @@ npm run db:migrate   # create the tables
 `db:init` does the following:
 
 - Creates a PostgreSQL server for this project in
-  `%LOCALAPPDATA%\household-finance-hub\pgdata`, listening on **localhost:5433**.
+  `%LOCALAPPDATA%\household-hub\pgdata`, listening on **localhost:5433**.
 - Generates passwords and writes `DATABASE_URL` to `.env.local`, which is never committed.
 - Saves the database admin (`postgres`) password in
-  `%LOCALAPPDATA%\household-finance-hub\postgres-superuser-password.txt`.
-- The folder and the database (`household_finance_hub`) keep the project's original name, from
-  before it became Household Hub, so existing local databases keep working.
+  `%LOCALAPPDATA%\household-hub\postgres-superuser-password.txt`.
 
 Every setting the app reads is listed, with what it's for, in [`.env.example`](.env.example). Copy the
 ones you need into `.env.local` (development) or set them in Coolify (production).
@@ -288,7 +286,7 @@ See [schema.md](schema.md) for the tables and the permission rules.
 | `npm run test:e2e`   | Browser tests (Playwright) of the main user flows, about 2 minutes   |
 
 The browser tests build the app, start it on port 3100 and use it like a person would, signed in
-as an owner, an editor and a viewer. They use their own database, `household_finance_test`, and
+as an owner, an editor and a viewer. They use their own database, `household_hub_test`, and
 wipe it on every run, so your own data is never touched. Before the first run:
 
 ```bash
@@ -315,10 +313,10 @@ npm run db:init-test  # once: creates the test database and adds TEST_DATABASE_U
    | Port | `5433` |
    | Maintenance database | `postgres` |
    | Username | `postgres` |
-   | Password | contents of `%LOCALAPPDATA%\household-finance-hub\postgres-superuser-password.txt` |
+   | Password | contents of `%LOCALAPPDATA%\household-hub\postgres-superuser-password.txt` |
    | Save password? | on |
 5. Click **Save**.
-6. Browse to **Household Hub (local)** → **Databases** → **household_finance_hub** →
+6. Browse to **Household Hub (local)** → **Databases** → **household_hub** →
    **Schemas** → **public** → **Tables**.
    - To see rows, right-click a table → **View/Edit Data** → **All Rows**.
    - To write SQL, select the database, then **Tools** → **Query Tool**.
