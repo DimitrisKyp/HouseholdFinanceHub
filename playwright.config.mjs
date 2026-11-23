@@ -23,7 +23,10 @@ export default defineConfig({
     baseURL: BASE_URL,
     viewport: { width: 1400, height: 1000 },
     // CI installs Playwright's Chromium; locally the installed Edge is used, so no extra download.
-    channel: process.env.E2E_BROWSER_CHANNEL ?? (CI ? undefined : "msedge"),
+    // "chromium" is the full browser in its new headless mode, like Edge locally. Playwright's default
+    // on CI would be the stripped-down "headless shell", where forms on the page sometimes stayed
+    // pending after the server had answered (tests failing at random, on CI only).
+    channel: process.env.E2E_BROWSER_CHANNEL ?? (CI ? "chromium" : "msedge"),
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
