@@ -36,7 +36,6 @@ test("owner adds expenses, with validation", async ({ page }) => {
 
   await page.fill("#expense-date", "2099-01-01");
   await page.click('button:has-text("Add expense")');
-  await expect(page.getByText("What was it for?")).toBeVisible();
   await expect(page.getByText("Choose a category.")).toBeVisible();
   await expect(page.getByText("The date can't be in the future.")).toBeVisible();
 
@@ -136,4 +135,23 @@ test("fits a laptop screen without scrolling the page; long lists scroll inside 
   await expect(page.getByRole("button", { name: "Add expense" })).toBeInViewport();
   await expect(page.getByRole("button", { name: /budget breakdown/ })).toBeInViewport();
   await expect(page.getByRole("heading", { name: "Markets & news" })).toBeInViewport();
+});
+
+test("an expense without a description goes by its category", async ({ page }) => {
+  await resetHousehold();
+  await page.goto("/");
+  await page.fill("#expense-amount", "18");
+  await page.selectOption("#expense-category", { label: "Groceries" });
+  await page.click('button:has-text("Add expense")');
+  await expect(page.getByText("Groceries (€18) added.")).toBeVisible();
+
+  const row = page.getByRole("list", { name: "Recent expenses" }).getByRole("listitem").first();
+  await expect(row.locator("p").first()).toHaveText("Groceries");
+  await expect(row).not.toContainText("· Groceries");
+
+  // The transactions table has its own category column, so the description shows as "-".
+  await page.goto("/transactions");
+  const cells = page.locator("tbody tr").first().locator("td");
+  await expect(cells.nth(1)).toHaveText("-");
+  await expect(cells.nth(2)).toHaveText("Groceries");
 });

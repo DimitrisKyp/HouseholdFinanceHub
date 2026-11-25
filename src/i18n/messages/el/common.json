@@ -9,7 +9,8 @@
   "nav": {
     "label": "Κύρια",
     "dashboard": "Αρχική",
-    "budget": "Μπάτζετ",
+    "budget": "Οικονομικά",
+    "categories": "Δαπάνες",
     "transactions": "Κινήσεις",
     "insights": "Αναλύσεις",
     "goals": "Στόχοι",

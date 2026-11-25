@@ -36,7 +36,7 @@ export default async function GoalsPage() {
   return (
     <Messages namespaces={["goals"]}>
       <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
-        <main className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+        <main className="mx-auto flex w-full flex-col gap-4">
           <section className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20 backdrop-blur md:p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>

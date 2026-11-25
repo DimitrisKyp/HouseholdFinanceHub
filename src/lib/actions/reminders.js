@@ -6,14 +6,14 @@ import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { expense, householdMember, recurringItem, task } from "@/db/schema";
-import { getTranslations } from "@/i18n/server";
+import { getLocale, getTranslations } from "@/i18n/server";
 import { requirePermission } from "@/lib/dal";
-import { todayIn } from "@/lib/format";
-import { field, parseDate, UUID_PATTERN } from "@/lib/forms";
+import { formatDay, todayIn } from "@/lib/format";
+import { field, parseAmount, parseDate, UUID_PATTERN } from "@/lib/forms";
 import { announce, liveMessage } from "@/lib/live";
 import { checkBudgetAlert } from "@/lib/notifications";
 import { clearReminderAlerts } from "@/lib/reminder-data";
-import { nextDueDate, REMIND_DAY_CHOICES } from "@/lib/reminders";
+import { nextDueDate, nextRepeatDate, REMIND_DAY_CHOICES, TASK_KINDS, TASK_REPEATS } from "@/lib/reminders";
 
 const MAX_TITLE_LENGTH = 120;
 
@@ -143,7 +143,10 @@ export async function addTaskAction(_previousState, formData) {
   const t = await getTranslations("reminders");
   const values = {
     title: field(formData, "title"),
+    kind: field(formData, "kind"),
+    amount: field(formData, "amount"),
     dueOn: field(formData, "dueOn"),
+    repeat: field(formData, "repeat"),
     remindDaysBefore: field(formData, "remindDaysBefore"),
     assigneeUserId: field(formData, "assigneeUserId"),
   };
@@ -151,8 +154,17 @@ export async function addTaskAction(_previousState, formData) {
   const errors = {};
   if (!values.title) errors.title = t("errors.taskTitle");
   else if (values.title.length > MAX_TITLE_LENGTH) errors.title = t("errors.titleTooLong");
+  const kind = values.kind || "other";
+  if (!TASK_KINDS.includes(kind)) errors.kind = t("errors.chooseKind");
+  // Optional: with an amount it's a bill to pay, without one just a reminder.
+  const amount = values.amount ? parseAmount(values.amount) : null;
+  if (values.amount && amount === null) errors.amount = t("errors.amount");
   const dueOn = values.dueOn ? parseDate(values.dueOn) : null;
   if (values.dueOn && !dueOn) errors.dueOn = t("errors.dueDate");
+  const repeat = values.repeat || null;
+  if (repeat && !TASK_REPEATS.includes(repeat)) errors.repeat = t("errors.chooseRepeat");
+  // A repeating task needs a first due date to count from.
+  else if (repeat && !values.dueOn) errors.dueOn = t("errors.repeatNeedsDate");
   const remindDaysBefore = values.remindDaysBefore === "" ? 1 : parseRemindDays(values.remindDaysBefore);
   if (remindDaysBefore === null) errors.remindDaysBefore = t("errors.remindDays");
   const assigneeUserId = await assignableMember(context.householdId, values.assigneeUserId);
@@ -162,16 +174,19 @@ export async function addTaskAction(_previousState, formData) {
   await db.insert(task).values({
     householdId: context.householdId,
     title: values.title,
+    kind,
+    amount,
     dueOn,
+    repeat,
     remindDaysBefore,
     assigneeUserId,
     createdByUserId: context.user.id,
   });
   await refreshReminderPages(context);
-  // Keep the reminder choice and the person for the next one; clear the rest.
+  // Keep the type, reminder choice and person for the next one; clear the rest.
   return {
     success: t("success.taskAdded", { title: values.title }),
-    values: { remindDaysBefore: values.remindDaysBefore, assigneeUserId: values.assigneeUserId },
+    values: { kind: values.kind, remindDaysBefore: values.remindDaysBefore, assigneeUserId: values.assigneeUserId },
   };
 }
 
@@ -191,6 +206,24 @@ export async function setTaskDoneAction(_previousState, formData) {
   const found = await findTask(context.householdId, field(formData, "taskId"));
   if (!found) return { error: t("errors.taskGone") };
   const done = field(formData, "done") === "true";
+
+  // A repeating task stays on the list: done moves it on to its next due date.
+  if (done && found.repeat && found.dueOn) {
+    // The page showed this due date; don't skip a second one if someone else just did it.
+    if (field(formData, "dueDate") && field(formData, "dueDate") !== found.dueOn)
+      return { success: t("success.taskDone", { title: found.title }) };
+    const next = nextRepeatDate(found.dueOn, found.repeat, todayIn(context.timezone));
+    const moved = await db
+      .update(task)
+      .set({ dueOn: next })
+      .where(and(eq(task.id, found.id), eq(task.dueOn, found.dueOn)))
+      .returning({ id: task.id });
+    if (moved.length) {
+      await clearReminderAlerts(context.householdId, "task", found.id, found.dueOn);
+      await refreshReminderPages(context, liveMessage("taskDone", { name: context.user.name, title: found.title }));
+    }
+    return { success: t("success.taskRepeats", { title: found.title, date: formatDay(next, await getLocale()) }) };
+  }
 
   const updated = await db
     .update(task)

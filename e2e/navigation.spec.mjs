@@ -1,7 +1,7 @@
 import { authFile, expect, test } from "./fixtures.mjs";
 import { resetHousehold } from "./helpers/db.mjs";
 
-const PAGES = ["/", "/budget", "/goals", "/transactions", "/insights", "/reminders", "/members", "/notifications", "/account"];
+const PAGES = ["/", "/budget", "/categories", "/goals", "/transactions", "/insights", "/reminders", "/members", "/account"];
 
 test.beforeAll(async () => {
   await resetHousehold();
@@ -44,10 +44,10 @@ test.describe("on a phone", () => {
   test("everyday pages are in the bar, the rest under More", async ({ page }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation");
-    for (const name of ["Dashboard", "Transactions", "Insights", "Goals", "Alerts"]) {
+    for (const name of ["Dashboard", "Transactions", "Insights", "Goals"]) {
       await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
     }
-    await expect(nav.getByRole("link", { name: "Budget", exact: true })).toBeHidden();
+    await expect(nav.getByRole("link", { name: "Finances", exact: true })).toBeHidden();
     // Nothing sticks out sideways, even on a narrow phone.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 
@@ -58,10 +58,10 @@ test.describe("on a phone", () => {
     await expect(more).toHaveAttribute("aria-expanded", "false");
 
     await more.click();
-    await nav.getByRole("link", { name: "Budget", exact: true }).click();
+    await nav.getByRole("link", { name: "Finances", exact: true }).click();
     await expect(page).toHaveURL(/\/budget$/);
     await expect(more).toHaveAttribute("aria-expanded", "false");
     await more.click();
-    await expect(nav.getByRole("link", { name: "Budget", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(nav.getByRole("link", { name: "Finances", exact: true })).toHaveAttribute("aria-current", "page");
   });
 });

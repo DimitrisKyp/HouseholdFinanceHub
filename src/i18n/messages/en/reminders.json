@@ -15,9 +15,9 @@
   "everyone": "Anyone",
   "bills": {
     "title": "Bills to pay",
-    "subtitle": "Your recurring bills from the Budget page. Set when the next one is due to be reminded.",
+    "subtitle": "Your recurring bills from the Spending page. Set when the next one is due to be reminded.",
     "empty": "No recurring bills yet.",
-    "emptyLink": "Add them on the Budget page",
+    "emptyLink": "Add them on the Spending page",
     "nextDue": "Next due {date}",
     "noReminder": "No reminder",
     "paysLabel": "Pays: {name}",
@@ -43,10 +43,11 @@
     "14": "2 weeks before"
   },
   "tasks": {
+    "newTitle": "New reminder",
     "title": "Things to do",
-    "subtitle": "One-off tasks for the house. With a date, the person it's for gets a reminder.",
+    "subtitle": "Things to do for the house, once or on repeat. With a date, the person it's for gets a reminder.",
     "whatLabel": "What needs doing",
-    "whatPlaceholder": "Buy a new kettle",
+    "whatPlaceholder": "Renew the car insurance",
     "dueOn": "By (optional)",
     "remindDaysBefore": "Remind",
     "assignee": "For",
@@ -61,7 +62,19 @@
     "deleteFor": "Delete {title}",
     "confirmDelete": "Delete \"{title}\"?",
     "doneTitle": "Done recently",
-    "doneBy": "Done by {name}"
+    "doneBy": "Done by {name}",
+    "kind": "Type",
+    "repeat": "Repeats",
+    "emptyFiltered": "Nothing to do in {kind}.",
+    "dueHint": "Needed for a task that repeats.",
+    "amount": "Amount (optional)",
+    "amountPlaceholder": "0.00",
+    "amountHint": "With an amount it's a bill to pay.",
+    "paid": "Paid"
+  },
+  "list": {
+    "title": "Reminders",
+    "subtitle": "Bills to pay and things to do, soonest first. Recurring bills come from the Spending page: give one a due date to be reminded."
   },
   "dashboard": {
     "title": "Coming up",
@@ -77,7 +90,11 @@
     "remindDays": "Choose when to be reminded.",
     "chooseMember": "Choose someone from the household.",
     "taskTitle": "What needs doing?",
-    "titleTooLong": "Keep it under 120 characters."
+    "titleTooLong": "Keep it under 120 characters.",
+    "chooseKind": "Choose a type.",
+    "chooseRepeat": "Choose how often it repeats.",
+    "repeatNeedsDate": "Pick the first date for a task that repeats.",
+    "amount": "Enter an amount above zero, or leave it empty."
   },
   "success": {
     "reminderSaved": "Reminder saved for {title}.",
@@ -87,6 +104,29 @@
     "taskAdded": "Added \"{title}\".",
     "taskDone": "\"{title}\" is done.",
     "taskReopened": "\"{title}\" is back on the list.",
-    "taskDeleted": "Task deleted."
+    "taskDeleted": "Task deleted.",
+    "taskRepeats": "{title} done. Next due {date}."
+  },
+  "filters": {
+    "label": "Show",
+    "all": "All"
+  },
+  "kinds": {
+    "vehicle": "Vehicle",
+    "documents": "Documents",
+    "subscriptions": "Subscriptions",
+    "warranties": "Warranties",
+    "bills": "Bills",
+    "returns": "Returns",
+    "prescriptions": "Prescriptions",
+    "free_trials": "Free trials",
+    "other": "Other"
+  },
+  "repeats": {
+    "none": "Doesn't repeat",
+    "daily": "Every day",
+    "weekly": "Every week",
+    "monthly": "Every month",
+    "yearly": "Every year"
   }
 }

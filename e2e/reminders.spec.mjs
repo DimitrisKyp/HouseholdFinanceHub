@@ -29,7 +29,8 @@ const runJob = (request, secret = E2E_CRON_SECRET) =>
 
 test("owner adds tasks, finishes one and puts it back", async ({ page }) => {
   await page.goto("/reminders");
-  await expect(page.getByText("Nothing to do. Nice.")).toBeVisible();
+  // Bills and things to do share one list: the recurring bills are there before any task.
+  await expect(page.getByRole("list", { name: "Reminders", exact: true })).toContainText("Rent");
 
   await page.click('button:has-text("Add task")');
   await expect(page.getByText("What needs doing?")).toBeVisible();
@@ -44,7 +45,7 @@ test("owner adds tasks, finishes one and puts it back", async ({ page }) => {
   await page.click('button:has-text("Add task")');
   await expect(page.getByText('Added "Fix the shelf".')).toBeVisible();
 
-  const tasks = page.getByRole("list", { name: "Things to do" });
+  const tasks = page.getByRole("list", { name: "Reminders", exact: true });
   const kettle = tasks.getByRole("listitem").filter({ hasText: "Buy a new kettle" });
   await expect(kettle).toContainText("In 2 days");
   await expect(kettle).toContainText("Test Editor");
@@ -63,7 +64,7 @@ test("owner adds tasks, finishes one and puts it back", async ({ page }) => {
 
 test("owner sets a bill reminder and marks it paid, logging the expense", async ({ page }) => {
   await page.goto("/reminders");
-  const bills = page.getByRole("list", { name: "Bills to pay" });
+  const bills = page.getByRole("list", { name: "Reminders", exact: true });
   const rent = bills.getByRole("listitem").filter({ hasText: "Rent" });
   await expect(rent).toContainText("No reminder");
 
@@ -119,7 +120,8 @@ test("the daily job needs its secret, alerts the right people once, and survives
   // Running again sends nothing new.
   expect((await (await runJob(request)).json()).notifications).toBe(0);
 
-  await page.goto("/notifications");
+  await page.goto("/");
+  await page.getByRole("button", { name: /^Alerts/ }).click();
   await expect(page.getByText("Car insurance is due today")).toBeVisible();
   await expect(page.getByText(`€300, due on ${formatDay(today())}.`)).toBeVisible();
 });
@@ -129,10 +131,83 @@ test.describe("viewer", () => {
 
   test("sees reminders but can't change them", async ({ page }) => {
     await page.goto("/reminders");
-    await expect(page.getByRole("list", { name: "Things to do" })).toContainText("Buy a new kettle");
-    await expect(page.getByRole("list", { name: "Bills to pay" })).toContainText("Car insurance");
+    await expect(page.getByRole("list", { name: "Reminders", exact: true })).toContainText("Buy a new kettle");
+    await expect(page.getByRole("list", { name: "Reminders", exact: true })).toContainText("Car insurance");
     await expect(page.getByRole("button", { name: "Add task" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /as paid/ })).toHaveCount(0);
     await expect(page.getByText("Set a reminder")).toHaveCount(0);
   });
+});
+
+test("tasks have a type to filter by, and a repeating one moves on to its next date when done", async ({ page }) => {
+  await page.goto("/reminders");
+  const tasks = page.getByRole("list", { name: "Reminders", exact: true });
+
+  // Repeating needs a first date.
+  await page.fill("#task-title", "Renew car insurance");
+  await page.selectOption("#task-kind", "vehicle");
+  await page.selectOption("#task-repeat", "yearly");
+  await page.click('button:has-text("Add task")');
+  await expect(page.getByText("Pick the first date for a task that repeats.")).toBeVisible();
+  const due = plusDays(today(), 5);
+  await page.fill("#task-due", due);
+  await page.click('button:has-text("Add task")');
+  await expect(page.getByText('Added "Renew car insurance".')).toBeVisible();
+
+  await page.fill("#task-title", "Pharmacy refill");
+  await page.selectOption("#task-kind", "prescriptions");
+  await page.click('button:has-text("Add task")');
+  await expect(page.getByText('Added "Pharmacy refill".')).toBeVisible();
+
+  const insurance = tasks.getByRole("listitem").filter({ hasText: "Renew car insurance" });
+  await expect(insurance).toContainText("Vehicle");
+  await expect(insurance).toContainText("Every year");
+
+  // Filters: one kind of task; the recurring bills only under All and Bills.
+  const filters = page.getByRole("navigation", { name: "Show" });
+  await filters.getByRole("link", { name: "Vehicle" }).click();
+  await expect(page).toHaveURL(/\/reminders\?kind=vehicle$/);
+  await expect(tasks).toContainText("Renew car insurance");
+  await expect(tasks).not.toContainText("Pharmacy refill");
+  await expect(tasks).not.toContainText("Rent");
+  // The filters only apply to the list: the form keeps what was last picked.
+  await expect(page.locator("#task-kind")).toHaveValue("prescriptions");
+  await filters.getByRole("link", { name: "Free trials" }).click();
+  await expect(page.getByText("Nothing to do in Free trials.")).toBeVisible();
+  await filters.getByRole("link", { name: "Bills" }).click();
+  await expect(tasks).toContainText("Rent");
+  await expect(tasks).not.toContainText("Pharmacy refill");
+  await filters.getByRole("link", { name: "All" }).click();
+  await expect(tasks).toContainText("Pharmacy refill");
+
+  // Done moves it on a year; it stays on the list.
+  const [year, month, day] = due.split("-").map(Number);
+  const next = `${year + 1}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  await page.getByRole("button", { name: "Mark Renew car insurance as done" }).click();
+  await expect(page.getByText(`Renew car insurance done. Next due ${formatDay(next)}.`)).toBeVisible();
+  await expect(tasks).toContainText("Renew car insurance");
+  await expect(page.getByText("Done recently")).toHaveCount(0);
+});
+
+test("a reminder with an amount is a bill to pay", async ({ page }) => {
+  await page.goto("/reminders");
+  const list = page.getByRole("list", { name: "Reminders", exact: true });
+
+  await page.fill("#task-title", "Pay the plumber");
+  await page.fill("#task-amount", "abc");
+  await page.click('button:has-text("Add task")');
+  await expect(page.getByText("Enter an amount above zero, or leave it empty.")).toBeVisible();
+  await page.fill("#task-amount", "45");
+  await page.click('button:has-text("Add task")');
+  await expect(page.getByText('Added "Pay the plumber".')).toBeVisible();
+
+  const plumber = list.getByRole("listitem").filter({ hasText: "Pay the plumber" });
+  await expect(plumber).toContainText("€45");
+  // Under "Bills" too, though its type is Other.
+  await page.getByRole("navigation", { name: "Show" }).getByRole("link", { name: "Bills" }).click();
+  await expect(plumber).toBeVisible();
+
+  await page.getByRole("button", { name: "Mark Pay the plumber as paid" }).click();
+  await expect(list).not.toContainText("Pay the plumber");
+  await expect(page.getByText("Done recently")).toBeVisible();
 });

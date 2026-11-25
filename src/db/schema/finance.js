@@ -48,6 +48,21 @@ export const memberRole = pgEnum("member_role", ["owner", "editor", "viewer"]);
 export const recurringType = pgEnum("recurring_type", ["income", "expense"]);
 export const frequency = pgEnum("frequency", ["weekly", "monthly", "yearly"]);
 export const goalStatus = pgEnum("goal_status", ["active", "paused", "completed", "cancelled"]);
+// What a task is about, for the filters on the Reminders page.
+export const taskKind = pgEnum("task_kind", [
+  "vehicle",
+  "documents",
+  "subscriptions",
+  "warranties",
+  "bills",
+  "returns",
+  "prescriptions",
+  "free_trials",
+  "other",
+]);
+// How often a task comes back once it's done (null = just once).
+export const taskRepeat = pgEnum("task_repeat", ["daily", "weekly", "monthly", "yearly"]);
+export const assetKind = pgEnum("asset_kind", ["bank", "crypto", "stocks", "real_estate", "other"]);
 
 // ── Households and membership ────────────────────────────────────────────────
 
@@ -194,15 +209,21 @@ export const recurringItem = pgTable(
 
 // ── Tasks ────────────────────────────────────────────────────────────────────
 
-// One-off things to do for the house ("buy a new kettle"), optionally by a date and for one member.
+// Things to do for the house ("renew the car insurance"), optionally by a date and for one member.
+// A repeating task isn't finished when it's done: its due date moves on to the next one.
 export const task = pgTable(
   "task",
   {
     id: id(),
     householdId: householdId(),
     title: varchar("title", { length: 120 }).notNull(),
+    kind: taskKind("kind").notNull().default("other"),
+    // Set = a bill to pay (shown with its amount, "Paid" instead of "Done"); null = just a reminder.
+    amount: money("amount"),
     // null = whenever; no reminder is sent.
     dueOn: date("due_on"),
+    // Needs a due date. Done moves due_on on by this much (lib/reminders.js, occurrence).
+    repeat: taskRepeat("repeat"),
     remindDaysBefore: integer("remind_days_before").notNull().default(1),
     // Who should do it; null = anyone (owner and editors get the reminder).
     assigneeUserId: text("assignee_user_id").references(() => user.id, { onDelete: "set null" }),
@@ -213,8 +234,27 @@ export const task = pgTable(
   },
   t => [
     check("task_remind_days_chk", sql`${t.remindDaysBefore} between 0 and 30`),
+    check("task_amount_chk", sql`${t.amount} is null or ${t.amount} > 0`),
+    check("task_repeat_chk", sql`${t.repeat} is null or ${t.dueOn} is not null`),
     index("task_household_open_idx").on(t.householdId, t.doneAt),
   ],
+);
+
+// ── Assets ───────────────────────────────────────────────────────────────────
+
+// What the household owns (bank accounts, crypto, stocks, property), at its current value as
+// typed in by a member. Net worth = their sum. Values are updated by hand, not tracked over time.
+export const asset = pgTable(
+  "asset",
+  {
+    id: id(),
+    householdId: householdId(),
+    name: varchar("name", { length: 120 }).notNull(),
+    kind: assetKind("kind").notNull().default("other"),
+    value: money("value").notNull(),
+    ...timestamps,
+  },
+  t => [check("asset_value_chk", sql`${t.value} >= 0`), index("asset_household_idx").on(t.householdId)],
 );
 
 // ── Goals ────────────────────────────────────────────────────────────────────

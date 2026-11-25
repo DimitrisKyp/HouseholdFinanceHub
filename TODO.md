@@ -4,7 +4,6 @@
 
 Live at https://nestestia.com on Vercel + Supabase (README, "Hosting on Vercel + Supabase"). The
 items below are for the move to a real server later (VPS + Coolify + own domain).
-
 - [ ] Make the first backup (README, "Backups"), then one now and then: free Supabase has none.
 
 ### Must do before going live

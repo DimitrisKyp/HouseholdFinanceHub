@@ -1,11 +1,13 @@
 import Link from "next/link";
-import CategoriesPanel from "@/components/Budget/CategoriesPanel";
+import AssetsPanel from "@/components/Budget/AssetsPanel";
 import RecurringItemsPanel from "@/components/Budget/RecurringItemsPanel";
 import Panel from "@/components/Panel";
 import { requireHousehold } from "@/lib/dal";
 import Messages from "@/i18n/MessagesProvider";
 import { getLocale, getTranslations } from "@/i18n/server";
-import { listCategories, listRecurringItems, recurringTotals } from "@/lib/finance";
+import { recurringRow } from "@/lib/budget-view";
+import { netWorth } from "@/lib/calculations";
+import { listAssets, listRecurringItems, recurringTotals } from "@/lib/finance";
 import { formatMoney } from "@/lib/format";
 import { listMembers } from "@/lib/invites";
 import { can } from "@/lib/permissions";
@@ -16,46 +18,29 @@ export async function generateMetadata() {
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }
 
+// Finances: regular income and what the household owns (net worth). Fixed bills and category
+// limits are on the Spending page (/categories).
 export default async function BudgetPage() {
   const { householdId, role, currency } = await requireHousehold();
   const canEdit = can(role, "finance:write");
   const [locale, t] = await Promise.all([getLocale(), getTranslations("budget")]);
   const money = amount => formatMoney(amount, currency, locale);
 
-  const [allCategories, recurring, members] = await Promise.all([
-    listCategories(householdId, { includeArchived: true }),
+  const [recurring, assets, members] = await Promise.all([
     listRecurringItems(householdId),
+    listAssets(householdId),
     canEdit ? listMembers(householdId) : [],
   ]);
 
-  // Amounts are formatted here so the browser receives ready-to-show labels.
-  const toRow = item => ({
-    id: item.id,
-    title: item.title,
-    categoryId: item.categoryId,
-    categoryName: item.categoryName,
-    detail: [t(`recurring.frequencies.${item.frequency}`), item.type === "income" ? item.memberName : item.categoryName]
-      .filter(Boolean)
-      .join(" · "),
-    amountLabel: money(item.amount),
-    monthlyLabel: item.frequency === "monthly" ? null : money(item.monthlyAmount),
-  });
-  const income = recurring.filter(item => item.type === "income").map(toRow);
-  const bills = recurring.filter(item => item.type === "expense").map(toRow);
+  const income = recurring.filter(item => item.type === "income").map(item => recurringRow(item, t, money));
   const totals = recurringTotals(recurring);
-
-  const categories = allCategories.filter(item => !item.isArchived);
-  const categoryRows = categories.map(item => ({
-    ...item,
-    limitLabel: item.monthlyLimit === null ? null : money(item.monthlyLimit),
-  }));
-  const archived = allCategories.filter(item => item.isArchived);
   const left = totals.income - totals.expenses;
+  const assetRows = assets.map(item => ({ ...item, valueLabel: money(item.value) }));
 
   return (
     <Messages namespaces={["budget"]}>
       <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
-        <main className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <main className="mx-auto flex w-full flex-col gap-4">
           <section className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20 backdrop-blur md:p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
@@ -77,32 +62,20 @@ export default async function BudgetPage() {
             </div>
           </section>
 
-          <Panel title={t("recurring.title")} subtitle={t("recurring.subtitle")}>
-            <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <Panel title={t("recurring.incomeTitle")} subtitle={t("recurring.incomeSubtitle")}>
               <RecurringItemsPanel
                 type="income"
-                title={t("recurring.incomeTitle")}
-                subtitle={t("recurring.incomeSubtitle")}
                 totalLabel={money(totals.income)}
                 items={income}
                 members={members.map(({ userId, name }) => ({ userId, name }))}
                 canEdit={canEdit}
               />
-              <RecurringItemsPanel
-                type="expense"
-                title={t("recurring.billsTitle")}
-                subtitle={t("recurring.billsSubtitle")}
-                totalLabel={money(totals.expenses)}
-                items={bills}
-                categories={categories.map(({ id, name }) => ({ id, name }))}
-                canEdit={canEdit}
-              />
-            </div>
-          </Panel>
-
-          <Panel title={t("categories.title")} subtitle={t("categories.subtitle")}>
-            <CategoriesPanel categories={categoryRows} archived={archived.map(({ id, name }) => ({ id, name }))} canEdit={canEdit} />
-          </Panel>
+            </Panel>
+            <Panel title={t("assets.title")} subtitle={t("assets.subtitle")}>
+              <AssetsPanel assets={assetRows} totalLabel={money(netWorth(assets))} canEdit={canEdit} />
+            </Panel>
+          </div>
         </main>
       </div>
     </Messages>

@@ -5,6 +5,22 @@
 /** How many days before a due date the reminder can be sent (the form's choices). */
 export const REMIND_DAY_CHOICES = [0, 1, 2, 3, 5, 7, 14];
 
+/** What a task can be about (the filters on the Reminders page; "bills" also shows bill reminders). */
+export const TASK_KINDS = [
+  "vehicle",
+  "documents",
+  "subscriptions",
+  "warranties",
+  "bills",
+  "returns",
+  "prescriptions",
+  "free_trials",
+  "other",
+];
+
+/** How often a task can repeat (null = once). */
+export const TASK_REPEATS = ["daily", "weekly", "monthly", "yearly"];
+
 /** Dashboard and "coming up": reminders due within this many days (and overdue ones). */
 export const UPCOMING_DAYS = 7;
 
@@ -26,6 +42,7 @@ export const addDays = (isoDate, days) => toIso(toUtc(isoDate) + days * 86_400_0
  * first date's day where the month has it, e.g. from 31 Jan: 28 Feb, 31 Mar, 30 Apr.
  */
 export function occurrence(firstDue, frequency, n) {
+  if (frequency === "daily") return addDays(firstDue, n);
   if (frequency === "weekly") return addDays(firstDue, 7 * n);
   const [year, month, day] = firstDue.split("-").map(Number);
   const months = frequency === "yearly" ? 12 * n : n;
@@ -38,13 +55,22 @@ export function occurrence(firstDue, frequency, n) {
 export function nextDueDate({ dueOn, frequency, paidThrough = null }) {
   if (!dueOn) return null;
   if (!paidThrough || paidThrough < dueOn) return dueOn;
-  // Jump close to the answer, then step: weekly bills paid years ahead stay cheap.
-  const approxPeriods = frequency === "weekly" ? Math.floor(daysBetween(dueOn, paidThrough) / 7) : 0;
+  // Jump close to the answer, then step: daily and weekly dates years ahead stay cheap.
+  const periodDays = { daily: 1, weekly: 7 }[frequency];
+  const approxPeriods = periodDays ? Math.floor(daysBetween(dueOn, paidThrough) / periodDays) : 0;
   for (let n = Math.max(0, approxPeriods - 1); n < approxPeriods + 2000; n += 1) {
     const date = occurrence(dueOn, frequency, n);
     if (date > paidThrough) return date;
   }
   return null;
+}
+
+/**
+ * A repeating task's next due date once it's done: the first one after its current due date, or
+ * after today if it was done late (a daily task done three days late is next due tomorrow).
+ */
+export function nextRepeatDate(dueOn, repeat, today) {
+  return nextDueDate({ dueOn, frequency: repeat, paidThrough: dueOn > today ? dueOn : today });
 }
 
 /**

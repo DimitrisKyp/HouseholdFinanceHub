@@ -54,6 +54,9 @@ const doneBy = alias(user, "done_by");
 const taskColumns = {
   id: task.id,
   title: task.title,
+  kind: task.kind,
+  amount: task.amount,
+  repeat: task.repeat,
   dueDate: task.dueOn,
   remindDaysBefore: task.remindDaysBefore,
   assigneeUserId: task.assigneeUserId,
@@ -208,6 +211,7 @@ export async function runDueReminders() {
       .select({
         id: task.id,
         title: task.title,
+        amount: task.amount,
         dueOn: task.dueOn,
         remindDaysBefore: task.remindDaysBefore,
         assigneeUserId: task.assigneeUserId,
@@ -218,7 +222,17 @@ export async function runDueReminders() {
       const stage = alertStage(item.dueOn, today, item.remindDaysBefore);
       if (!stage) continue;
       const days = daysBetween(today, item.dueOn);
-      const message = reminderMessage({ item: "task", title: item.title, dueDate: item.dueOn, stage, days, overdue: days < 0 });
+      // A task with an amount is a bill to pay: the alert says how much.
+      const message = reminderMessage({
+        item: item.amount ? "bill" : "task",
+        title: item.title,
+        dueDate: item.dueOn,
+        stage,
+        days,
+        overdue: days < 0,
+        amount: item.amount,
+        currency: home.currency,
+      });
       await send({ householdId: home.id, userId: item.assigneeUserId, kind: "task", id: item.id, dueDate: item.dueOn, stage, message });
     }
   }

@@ -1,15 +1,18 @@
 "use client";
 
-// Household tasks: the add form, the open list (Done / Delete) and the recently finished ones (Undo).
+// Reminders: the add form (AddTaskForm, shown on its own) and one list with both bills to pay
+// (recurring bills, and tasks with an amount) and things to do, then the recently finished ones (Undo).
+// A repeating task never shows as finished: Done moves it on to its next due date.
 import { useActionState } from "react";
+import { BillRow } from "@/components/Reminders/BillReminderList";
 import Badge from "@/components/ui/Badge";
 import { buttonClasses, SubmitButton } from "@/components/ui/Button";
 import TextField, { FormError, FormSuccess, InlineMessage, SelectField } from "@/components/ui/Field";
 import { useTranslations } from "@/i18n/client";
 import { addTaskAction, deleteTaskAction, setTaskDoneAction } from "@/lib/actions/reminders";
-import { REMIND_DAY_CHOICES } from "@/lib/reminders";
+import { REMIND_DAY_CHOICES, TASK_KINDS, TASK_REPEATS } from "@/lib/reminders";
 
-function AddTaskForm({ members }) {
+export function AddTaskForm({ members, defaultKind = "other" }) {
   const [state, formAction, pending] = useActionState(addTaskAction, {});
   const values = state.values ?? {};
   const t = useTranslations("reminders");
@@ -32,7 +35,54 @@ function AddTaskForm({ members }) {
           error={state.errors?.title}
         />
       </div>
-      <TextField id="task-due" name="dueOn" type="date" label={t("tasks.dueOn")} defaultValue={values.dueOn} error={state.errors?.dueOn} />
+      <SelectField
+        key={`kind-${values.kind ?? defaultKind}`}
+        id="task-kind"
+        name="kind"
+        label={t("tasks.kind")}
+        defaultValue={values.kind || defaultKind}
+        error={state.errors?.kind}
+      >
+        {TASK_KINDS.map(kind => (
+          <option key={kind} value={kind}>
+            {t(`kinds.${kind}`)}
+          </option>
+        ))}
+      </SelectField>
+      <SelectField
+        key={`repeat-${values.repeat}`}
+        id="task-repeat"
+        name="repeat"
+        label={t("tasks.repeat")}
+        defaultValue={values.repeat ?? ""}
+        error={state.errors?.repeat}
+      >
+        <option value="">{t("repeats.none")}</option>
+        {TASK_REPEATS.map(repeat => (
+          <option key={repeat} value={repeat}>
+            {t(`repeats.${repeat}`)}
+          </option>
+        ))}
+      </SelectField>
+      <TextField
+        id="task-amount"
+        name="amount"
+        label={t("tasks.amount")}
+        inputMode="decimal"
+        placeholder={t("tasks.amountPlaceholder")}
+        hint={t("tasks.amountHint")}
+        defaultValue={values.amount}
+        error={state.errors?.amount}
+      />
+      <TextField
+        id="task-due"
+        name="dueOn"
+        type="date"
+        label={t("tasks.dueOn")}
+        hint={t("tasks.dueHint")}
+        defaultValue={values.dueOn}
+        error={state.errors?.dueOn}
+      />
       <SelectField
         key={`remind-${values.remindDaysBefore}`}
         id="task-remind"
@@ -47,7 +97,7 @@ function AddTaskForm({ members }) {
           </option>
         ))}
       </SelectField>
-      <div className="sm:col-span-2">
+      <div>
         <SelectField
           key={`assignee-${values.assigneeUserId}`}
           id="task-assignee"
@@ -75,6 +125,8 @@ function OpenTask({ item, canEdit }) {
   const [doneState, doneAction, donePending] = useActionState(setTaskDoneAction, {});
   const [deleteState, deleteAction, deletePending] = useActionState(deleteTaskAction, {});
   const t = useTranslations("reminders");
+  // With an amount it's a bill to pay: the amount shows, and Done reads "Paid".
+  const isBill = Boolean(item.amountLabel);
 
   return (
     <li className="rounded-xl border border-white/5 bg-white/5 px-4 py-3">
@@ -82,44 +134,50 @@ function OpenTask({ item, canEdit }) {
         <div className="min-w-0">
           <p className="truncate font-medium text-white">{item.title}</p>
           <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-400">
+            <Badge>{item.kindLabel}</Badge>
             {item.badge ? <Badge tone={item.badge.tone}>{item.badge.label}</Badge> : null}
             <span className="truncate">{item.detail}</span>
           </p>
         </div>
-        {canEdit ? (
-          <div className="flex shrink-0 items-center gap-2">
-            <form action={doneAction}>
-              <input type="hidden" name="taskId" value={item.id} />
-              <input type="hidden" name="done" value="true" />
-              <button
-                type="submit"
-                disabled={donePending}
-                aria-label={t("tasks.doneFor", { title: item.title })}
-                className={buttonClasses({ variant: "success", size: "xs" })}
+        <div className="flex shrink-0 items-center gap-3">
+          {isBill ? <p className="font-semibold text-rose-200">{item.amountLabel}</p> : null}
+          {canEdit ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <form action={doneAction}>
+                <input type="hidden" name="taskId" value={item.id} />
+                <input type="hidden" name="done" value="true" />
+                <input type="hidden" name="dueDate" value={item.dueDate ?? ""} />
+                <button
+                  type="submit"
+                  disabled={donePending}
+                  aria-label={isBill ? t("bills.markPaidFor", { title: item.title }) : t("tasks.doneFor", { title: item.title })}
+                  className={buttonClasses({ variant: "success", size: "xs" })}
+                >
+                  {donePending ? "…" : isBill ? t("tasks.paid") : t("tasks.done")}
+                </button>
+              </form>
+              <form
+                action={deleteAction}
+                onSubmit={event => {
+                  if (!window.confirm(t("tasks.confirmDelete", { title: item.title }))) event.preventDefault();
+                }}
               >
-                {donePending ? "…" : t("tasks.done")}
-              </button>
-            </form>
-            <form
-              action={deleteAction}
-              onSubmit={event => {
-                if (!window.confirm(t("tasks.confirmDelete", { title: item.title }))) event.preventDefault();
-              }}
-            >
-              <input type="hidden" name="taskId" value={item.id} />
-              <button
-                type="submit"
-                disabled={deletePending}
-                aria-label={t("tasks.deleteFor", { title: item.title })}
-                className={buttonClasses({ variant: "secondary", size: "xs", className: "hover:border-rose-400/50 hover:text-rose-200" })}
-              >
-                {deletePending ? "…" : t("tasks.delete")}
-              </button>
-            </form>
-          </div>
-        ) : null}
+                <input type="hidden" name="taskId" value={item.id} />
+                <button
+                  type="submit"
+                  disabled={deletePending}
+                  aria-label={t("tasks.deleteFor", { title: item.title })}
+                  className={buttonClasses({ variant: "secondary", size: "xs", className: "hover:border-rose-400/50 hover:text-rose-200" })}
+                >
+                  {deletePending ? "…" : t("tasks.delete")}
+                </button>
+              </form>
+            </div>
+          ) : null}
+        </div>
       </div>
-      <InlineMessage state={doneState.error ? doneState : deleteState.error ? deleteState : null} />
+      {/* A repeating task stays listed after Done, so its "next due" message is shown here. */}
+      <InlineMessage state={doneState.error || doneState.success ? doneState : deleteState.error ? deleteState : null} />
     </li>
   );
 }
@@ -152,19 +210,23 @@ function DoneTask({ item, canEdit }) {
   );
 }
 
-export default function TaskPanel({ open, done, members, canEdit }) {
+/** items: bills ({ type: "bill" }) and tasks ({ type: "task" }) together, soonest first. */
+export default function TaskPanel({ items, done, members, canEdit, today, emptyText }) {
   const t = useTranslations("reminders");
   return (
     <div className="space-y-4">
-      {canEdit ? <AddTaskForm members={members} /> : null}
-      {open.length ? (
-        <ul aria-label={t("tasks.title")} className="space-y-2">
-          {open.map(item => (
-            <OpenTask key={item.id} item={item} canEdit={canEdit} />
-          ))}
+      {items.length ? (
+        <ul aria-label={t("list.title")} className="space-y-2">
+          {items.map(item =>
+            item.type === "bill" ? (
+              <BillRow key={`bill-${item.id}`} bill={item} members={members} canEdit={canEdit} today={today} />
+            ) : (
+              <OpenTask key={`task-${item.id}`} item={item} canEdit={canEdit} />
+            ),
+          )}
         </ul>
       ) : (
-        <p className="text-sm text-slate-500">{t("tasks.empty")}</p>
+        <p className="text-sm text-slate-500">{emptyText ?? t("tasks.empty")}</p>
       )}
       {done.length ? (
         <section aria-labelledby="done-tasks-heading">

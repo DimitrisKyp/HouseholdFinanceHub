@@ -3,7 +3,7 @@
 // Spending categories with an optional monthly limit. Shared by expenses, recurring bills and budgets.
 import { useActionState } from "react";
 import TextField, { FormError, FormSuccess, InlineMessage } from "@/components/ui/Field";
-import { addCategoryAction, setCategoryArchivedAction, updateCategoryLimitAction } from "@/lib/actions/budget";
+import { addCategoryAction, deleteCategoryAction, setCategoryArchivedAction, updateCategoryLimitAction } from "@/lib/actions/budget";
 import { buttonClasses } from "@/components/ui/Button";
 import { useTranslations } from "@/i18n/client";
 
@@ -23,10 +23,36 @@ function ArchiveButton({ item, archive, onResult }) {
   );
 }
 
+// Only works for a category with no expenses; otherwise the server says to archive it instead.
+function DeleteButton({ item, onResult }) {
+  const t = useTranslations("budget");
+  return (
+    <form
+      action={onResult}
+      onSubmit={event => {
+        if (!window.confirm(t("categories.confirmDelete", { name: item.name }))) event.preventDefault();
+      }}
+    >
+      <input type="hidden" name="categoryId" value={item.id} />
+      <button
+        type="submit"
+        aria-label={t("categories.deleteLabel", { name: item.name })}
+        className={`${smallButton} hover:border-rose-400/50 hover:text-rose-200`}
+      >
+        {t("categories.delete")}
+      </button>
+    </form>
+  );
+}
+
 function CategoryRow({ item, canEdit }) {
   const [limitState, limitAction, limitPending] = useActionState(updateCategoryLimitAction, {});
   const [archiveState, archiveAction] = useActionState(setCategoryArchivedAction, {});
+  const [deleteState, deleteAction] = useActionState(deleteCategoryAction, {});
   const t = useTranslations("budget");
+  let message = archiveState;
+  if (limitState.error || limitState.success) message = limitState;
+  else if (deleteState.error) message = deleteState;
 
   return (
     <li className="rounded-xl border border-white/5 bg-white/5 px-4 py-3">
@@ -57,21 +83,29 @@ function CategoryRow({ item, canEdit }) {
               </button>
             </form>
             <ArchiveButton item={item} archive onResult={archiveAction} />
+            <DeleteButton item={item} onResult={deleteAction} />
           </div>
         ) : null}
       </div>
-      <InlineMessage state={limitState.error || limitState.success ? limitState : archiveState} />
+      <InlineMessage state={message} />
     </li>
   );
 }
 
 function ArchivedRow({ item }) {
   const [state, action] = useActionState(setCategoryArchivedAction, {});
+  const [deleteState, deleteAction] = useActionState(deleteCategoryAction, {});
+  const error = [state, deleteState].find(result => result.error);
   return (
-    <li className="flex items-center justify-between gap-3 rounded-xl border border-white/5 px-4 py-2">
-      <span className="truncate text-sm text-slate-400">{item.name}</span>
-      <ArchiveButton item={item} archive={false} onResult={action} />
-      <InlineMessage state={state.error ? state : null} />
+    <li className="rounded-xl border border-white/5 px-4 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="truncate text-sm text-slate-400">{item.name}</span>
+        <div className="flex items-center gap-2">
+          <ArchiveButton item={item} archive={false} onResult={action} />
+          <DeleteButton item={item} onResult={deleteAction} />
+        </div>
+      </div>
+      <InlineMessage state={error ?? null} />
     </li>
   );
 }
@@ -117,7 +151,7 @@ export default function CategoriesPanel({ categories, archived, canEdit }) {
     <div className="space-y-4">
       {canEdit ? <AddCategoryForm /> : null}
       {categories.length ? (
-        <ul className="grid gap-2 lg:grid-cols-2">
+        <ul className="grid gap-2">
           {categories.map(item => (
             <CategoryRow key={item.id} item={item} canEdit={canEdit} />
           ))}

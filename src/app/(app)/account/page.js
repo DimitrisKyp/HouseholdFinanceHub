@@ -30,30 +30,35 @@ export default async function AccountPage() {
 
   return (
     <Messages namespaces={["account"]}>
-      <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-5 md:py-4">
+      <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
         <main className="mx-auto flex w-full max-w-none flex-col gap-3">
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20 backdrop-blur md:p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-sm font-semibold tracking-[0.35em] text-cyan-300 uppercase">{t("eyebrow")}</p>
-                <h1 className="mt-2 text-xl font-semibold tracking-tight md:text-3xl">{t("heading")}</h1>
-              </div>
-              <Link href="/" className={buttonClasses({ variant: "secondary", size: "pill", className: "w-fit" })}>
-                {t("backToDashboard")}
-              </Link>
-            </div>
-          </section>
+          {/* A slim heading: the top bar above already shows whose account this is. */}
+          <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-lg font-semibold tracking-tight md:text-2xl">
+              <span className="mr-3 text-sm font-semibold tracking-[0.35em] text-cyan-300 uppercase">{t("eyebrow")}</span>
+              {t("heading")}
+            </h1>
+            <Link href="/" className={buttonClasses({ variant: "secondary", size: "pill", className: "w-fit shrink-0" })}>
+              {t("backToDashboard")}
+            </Link>
+          </div>
 
-          <div className="grid gap-3 xl:grid-cols-2">
-            <Panel title={t("profile.title")} subtitle={t("profile.subtitle", { household: householdName, role: common(`roles.${role}`) })}>
-              <ProfileForm name={user.name} email={user.email} />
-            </Panel>
-            <Panel title={t("appearance.title")} subtitle={t("appearance.subtitle")}>
-              <div className="space-y-4">
-                <LanguageForm locale={locale} options={LOCALES.map(value => ({ value, label: LOCALE_NAMES[value] }))} />
-                <ThemeForm theme={theme} options={THEMES.map(value => ({ value, label: t(`appearance.themes.${value}`) }))} />
-              </div>
-            </Panel>
+          {/* Wide screens: three columns, so the whole page fits on one screen without scrolling. */}
+          <div className={`grid items-start gap-3 md:grid-cols-2 ${canManageHousehold ? "xl:grid-cols-3" : ""}`}>
+            <div className="flex flex-col gap-3">
+              <Panel
+                title={t("profile.title")}
+                subtitle={t("profile.subtitle", { household: householdName, role: common(`roles.${role}`) })}
+              >
+                <ProfileForm name={user.name} email={user.email} />
+              </Panel>
+              <Panel title={t("appearance.title")} subtitle={t("appearance.subtitle")}>
+                <div className="space-y-4">
+                  <LanguageForm locale={locale} options={LOCALES.map(value => ({ value, label: LOCALE_NAMES[value] }))} />
+                  <ThemeForm theme={theme} options={THEMES.map(value => ({ value, label: t(`appearance.themes.${value}`) }))} />
+                </div>
+              </Panel>
+            </div>
             {canManageHousehold ? (
               <Panel title={t("household.title")} subtitle={t("household.subtitle")}>
                 <HouseholdSettingsForm

@@ -2,10 +2,12 @@
 // (requireHousehold), so every query is scoped to the household the user belongs to.
 // Pure calculations live in lib/calculations.js and are re-exported here for convenience.
 import "server-only";
+import { cache } from "react";
 import { and, asc, desc, eq, gte, ilike, inArray, lt, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { GOAL_STATUSES, monthlyAmount } from "@/lib/calculations";
-import { category, expense, goal, goalContribution, recurringItem, user } from "@/db/schema";
+import { billsByCategory, GOAL_STATUSES, monthlyAmount, recurringTotals, spendingBeyondBills } from "@/lib/calculations";
+import { currentMonthRange } from "@/lib/format";
+import { asset, category, expense, goal, goalContribution, recurringItem, user } from "@/db/schema";
 
 export {
   billsByCategory,
@@ -29,6 +31,15 @@ export async function listCategories(householdId, { includeArchived = false } = 
       includeArchived ? eq(category.householdId, householdId) : and(eq(category.householdId, householdId), eq(category.isArchived, false)),
     )
     .orderBy(asc(category.name));
+}
+
+/** What the household owns, largest first. */
+export async function listAssets(householdId) {
+  return db
+    .select({ id: asset.id, name: asset.name, kind: asset.kind, value: asset.value })
+    .from(asset)
+    .where(eq(asset.householdId, householdId))
+    .orderBy(desc(asset.value), asc(asset.name));
 }
 
 /** Active recurring income and expenses, largest first, with category and member names. */
@@ -254,3 +265,25 @@ export async function spendingByCategory(householdId, { from, to }) {
     .orderBy(desc(total));
   return rows.map(row => ({ ...row, total: Math.round(row.total * 100) / 100 }));
 }
+
+/**
+ * This month so far: recurring items, the month's expenses and what's left (income minus fixed bills
+ * minus spending on top of them; expenses in a bill's category only count above that bill, so a
+ * bill logged as an expense isn't counted twice). Cached per request: the top bar on every page
+ * and the dashboard share one set of queries.
+ */
+export const monthSummary = cache(async (householdId, timezone) => {
+  const month = currentMonthRange(timezone);
+  const [recurring, expenses] = await Promise.all([
+    listRecurringItems(householdId),
+    listExpenses(householdId, { from: month.start, to: month.end }),
+  ]);
+  const totals = recurringTotals(recurring);
+  const spent = Math.round(expenses.reduce((sum, item) => sum + item.amount * 100, 0)) / 100;
+  const extra = spendingBeyondBills(
+    expenses.map(item => ({ categoryId: item.categoryId, total: item.amount })),
+    billsByCategory(recurring),
+  );
+  const net = Math.round((totals.income - totals.expenses - extra) * 100) / 100;
+  return { month, recurring, expenses, totals, spent, net };
+});

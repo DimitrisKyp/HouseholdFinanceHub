@@ -9,7 +9,8 @@
   "nav": {
     "label": "Main",
     "dashboard": "Dashboard",
-    "budget": "Budget",
+    "budget": "Finances",
+    "categories": "Spending",
     "transactions": "Transactions",
     "insights": "Insights",
     "goals": "Goals",

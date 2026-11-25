@@ -10,6 +10,10 @@ const nextConfig = {
       allowedOrigins: publicHost ? [publicHost] : [],
     },
   },
+  async redirects() {
+    // Notifications used to have their own page; they're now a pop-up behind the bell on the dashboard.
+    return [{ source: "/notifications", destination: "/", permanent: false }];
+  },
   async headers() {
     return [
       {

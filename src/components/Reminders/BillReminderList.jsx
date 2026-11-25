@@ -104,7 +104,7 @@ function MarkPaidForm({ bill }) {
   );
 }
 
-function BillRow({ bill, members, canEdit, today }) {
+export function BillRow({ bill, members, canEdit, today }) {
   const t = useTranslations("reminders");
   return (
     <li className="rounded-xl border border-white/5 bg-white/5 px-4 py-3">
@@ -130,16 +130,5 @@ function BillRow({ bill, members, canEdit, today }) {
         </details>
       ) : null}
     </li>
-  );
-}
-
-export default function BillReminderList({ bills, members, canEdit, today }) {
-  const t = useTranslations("reminders");
-  return (
-    <ul aria-label={t("bills.title")} className="space-y-2">
-      {bills.map(bill => (
-        <BillRow key={bill.id} bill={bill} members={members} canEdit={canEdit} today={today} />
-      ))}
-    </ul>
   );
 }

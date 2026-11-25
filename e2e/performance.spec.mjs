@@ -5,7 +5,7 @@ import { resetHousehold } from "./helpers/db.mjs";
 // the network), measured in the browser from the Resource Timing API. Printed as a table and
 // attached to the report; the test fails if a page goes over its budget.
 const BUDGET_KB = 200;
-const PAGES = ["/", "/budget", "/transactions", "/insights", "/goals", "/members", "/notifications", "/account"];
+const PAGES = ["/", "/budget", "/transactions", "/insights", "/goals", "/members", "/account"];
 
 test.beforeAll(async () => {
   await resetHousehold();

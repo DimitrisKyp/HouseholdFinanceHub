@@ -15,7 +15,7 @@ export default function ThemeForm({ theme, options }) {
     <form ref={form} action={formAction}>
       <fieldset disabled={pending}>
         <legend className="mb-2 text-sm text-slate-300">{t("appearance.theme")}</legend>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="flex flex-wrap gap-2">
           {options.map(option => (
             <label
               key={option.value}

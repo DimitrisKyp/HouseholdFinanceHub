@@ -31,7 +31,7 @@ export default function ExpenseTrackerPanel({
     body = (
       <p className="text-sm text-slate-400">
         {t("tracker.noCategoriesBefore")}{" "}
-        <Link href="/budget" className="text-cyan-300 underline-offset-2 hover:underline">
+        <Link href="/categories" className="text-cyan-300 underline-offset-2 hover:underline">
           {t("tracker.noCategoriesLink")}
         </Link>{" "}
         {t("tracker.noCategoriesAfter")}

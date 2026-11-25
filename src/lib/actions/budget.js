@@ -2,12 +2,13 @@
 
 // Server Actions for the budget: recurring income and bills, and categories with monthly limits.
 // Owners and editors may change these (requirePermission("finance:write")); viewers may not.
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { category, householdMember, recurringItem } from "@/db/schema";
+import { asset, category, expense, householdMember, recurringItem } from "@/db/schema";
 import { getTranslations } from "@/i18n/server";
 import { requirePermission } from "@/lib/dal";
+import { ASSET_KINDS } from "@/lib/calculations";
 import { FREQUENCIES } from "@/lib/finance";
 import { announce, liveMessage } from "@/lib/live";
 import { todayIn } from "@/lib/format";
@@ -19,6 +20,7 @@ const MAX_CATEGORY_NAME_LENGTH = 50;
 // The budget feeds the dashboard totals, so both pages are refreshed, here and for everyone else.
 async function refreshBudgetPages(context) {
   revalidatePath("/budget");
+  revalidatePath("/categories");
   revalidatePath("/");
   await announce(context, "budget", liveMessage("budgetUpdated", { name: context.user.name }));
 }
@@ -191,4 +193,87 @@ export async function setCategoryArchivedAction(_previousState, formData) {
   await db.update(category).set({ isArchived: archived }).where(eq(category.id, found.id));
   await refreshBudgetPages(context);
   return { success: archived ? t("success.archived", { name: found.name }) : t("success.restored", { name: found.name }) };
+}
+
+// Deleting is for categories nobody has used: one with expenses can only be archived, so past
+// expenses keep their category (the database refuses too). Bills in it are left without one.
+export async function deleteCategoryAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
+  const found = await findCategory(context.householdId, field(formData, "categoryId"), { allowArchived: true });
+  if (!found) return { error: t("errors.categoryGone") };
+
+  const [{ used }] = await db.select({ used: count() }).from(expense).where(eq(expense.categoryId, found.id));
+  if (used > 0) return { error: t("errors.categoryInUse", { name: found.name }) };
+
+  try {
+    await db.delete(category).where(eq(category.id, found.id));
+  } catch (error) {
+    // An expense was logged under it a moment ago.
+    if ((error?.cause?.code ?? error?.code) === "23503") return { error: t("errors.categoryInUse", { name: found.name }) };
+    throw error;
+  }
+  await refreshBudgetPages(context);
+  return { success: t("success.deleted", { name: found.name }) };
+}
+
+// ── Assets ───────────────────────────────────────────────────────────────────
+
+const MAX_ASSET_NAME_LENGTH = 120;
+
+async function findAsset(householdId, assetId) {
+  if (!UUID_PATTERN.test(assetId)) return null;
+  const [row] = await db
+    .select({ id: asset.id, name: asset.name })
+    .from(asset)
+    .where(and(eq(asset.id, assetId), eq(asset.householdId, householdId)));
+  return row ?? null;
+}
+
+// Only the Finances page shows assets.
+async function refreshAssets(context) {
+  revalidatePath("/budget");
+  await announce(context, "budget", liveMessage("budgetUpdated", { name: context.user.name }));
+}
+
+export async function addAssetAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
+  const values = { name: field(formData, "name"), kind: field(formData, "kind"), value: field(formData, "value") };
+
+  const errors = {};
+  if (!values.name) errors.name = t("errors.assetName");
+  else if (values.name.length > MAX_ASSET_NAME_LENGTH) errors.name = t("errors.nameTooLong");
+  if (!ASSET_KINDS.includes(values.kind)) errors.kind = t("errors.assetKind");
+  const value = parseAmount(values.value, { allowZero: true });
+  if (value === null) errors.value = t("errors.assetValue");
+  if (Object.keys(errors).length) return { errors, values };
+
+  await db.insert(asset).values({ householdId: context.householdId, name: values.name, kind: values.kind, value });
+  await refreshAssets(context);
+  // Keep the type for the next one.
+  return { success: t("success.assetAdded", { name: values.name }), values: { kind: values.kind } };
+}
+
+export async function updateAssetValueAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
+  const found = await findAsset(context.householdId, field(formData, "assetId"));
+  if (!found) return { error: t("errors.assetGone") };
+  const value = parseAmount(field(formData, "value"), { allowZero: true });
+  if (value === null) return { error: t("errors.assetValue") };
+
+  await db.update(asset).set({ value }).where(eq(asset.id, found.id));
+  await refreshAssets(context);
+  return { success: t("success.saved") };
+}
+
+export async function deleteAssetAction(_previousState, formData) {
+  const context = await requirePermission("finance:write");
+  const t = await getTranslations("budget");
+  const found = await findAsset(context.householdId, field(formData, "assetId"));
+  if (!found) return { error: t("errors.assetGone") };
+  await db.delete(asset).where(eq(asset.id, found.id));
+  await refreshAssets(context);
+  return { success: t("success.assetDeleted", { name: found.name }) };
 }

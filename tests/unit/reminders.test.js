@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { addDays, alertStage, byDueDate, daysBetween, dueStatus, nextDueDate, occurrence, reminderDedupeKey } from "@/lib/reminders";
+import {
+  addDays,
+  alertStage,
+  byDueDate,
+  daysBetween,
+  dueStatus,
+  nextDueDate,
+  nextRepeatDate,
+  occurrence,
+  reminderDedupeKey,
+} from "@/lib/reminders";
 
 describe("occurrence", () => {
   it("steps weekly, monthly and yearly", () => {
@@ -28,6 +38,24 @@ describe("nextDueDate", () => {
     expect(nextDueDate({ dueOn: "2026-10-01", frequency: "monthly", paidThrough: "2026-12-01" })).toBe("2027-01-01");
     expect(nextDueDate({ dueOn: "2026-01-01", frequency: "weekly", paidThrough: "2029-06-01" })).toBe("2029-06-07");
     expect(nextDueDate({ dueOn: "2026-03-15", frequency: "yearly", paidThrough: "2026-03-15" })).toBe("2027-03-15");
+  });
+});
+
+describe("nextRepeatDate", () => {
+  it("moves a task done on time or early on by one period from its due date", () => {
+    expect(nextRepeatDate("2026-11-25", "daily", "2026-11-25")).toBe("2026-11-26");
+    expect(nextRepeatDate("2026-12-01", "monthly", "2026-11-25")).toBe("2027-01-01");
+    expect(nextRepeatDate("2027-03-15", "yearly", "2026-11-25")).toBe("2028-03-15");
+  });
+
+  it("moves a task done late to its next date after today", () => {
+    expect(nextRepeatDate("2026-11-20", "daily", "2026-11-25")).toBe("2026-11-26");
+    expect(nextRepeatDate("2026-11-01", "weekly", "2026-11-25")).toBe("2026-11-29");
+    expect(nextRepeatDate("2026-10-31", "monthly", "2026-11-25")).toBe("2026-11-30");
+  });
+
+  it("steps daily dates years ahead without looping through each one", () => {
+    expect(nextRepeatDate("2020-01-01", "daily", "2026-11-25")).toBe("2026-11-26");
   });
 });
 

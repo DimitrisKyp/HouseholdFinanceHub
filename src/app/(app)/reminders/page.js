@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Panel from "@/components/Panel";
-import BillReminderList from "@/components/Reminders/BillReminderList";
-import TaskPanel from "@/components/Reminders/TaskPanel";
+import TaskPanel, { AddTaskForm } from "@/components/Reminders/TaskPanel";
 import { buttonClasses } from "@/components/ui/Button";
 import Messages from "@/i18n/MessagesProvider";
 import { getLocale, getTranslations } from "@/i18n/server";
@@ -9,14 +8,45 @@ import { requireHousehold } from "@/lib/dal";
 import { formatDay, formatMoney, todayIn } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { listAssignableMembers, listBillReminders, listTasks } from "@/lib/reminder-data";
-import { reminderBadge } from "@/lib/reminders";
+import { reminderBadge, TASK_KINDS } from "@/lib/reminders";
 
 export async function generateMetadata() {
   const [t, common] = await Promise.all([getTranslations("reminders"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }
 
-export default async function RemindersPage() {
+const FILTERS = [null, ...TASK_KINDS];
+const filterHref = kind => (kind ? `/reminders?kind=${kind}` : "/reminders");
+
+/** Filter chips: All, then each kind of task. "Bills" also shows the bill reminders. */
+function ReminderFilters({ active, t }) {
+  return (
+    <nav aria-label={t("filters.label")} className="flex flex-wrap gap-2">
+      {FILTERS.map(kind => {
+        const current = kind === active;
+        return (
+          <Link
+            key={kind ?? "all"}
+            href={filterHref(kind)}
+            aria-current={current ? "page" : undefined}
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              current
+                ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-200"
+                : "border-white/10 text-slate-300 hover:border-white/30 hover:text-white"
+            }`}
+          >
+            {kind ? t(`kinds.${kind}`) : t("filters.all")}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export default async function RemindersPage({ searchParams }) {
+  const { kind } = await searchParams;
+  const filter = TASK_KINDS.includes(kind) ? kind : null;
+  const showBills = !filter || filter === "bills";
   const { householdId, role, currency, timezone } = await requireHousehold();
   const canEdit = can(role, "finance:write");
   const today = todayIn(timezone);
@@ -31,6 +61,7 @@ export default async function RemindersPage() {
 
   // Labels are built here, in the household's currency and the reader's language.
   const billRows = bills.map(item => ({
+    type: "bill",
     id: item.id,
     title: item.title,
     amountLabel: formatMoney(item.amount, currency, locale),
@@ -43,13 +74,27 @@ export default async function RemindersPage() {
     remindDaysBefore: item.remindDaysBefore,
     canLog: Boolean(item.categoryId),
   }));
-  const openTasks = tasks.open.map(item => ({
+  // "Bills" shows the recurring bills and the tasks with an amount or of that type.
+  const matches = item => !filter || item.kind === filter || (filter === "bills" && item.amount);
+  const taskRows = tasks.open.filter(matches).map(item => ({
+    type: "task",
     id: item.id,
     title: item.title,
+    dueDate: item.dueDate,
+    kindLabel: t(`kinds.${item.kind}`),
+    amountLabel: item.amount ? formatMoney(item.amount, currency, locale) : null,
     badge: reminderBadge(item, t, day),
-    detail: [item.dueDate ? null : t("tasks.noDate"), item.assigneeName ?? t("everyone")].filter(Boolean).join(" · "),
+    detail: [item.repeat ? t(`repeats.${item.repeat}`) : null, item.dueDate ? null : t("tasks.noDate"), item.assigneeName ?? t("everyone")]
+      .filter(Boolean)
+      .join(" · "),
   }));
-  const doneTasks = tasks.done.map(item => ({
+  // One list, soonest first; anything without a date goes last.
+  const listRows = [...(showBills ? billRows : []), ...taskRows].sort((x, y) => {
+    if (x.dueDate && y.dueDate) return x.dueDate.localeCompare(y.dueDate);
+    if (x.dueDate) return -1;
+    return y.dueDate ? 1 : 0;
+  });
+  const doneTasks = tasks.done.filter(matches).map(item => ({
     id: item.id,
     title: item.title,
     detail: item.doneByName ? t("tasks.doneBy", { name: item.doneByName }) : null,
@@ -58,7 +103,7 @@ export default async function RemindersPage() {
   return (
     <Messages namespaces={["reminders"]}>
       <div className="h-full overflow-y-auto px-3 py-3 text-white md:px-6">
-        <main className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <main className="mx-auto flex w-full flex-col gap-4">
           <section className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20 backdrop-blur md:p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
@@ -72,22 +117,37 @@ export default async function RemindersPage() {
             </div>
           </section>
 
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            <Panel title={t("tasks.title")} subtitle={t("tasks.subtitle")}>
-              <TaskPanel open={openTasks} done={doneTasks} members={members} canEdit={canEdit} />
-            </Panel>
-            <Panel title={t("bills.title")} subtitle={t("bills.subtitle")}>
-              {billRows.length ? (
-                <BillReminderList bills={billRows} members={members} canEdit={canEdit} today={today} />
-              ) : (
-                <p className="text-sm text-slate-400">
-                  {t("bills.empty")}{" "}
-                  <Link href="/budget" className="text-cyan-300 underline-offset-2 hover:underline">
-                    {t("bills.emptyLink")}
-                  </Link>
-                </p>
-              )}
-            </Panel>
+          {/* Left: the form for a new reminder. Right: what's active, with the filters applying only there. */}
+          <div
+            className={`grid items-start gap-4 ${canEdit ? "lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,30rem)_minmax(0,1fr)]" : ""}`}
+          >
+            {canEdit ? (
+              <Panel title={t("tasks.newTitle")} subtitle={t("tasks.subtitle")} className="lg:sticky lg:top-0">
+                <AddTaskForm members={members} />
+              </Panel>
+            ) : null}
+
+            <div className="flex min-w-0 flex-col gap-4">
+              <ReminderFilters active={filter} t={t} />
+              <Panel title={t("list.title")} subtitle={t("list.subtitle")}>
+                <TaskPanel
+                  items={listRows}
+                  done={doneTasks}
+                  members={members}
+                  canEdit={canEdit}
+                  today={today}
+                  emptyText={filter ? t("tasks.emptyFiltered", { kind: t(`kinds.${filter}`) }) : t("tasks.empty")}
+                />
+                {showBills && !billRows.length ? (
+                  <p className="mt-4 text-xs text-slate-400">
+                    {t("bills.empty")}{" "}
+                    <Link href="/categories" className="text-cyan-300 underline-offset-2 hover:underline">
+                      {t("bills.emptyLink")}
+                    </Link>
+                  </p>
+                ) : null}
+              </Panel>
+            </div>
           </div>
         </main>
       </div>

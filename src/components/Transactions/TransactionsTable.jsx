@@ -3,6 +3,7 @@
 import Link from "next/link";
 import DeleteExpenseButton from "@/components/Transactions/DeleteExpenseButton";
 import { useTranslations } from "@/i18n/client";
+import { expenseName } from "@/lib/format";
 import { sortHref, transactionsHref } from "@/lib/transaction-filters";
 
 // labelKey: under "table" in the transactions messages.
@@ -99,7 +100,7 @@ export default function TransactionsTable({ rows, filters, pageCount, canEdit })
                 <td className="px-3 py-2.5 text-right font-semibold whitespace-nowrap text-rose-200">{row.amountLabel}</td>
                 {canEdit ? (
                   <td className="px-3 py-2.5 text-right">
-                    <DeleteExpenseButton id={row.id} title={row.title} />
+                    <DeleteExpenseButton id={row.id} title={expenseName(row.title, row.categoryName)} />
                   </td>
                 ) : null}
               </tr>
