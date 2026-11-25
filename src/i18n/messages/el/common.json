@@ -17,7 +17,8 @@
     "members": "Μέλη",
     "alerts": "Ειδοποιήσεις",
     "account": "Λογαριασμός",
-    "more": "Περισσότερα",
+    "menu": "Μενού",
+    "closeMenu": "Κλείσιμο μενού",
     "unreadTitle": "{label}: {count} μη αναγνωσμένες",
     "unreadLabel": "{label}, {count} μη αναγνωσμένες",
     "reminders": "Υπενθυμίσεις"

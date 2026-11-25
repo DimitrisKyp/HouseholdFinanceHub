@@ -17,7 +17,8 @@
     "members": "Members",
     "alerts": "Alerts",
     "account": "Account",
-    "more": "More",
+    "menu": "Menu",
+    "closeMenu": "Close menu",
     "unreadTitle": "{label}: {count} unread",
     "unreadLabel": "{label}, {count} unread",
     "reminders": "Reminders"

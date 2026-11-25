@@ -167,7 +167,7 @@ export default function NotificationsMenu({ unreadCount = 0 }) {
           id={panelId}
           role="dialog"
           aria-labelledby={headingId}
-          className="fixed inset-x-3 top-40 z-40 flex max-h-[70vh] flex-col rounded-2xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/50 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-96"
+          className="fixed inset-x-3 top-20 z-40 flex max-h-[70vh] flex-col rounded-2xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/50 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-96"
         >
           <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
             <div>

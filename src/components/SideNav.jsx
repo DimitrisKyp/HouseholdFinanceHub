@@ -2,12 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useDismiss } from "@/hooks/useDismiss";
 import { useTranslations } from "@/i18n/client";
-
-// On phones only the everyday pages fit in the bar; the others (setup and settings) go under "More".
-const PHONE_BAR = new Set(["/", "/transactions", "/insights", "/goals"]);
 
 const navItems = [
   {
@@ -122,77 +119,154 @@ function NavIcon({ icon, active }) {
   );
 }
 
-const MORE_ICON = (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01" />
+const BURGER_ICON = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.75}
+    aria-hidden="true"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
   </svg>
 );
 
-/** Phones only: the pages that don't fit in the bar, in a menu. Closes on navigation, Escape or a click outside. */
-function MoreMenu({ items, pathname, label }) {
+const CLOSE_ICON = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.75}
+    aria-hidden="true"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
+
+const roundButton =
+  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 text-slate-300 transition hover:border-cyan-400/40 hover:text-white";
+
+function useNavItems() {
+  const t = useTranslations("common");
+  return navItems.map(item => ({ ...item, label: t(`nav.${item.labelKey}`) }));
+}
+
+/**
+ * Phones only: a burger button (left of the top bar) that opens every page in a drawer from the
+ * left. Closes on navigation, Escape or a tap outside; Tab stays inside the drawer while open.
+ */
+export function MobileNav() {
+  const pathname = usePathname();
+  const t = useTranslations("common");
+  const items = useNavItems();
   const [open, setOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(pathname);
-  const menuId = useId();
-  const wrapper = useRef(null);
+  const drawerId = useId();
+  const button = useRef(null);
+  const panel = useRef(null);
+  const closeButton = useRef(null);
   if (open && openedAt !== pathname) setOpen(false);
-  const close = useCallback(() => setOpen(false), []);
-  useDismiss(open, close, { containerRef: wrapper });
 
-  const active = items.some(item => isActivePath(pathname, item.href));
+  const close = useCallback(() => {
+    setOpen(false);
+    button.current?.focus();
+  }, []);
+  useDismiss(open, close, { containerRef: panel });
+
+  useEffect(() => {
+    if (!open) return undefined;
+    closeButton.current?.focus();
+    const onKey = event => {
+      if (event.key !== "Tab" || !panel.current) return;
+      const focusable = panel.current.querySelectorAll("a[href], button");
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
-    <div ref={wrapper} className="relative md:hidden">
+    <div className="md:hidden">
       <button
+        ref={button}
         type="button"
+        aria-label={t("nav.menu")}
         aria-expanded={open}
-        aria-controls={menuId}
+        aria-controls={drawerId}
         onClick={() => {
           setOpenedAt(pathname);
-          setOpen(value => !value);
+          setOpen(true);
         }}
-        className={`group flex flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-all ${
-          active || open ? "text-cyan-300" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
-        }`}
+        className={roundButton}
       >
-        <NavIcon icon={MORE_ICON} active={active} />
-        <span className="text-[10px] leading-none font-medium">{label}</span>
+        {BURGER_ICON}
       </button>
       {open ? (
-        <ul
-          id={menuId}
-          className="absolute top-full right-0 z-30 mt-2 w-44 rounded-lg border border-white/10 bg-slate-900 p-1 shadow-2xl shadow-black/50"
-        >
-          {items.map(({ href, label, icon }) => {
-            const itemActive = isActivePath(pathname, href);
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  aria-current={itemActive ? "page" : undefined}
-                  onClick={() => setOpen(false)}
-                  className={`group flex items-center gap-3 rounded-md px-2 py-1.5 text-sm transition ${
-                    itemActive ? "text-cyan-300" : "text-slate-300 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <NavIcon icon={icon} active={itemActive} />
-                  {label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="fixed inset-0 z-50">
+          <div aria-hidden="true" className="absolute inset-0 bg-black/50" />
+          <div
+            ref={panel}
+            id={drawerId}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("nav.menu")}
+            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-white/10 bg-slate-900 p-3 shadow-2xl shadow-black/50"
+          >
+            <div className="mb-3 flex justify-end">
+              <button ref={closeButton} type="button" aria-label={t("nav.closeMenu")} onClick={close} className={roundButton}>
+                {CLOSE_ICON}
+              </button>
+            </div>
+            <nav aria-label={t("nav.label")} className="min-h-0 flex-1 overflow-y-auto">
+              <ul className="space-y-1">
+                {items.map(({ href, label, icon }) => {
+                  const active = isActivePath(pathname, href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        aria-current={active ? "page" : undefined}
+                        onClick={() => setOpen(false)}
+                        className={`group flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium transition ${
+                          active ? "bg-cyan-400/5 text-cyan-300" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        }`}
+                      >
+                        <NavIcon icon={icon} active={active} />
+                        {label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          </div>
+        </div>
       ) : null}
     </div>
   );
 }
 
+/** From md up: the column of pages beside the content. Phones use MobileNav instead. */
 export default function SideNav() {
   const pathname = usePathname();
   const t = useTranslations("common");
-  const items = navItems.map(item => ({ ...item, label: t(`nav.${item.labelKey}`) }));
+  const items = useNavItems();
 
   return (
-    <nav className="relative h-full rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl shadow-black/30 md:h-auto md:w-20">
-      <div className="relative z-10 flex h-full flex-row items-center justify-around gap-1 md:flex-col md:justify-center md:gap-3">
+    <nav aria-label={t("nav.label")} className="relative w-20 rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl shadow-black/30">
+      <div className="relative z-10 flex flex-col items-center justify-center gap-3">
         {items.map(({ href, label, icon }) => {
           const isActive = isActivePath(pathname, href);
           return (
@@ -201,16 +275,15 @@ export default function SideNav() {
               href={href}
               title={label}
               aria-current={isActive ? "page" : undefined}
-              className={`group min-w-0 flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-all ${
-                PHONE_BAR.has(href) ? "flex" : "hidden md:flex"
-              } ${isActive ? "text-cyan-300" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"}`}
+              className={`group flex min-w-0 flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-all ${
+                isActive ? "text-cyan-300" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+              }`}
             >
               <NavIcon icon={icon} active={isActive} />
-              <span className="text-[10px] leading-none font-medium md:text-[11px]">{label}</span>
+              <span className="text-[11px] leading-none font-medium">{label}</span>
             </Link>
           );
         })}
-        <MoreMenu items={items.filter(item => !PHONE_BAR.has(item.href))} pathname={pathname} label={t("nav.more")} />
       </div>
     </nav>
   );

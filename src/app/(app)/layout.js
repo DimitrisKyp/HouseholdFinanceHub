@@ -1,7 +1,7 @@
 // Shell for the logged-in app: side navigation beside the page, and the top bar (what's left this
 // month, the date, notifications, the profile and sign-out) above every page.
 import LiveUpdates from "@/components/LiveUpdates";
-import SideNav from "@/components/SideNav";
+import SideNav, { MobileNav } from "@/components/SideNav";
 import TopBar from "@/components/TopBar";
 import { dateLocale } from "@/i18n/config";
 import Messages from "@/i18n/MessagesProvider";
@@ -32,7 +32,7 @@ export default async function AppLayout({ children }) {
   }).format(new Date());
 
   return (
-    <div className="flex h-full flex-col md:flex-row">
+    <div className="flex h-full flex-row">
       {/* First thing a keyboard user reaches: jump past the navigation. */}
       <a
         href="#content"
@@ -40,23 +40,27 @@ export default async function AppLayout({ children }) {
       >
         {t("skipToContent")}
       </a>
-      <aside className="relative z-40 shrink-0 md:w-25">
-        {/* Above the top bar, so the phone "More" menu opens over it. From md up: a column centred
-            beside the page, as tall as its items (scrolls on very short screens). */}
-        <div className="h-full md:flex md:items-center md:py-4 md:pr-0 md:pl-6">
+      {/* From md up: a column centred beside the page. Phones get the burger menu in the top bar. */}
+      <aside className="relative z-40 hidden w-25 shrink-0 md:block">
+        <div className="flex h-full items-center py-4 pr-0 pl-6">
           <SideNav />
         </div>
       </aside>
       <div className="flex min-h-0 flex-1 flex-col">
         <header className="relative z-30 shrink-0 px-3 pt-3 text-white md:px-6">
           <Messages namespaces={["notifications"]}>
-            <TopBar
-              balanceLabel={formatMoney(net, currency, locale)}
-              balanceNegative={net < 0}
-              dateLabel={dateLabel}
-              unreadCount={unreadCount}
-              currentUser={{ name: user.name, avatarUrl: user.image ?? null, role, householdName }}
-            />
+            <div className="flex items-center gap-2">
+              <MobileNav />
+              <div className="min-w-0 flex-1">
+                <TopBar
+                  balanceLabel={formatMoney(net, currency, locale)}
+                  balanceNegative={net < 0}
+                  dateLabel={dateLabel}
+                  unreadCount={unreadCount}
+                  currentUser={{ name: user.name, avatarUrl: user.image ?? null, role, householdName }}
+                />
+              </div>
+            </div>
           </Messages>
         </header>
         <section id="content" tabIndex={-1} className="min-h-0 flex-1 overflow-hidden outline-none">

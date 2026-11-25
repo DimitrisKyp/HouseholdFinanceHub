@@ -41,27 +41,32 @@ for (const role of ["owner", "editor", "viewer"]) {
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 360, height: 780 } });
 
-  test("everyday pages are in the bar, the rest under More", async ({ page }) => {
+  test("every page is in the burger menu on the left", async ({ page }) => {
     await page.goto("/");
-    const nav = page.getByRole("navigation");
-    for (const name of ["Dashboard", "Transactions", "Insights", "Goals"]) {
-      await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
-    }
-    await expect(nav.getByRole("link", { name: "Finances", exact: true })).toBeHidden();
+    // No side column or bar on a phone: just the burger button.
+    await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
     // Nothing sticks out sideways, even on a narrow phone.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 
-    const more = nav.getByRole("button", { name: "More" });
-    await more.click();
-    await expect(more).toHaveAttribute("aria-expanded", "true");
+    const burger = page.getByRole("button", { name: "Menu", exact: true });
+    expect((await burger.boundingBox()).x).toBeLessThan(40);
+    await burger.click();
+    await expect(burger).toHaveAttribute("aria-expanded", "true");
+    const nav = page.getByRole("dialog", { name: "Menu" }).getByRole("navigation", { name: "Main" });
+    for (const name of ["Dashboard", "Finances", "Spending", "Transactions", "Insights", "Goals", "Reminders", "Members"]) {
+      await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
+    }
     await page.keyboard.press("Escape");
-    await expect(more).toHaveAttribute("aria-expanded", "false");
+    await expect(burger).toHaveAttribute("aria-expanded", "false");
+    await expect(burger).toBeFocused();
 
-    await more.click();
+    await burger.click();
     await nav.getByRole("link", { name: "Finances", exact: true }).click();
     await expect(page).toHaveURL(/\/budget$/);
-    await expect(more).toHaveAttribute("aria-expanded", "false");
-    await more.click();
+    await expect(burger).toHaveAttribute("aria-expanded", "false");
+    await burger.click();
     await expect(nav.getByRole("link", { name: "Finances", exact: true })).toHaveAttribute("aria-current", "page");
+    await page.getByRole("button", { name: "Close menu" }).click();
+    await expect(page.getByRole("dialog", { name: "Menu" })).toHaveCount(0);
   });
 });
