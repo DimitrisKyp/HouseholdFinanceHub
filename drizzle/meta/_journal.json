@@ -22,6 +22,27 @@
       "when": 1795077867438,
       "tag": "0002_i18n",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795444263057,
+      "tag": "0003_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795604280282,
+      "tag": "0004_assets_task_kinds",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795612556198,
+      "tag": "0005_task_amount",
+      "breakpoints": true
     }
   ]
 }

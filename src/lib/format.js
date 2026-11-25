@@ -54,3 +54,11 @@ export function formatMonth(isoDate, locale = DEFAULT_LOCALE) {
     new Date(Date.UTC(year, month - 1, 1)),
   );
 }
+
+/** Stored as an expense's description when it has none. */
+export const NO_EXPENSE_TITLE = "-";
+
+/** What to call an expense in a list: its description, or its category when it has none. */
+export function expenseName(title, categoryName) {
+  return !title || title === NO_EXPENSE_TITLE ? categoryName : title;
+}

@@ -6,9 +6,9 @@ import { forecastView, savingsForecast } from "@/lib/forecast";
 import { formatMoney } from "@/lib/format";
 
 describe("SavingsForecast", () => {
-  it("points to the Budget page when there's nothing to forecast", () => {
+  it("points to the Finances page when there's nothing to forecast", () => {
     render(<SavingsForecast forecast={null} />);
-    expect(screen.getByRole("link", { name: "Budget page" })).toHaveAttribute("href", "/budget");
+    expect(screen.getByRole("link", { name: "Finances page" })).toHaveAttribute("href", "/budget");
   });
 
   it("flags a monthly shortfall in words, not only as a negative number", () => {

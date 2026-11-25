@@ -12,6 +12,7 @@ import elGoals from "./el/goals.json";
 import elInsights from "./el/insights.json";
 import elMembers from "./el/members.json";
 import elNotifications from "./el/notifications.json";
+import elReminders from "./el/reminders.json";
 import elTransactions from "./el/transactions.json";
 import enAccount from "./en/account.json";
 import enAuth from "./en/auth.json";
@@ -24,6 +25,7 @@ import enGoals from "./en/goals.json";
 import enInsights from "./en/insights.json";
 import enMembers from "./en/members.json";
 import enNotifications from "./en/notifications.json";
+import enReminders from "./en/reminders.json";
 import enTransactions from "./en/transactions.json";
 
 export const MESSAGES = {
@@ -39,6 +41,7 @@ export const MESSAGES = {
     insights: enInsights,
     members: enMembers,
     notifications: enNotifications,
+    reminders: enReminders,
     transactions: enTransactions,
   },
   el: {
@@ -53,6 +56,7 @@ export const MESSAGES = {
     insights: elInsights,
     members: elMembers,
     notifications: elNotifications,
+    reminders: elReminders,
     transactions: elTransactions,
   },
 };

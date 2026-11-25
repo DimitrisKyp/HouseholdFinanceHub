@@ -3,18 +3,20 @@ import { db } from "@/db";
 import { category, household, householdMember } from "@/db/schema";
 import { getTranslations } from "@/i18n/server";
 
-// Starter categories for a new household (monthly limit in the household currency, or null).
-// Named in the creator's language (budget messages, defaultCategories); after that they're the
-// household's own data and are never translated again.
+// Starter categories for a new household: [key, monthly limit in the household currency or null,
+// archived]. Only the first few are in use; the rest start archived, one click away on the
+// Categories page. Named in the creator's language (budget messages, defaultCategories); after
+// that they're the household's own data and are never translated again.
 const DEFAULT_CATEGORIES = [
-  ["groceries", 650],
-  ["bills", 380],
-  ["transport", 240],
-  ["leisure", 180],
-  ["housing", null],
-  ["utilities", null],
-  ["subscriptions", null],
-  ["insurance", null],
+  ["groceries", 650, false],
+  ["bills", 380, false],
+  ["subscriptions", null, false],
+  ["car", null, false],
+  ["transport", null, true],
+  ["leisure", null, true],
+  ["housing", null, true],
+  ["utilities", null, true],
+  ["insurance", null, true],
 ];
 
 /** Creates a household with `userId` as its owner, plus starter categories. All or nothing. */
@@ -26,10 +28,11 @@ export async function createHouseholdWithOwner({ userId, name }) {
     await tx.insert(householdMember).values({ householdId: created.id, userId, role: "owner" });
 
     await tx.insert(category).values(
-      DEFAULT_CATEGORIES.map(([key, monthlyLimit]) => ({
+      DEFAULT_CATEGORIES.map(([key, monthlyLimit, isArchived]) => ({
         householdId: created.id,
         name: t(`defaultCategories.${key}`),
         monthlyLimit,
+        isArchived,
       })),
     );
 

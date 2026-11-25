@@ -7,7 +7,7 @@ import { today } from "./helpers/dates.mjs";
 // Automated WCAG 2.1 A/AA checks (axe-core) on every page, in both themes. axe finds about a third
 // of real accessibility problems (contrast, names, labels, landmarks, ARIA misuse); keyboard use
 // and screen-reader wording are covered by the other tests and by hand.
-const APP_PAGES = ["/", "/budget", "/transactions", "/insights", "/goals", "/members", "/notifications", "/account"];
+const APP_PAGES = ["/", "/budget", "/categories", "/transactions", "/insights", "/goals", "/reminders", "/members", "/account"];
 const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/forgot-password"];
 
 const setTheme = (context, theme) => context.addCookies([{ name: "theme", value: theme, url: BASE_URL }]);
@@ -48,6 +48,13 @@ for (const theme of ["dark", "light"]) {
         await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
         expect.soft(await violations(page), path).toEqual([]);
       }
+    });
+
+    test("the notifications pop-up has no detectable WCAG A/AA problems", async ({ page }) => {
+      await page.goto("/");
+      await page.getByRole("button", { name: /^Alerts/ }).click();
+      await expect(page.getByRole("dialog", { name: "Notifications" })).toBeVisible();
+      expect(await violations(page)).toEqual([]);
     });
 
     test.describe("signed out", () => {

@@ -103,6 +103,29 @@ export function sendPasswordChangedEmail({ to, name, url, locale }) {
   return sendLinkEmail({ to, name, url, key: "passwordChanged", lines: ["line1", "line2"], locale });
 }
 
+/**
+ * Today's reminders in one email: lines are the reminders' titles and bodies, already in the
+ * reader's language (see renderNotification).
+ */
+export async function sendRemindersEmail({ to, name, reminders, locale }) {
+  const language = isLocale(locale) ? locale : await getLocale();
+  const t = await getTranslations("email", language);
+  const p = { app: APP_NAME, count: reminders.length, first: reminders[0]?.title };
+  return sendEmail({
+    to,
+    subject: t("reminders.subject", p),
+    ...linkEmail({
+      lang: language,
+      greeting: name ? t("greeting", { name }) : t("greetingNoName"),
+      lines: [t("reminders.line", p), ...reminders.map(item => (item.body ? `• ${item.title}: ${item.body}` : `• ${item.title}`))],
+      buttonLabel: t("reminders.button", p),
+      url: siteUrl("/reminders"),
+      footer: t("reminders.footer", p),
+      fallbackNote: t("buttonFallback"),
+    }),
+  });
+}
+
 /** Absolute URL on this site, for links inside emails. */
 export function siteUrl(path) {
   return new URL(path, process.env.BETTER_AUTH_URL).toString();

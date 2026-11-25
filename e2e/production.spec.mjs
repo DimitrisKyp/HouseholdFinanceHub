@@ -35,14 +35,14 @@ test.describe("password guessing", () => {
     const email = `guess-${Date.now()}@e2e.test`;
     for (let attempt = 1; attempt <= 8; attempt++) {
       await page.getByLabel("Email").fill(email);
-      await page.getByLabel("Password").fill(`wrong-${attempt}`);
+      await page.getByLabel("Password", { exact: true }).fill(`wrong-${attempt}`);
       await page.getByRole("button", { name: "Sign in" }).click();
       await expect(page.locator("form").getByRole("alert")).toHaveText("Incorrect email or password.");
       // React resets the form after each submit; wait for that before typing again.
-      await expect(page.getByLabel("Password")).toHaveValue("");
+      await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
     }
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill("wrong-9");
+    await page.getByLabel("Password", { exact: true }).fill("wrong-9");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.locator("form").getByRole("alert")).toHaveText(/^Too many attempts. Please wait 15 minutes/);
   });

@@ -1,5 +1,5 @@
 import { useMemo, useOptimistic } from "react";
-import { formatDay, formatMoney } from "@/lib/format";
+import { expenseName, formatDay, formatMoney } from "@/lib/format";
 import { field, parseAmount } from "@/lib/forms";
 
 /**
@@ -19,12 +19,13 @@ export function usePendingExpenses({ recentExpenses, categories, members, today,
     const spentOn = field(formData, "spentOn") || today;
     const category = categories.find(item => item.id === field(formData, "categoryId"));
     const payer = members.find(member => member.userId === field(formData, "paidByUserId"));
-    if (!title || amount === null || !category || spentOn > today) return;
+    if (title.length > 120 || amount === null || !category || spentOn > today) return;
     addPending({
       id: `pending-${Date.now()}`,
-      title,
+      title: expenseName(title, category.name),
       amountLabel: formatMoney(amount, currency, locale),
-      detail: [formatDay(spentOn, locale), category.name, payer?.name].filter(Boolean).join(" · "),
+      // Without a description the category is already the title.
+      detail: [formatDay(spentOn, locale), title ? category.name : null, payer?.name].filter(Boolean).join(" · "),
       pending: true,
     });
   };

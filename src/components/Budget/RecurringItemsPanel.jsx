@@ -193,21 +193,16 @@ function ItemRow({ item, canEdit, amountColor, categories }) {
   );
 }
 
-export default function RecurringItemsPanel({ type, title, subtitle, totalLabel, items, categories = [], members = [], canEdit }) {
+/** Income sources or fixed bills. Goes inside a Panel, which gives it its title. */
+export default function RecurringItemsPanel({ type, totalLabel, items, categories = [], members = [], canEdit }) {
   const copy = COPY[type];
   const t = useTranslations("budget");
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="font-medium text-white">{title}</h3>
-          <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
-        </div>
-        <div className="shrink-0 text-right">
-          <p className={`font-semibold ${copy.amountColor}`}>{totalLabel}</p>
-          <p className="text-xs text-slate-500">{t("recurring.perMonth")}</p>
-        </div>
+    <div>
+      <div className="flex items-baseline justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3">
+        <p className="text-sm text-slate-300">{t("recurring.monthlyTotal")}</p>
+        <p className={`text-xl font-semibold ${copy.amountColor}`}>{totalLabel}</p>
       </div>
 
       {canEdit ? (
@@ -231,6 +226,6 @@ export default function RecurringItemsPanel({ type, title, subtitle, totalLabel,
       ) : (
         <p className="mt-4 text-sm text-slate-500">{t(`recurring.${type}.empty`)}</p>
       )}
-    </section>
+    </div>
   );
 }

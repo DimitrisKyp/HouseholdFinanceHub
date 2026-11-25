@@ -1,12 +1,19 @@
 {
-  "metaTitle": "Budget",
-  "eyebrow": "Income & monthly baseline",
-  "heading": "Your salary, side income and fixed bills.",
-  "introEdit": "Set up what comes in and goes out every month before tracking daily spending. These totals feed the dashboard.",
-  "introView": "What comes in and goes out every month. Only owners and editors can change it.",
+  "metaTitle": "Finances",
+  "eyebrow": "Income & net worth",
+  "heading": "What comes in, and what you own.",
+  "introEdit": "Your regular income, and the money and things of value you own: bank accounts, crypto, stocks, property. Fixed bills and category limits are on the Spending page.",
+  "introView": "Regular income and what the household owns. Only owners and editors can change them.",
   "leftAfterBills": "Left after fixed bills",
   "perMonthAmount": "{amount} / month",
   "backToDashboard": "Back to dashboard",
+  "categoriesPage": {
+    "metaTitle": "Spending",
+    "eyebrow": "Spending",
+    "heading": "Monthly limits and fixed bills.",
+    "introEdit": "The categories you log expenses under, with a monthly limit, and the bills that come back every month, week or year. Archive categories you don't use: past expenses keep them.",
+    "introView": "Expense categories with their monthly limits, and the fixed bills. Only owners and editors can change them."
+  },
   "recurring": {
     "title": "Recurring income and bills",
     "subtitle": "Amounts that repeat. Weekly and yearly items are converted to a monthly average.",
@@ -45,7 +52,8 @@
       "titlePlaceholder": "Rent",
       "submit": "Add bill",
       "empty": "No recurring bills added yet."
-    }
+    },
+    "monthlyTotal": "Per month"
   },
   "categories": {
     "title": "Categories and monthly limits",
@@ -57,6 +65,9 @@
     "save": "Save",
     "archive": "Archive",
     "restore": "Restore",
+    "delete": "Delete",
+    "deleteLabel": "Delete {name}",
+    "confirmDelete": "Delete {name} for good? Bills in this category will be left without one. Categories with expenses can only be archived.",
     "newCategory": "New category",
     "namePlaceholder": "Pets",
     "monthlyLimit": "Monthly limit",
@@ -81,7 +92,12 @@
     "nameCategory": "Name the category.",
     "categoryNameLength": "Use at most {max} characters.",
     "categoryExists": "A category with this name already exists (it may be archived).",
-    "categoryGone": "This category no longer exists."
+    "categoryGone": "This category no longer exists.",
+    "categoryInUse": "{name} has expenses logged under it, so it can't be deleted. Archive it instead: past expenses keep it.",
+    "assetName": "Name it, e.g. Savings account.",
+    "assetKind": "Choose a type.",
+    "assetValue": "Enter its value, e.g. 12500 or 0.",
+    "assetGone": "This no longer exists. Refresh the page."
   },
   "defaultCategories": {
     "groceries": "Groceries",
@@ -91,6 +107,7 @@
     "housing": "Housing",
     "utilities": "Utilities",
     "subscriptions": "Subscriptions",
+    "car": "Car",
     "insurance": "Insurance"
   },
   "success": {
@@ -99,6 +116,34 @@
     "removed": "Removed.",
     "saved": "Saved.",
     "archived": "{name} archived.",
-    "restored": "{name} restored."
+    "restored": "{name} restored.",
+    "deleted": "{name} deleted.",
+    "assetAdded": "{name} added.",
+    "assetDeleted": "{name} deleted."
+  },
+  "netWorth": "Net worth",
+  "assets": {
+    "title": "What you own",
+    "subtitle": "Bank accounts, crypto, stocks, property. Update the values now and then; together they make your net worth.",
+    "name": "Name",
+    "namePlaceholder": "Savings account",
+    "kind": "Type",
+    "value": "Value",
+    "valuePlaceholder": "12500",
+    "add": "Add",
+    "adding": "Adding…",
+    "empty": "Nothing added yet.",
+    "valueFor": "Value of {name}",
+    "save": "Save",
+    "delete": "Delete",
+    "deleteFor": "Delete {name}",
+    "confirmDelete": "Delete \"{name}\"?",
+    "kinds": {
+      "bank": "Bank",
+      "crypto": "Crypto",
+      "stocks": "Stocks",
+      "real_estate": "Real estate",
+      "other": "Other"
+    }
   }
 }

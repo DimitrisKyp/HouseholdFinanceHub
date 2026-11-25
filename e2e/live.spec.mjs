@@ -6,7 +6,7 @@ import { resetHousehold, sql } from "./helpers/db.mjs";
 // another member who makes the changes. Nobody reloads; changes arrive over /api/events.
 const liveConnected = page => expect(page.locator('[data-live="open"]')).toHaveCount(1);
 const recentExpenses = page => page.getByRole("list", { name: "Recent expenses" });
-const alertsLink = page => page.getByRole("navigation").getByRole("link", { name: /^Alerts/ });
+const alertsLink = page => page.getByRole("button", { name: /^Alerts/ });
 
 async function openAs(browser, role, path) {
   const context = await browser.newContext({ storageState: authFile(role) });
@@ -52,7 +52,7 @@ test("a budget alert updates everyone's badge at once, including the person who 
     household.categoryIds.Groceries,
     today(),
   ]);
-  await page.goto("/insights");
+  await page.goto("/");
   await liveConnected(page);
   await expect(alertsLink(page)).toHaveAccessibleName("Alerts");
   const editor = await openAs(browser, "editor", "/");

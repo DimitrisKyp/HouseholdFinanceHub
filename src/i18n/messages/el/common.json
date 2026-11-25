@@ -9,7 +9,8 @@
   "nav": {
     "label": "Κύρια",
     "dashboard": "Αρχική",
-    "budget": "Μπάτζετ",
+    "budget": "Οικονομικά",
+    "categories": "Δαπάνες",
     "transactions": "Κινήσεις",
     "insights": "Αναλύσεις",
     "goals": "Στόχοι",
@@ -18,7 +19,8 @@
     "account": "Λογαριασμός",
     "more": "Περισσότερα",
     "unreadTitle": "{label}: {count} μη αναγνωσμένες",
-    "unreadLabel": "{label}, {count} μη αναγνωσμένες"
+    "unreadLabel": "{label}, {count} μη αναγνωσμένες",
+    "reminders": "Υπενθυμίσεις"
   },
   "roles": {
     "owner": "Ιδιοκτήτης",
@@ -38,6 +40,11 @@
     "goalAdded": "{name} πρόσθεσε {amount} στον στόχο «{goal}»",
     "goalWithdrawn": "{name} αφαίρεσε {amount} από τον στόχο «{goal}»",
     "expenseAdded": "{name} πρόσθεσε το έξοδο «{title}» ({amount})",
-    "expenseDeleted": "{name} διέγραψε το έξοδο «{title}»"
-  }
+    "expenseDeleted": "{name} διέγραψε το έξοδο «{title}»",
+    "remindersUpdated": "{name} ενημέρωσε τις υπενθυμίσεις",
+    "billPaid": "{name} σημείωσε το {title} ως πληρωμένο",
+    "taskDone": "{name} ολοκλήρωσε το {title}"
+  },
+  "showPassword": "Εμφάνιση κωδικού",
+  "hidePassword": "Απόκρυψη κωδικού"
 }

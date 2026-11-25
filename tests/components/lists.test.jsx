@@ -64,7 +64,7 @@ describe("ExpenseTrackerPanel", () => {
 
   it("asks for a category first when there are none", () => {
     render(<ExpenseTrackerPanel {...props} categories={[]} canEdit />);
-    expect(screen.getByRole("link", { name: "Budget page" })).toHaveAttribute("href", "/budget");
+    expect(screen.getByRole("link", { name: "Spending page" })).toHaveAttribute("href", "/categories");
     expect(screen.queryByRole("button", { name: "Add expense" })).not.toBeInTheDocument();
   });
 

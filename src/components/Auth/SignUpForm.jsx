@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import TextField, { FormError } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/Button";
+import PasswordField from "@/components/ui/PasswordField";
 import { signUpAction } from "@/lib/actions/auth";
 import { useTranslations } from "@/i18n/client";
 
@@ -32,19 +33,17 @@ export default function SignUpForm() {
         defaultValue={state.values?.email}
         error={errors.email}
       />
-      <TextField
+      <PasswordField
         id="password"
         label={t("fields.password")}
-        type="password"
         autoComplete="new-password"
         required
         hint={t("fields.passwordHint")}
         error={errors.password}
       />
-      <TextField
+      <PasswordField
         id="confirmPassword"
         label={t("fields.confirmPassword")}
-        type="password"
         autoComplete="new-password"
         required
         error={errors.confirmPassword}

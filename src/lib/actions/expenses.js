@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { getLocale, getTranslations } from "@/i18n/server";
 import { category, expense, householdMember } from "@/db/schema";
 import { requirePermission } from "@/lib/dal";
-import { formatMoney, todayIn } from "@/lib/format";
+import { expenseName, formatMoney, NO_EXPENSE_TITLE, todayIn } from "@/lib/format";
 import { field, parseAmount, parseDate, UUID_PATTERN } from "@/lib/forms";
 import { announce, liveMessage } from "@/lib/live";
 import { checkBudgetAlert } from "@/lib/notifications";
@@ -28,8 +28,8 @@ export async function addExpenseAction(_previousState, formData) {
   const t = await getTranslations("dashboard");
 
   const errors = {};
-  if (!values.title) errors.title = t("actions.titleMissing");
-  else if (values.title.length > MAX_TITLE_LENGTH) errors.title = t("actions.titleTooLong");
+  // The description is optional: without one the expense goes by its category.
+  if (values.title.length > MAX_TITLE_LENGTH) errors.title = t("actions.titleTooLong");
   const amount = parseAmount(values.amount);
   if (amount === null) errors.amount = t("actions.amountInvalid");
   const spentOn = values.spentOn ? parseDate(values.spentOn) : today;
@@ -38,7 +38,7 @@ export async function addExpenseAction(_previousState, formData) {
 
   const [foundCategory] = UUID_PATTERN.test(values.categoryId)
     ? await db
-        .select({ id: category.id })
+        .select({ id: category.id, name: category.name })
         .from(category)
         .where(and(eq(category.id, values.categoryId), eq(category.householdId, context.householdId), eq(category.isArchived, false)))
     : [];
@@ -59,7 +59,7 @@ export async function addExpenseAction(_previousState, formData) {
   await db.insert(expense).values({
     householdId: context.householdId,
     categoryId: foundCategory.id,
-    title: values.title,
+    title: values.title || NO_EXPENSE_TITLE,
     amount,
     spentOn,
     paidByUserId,
@@ -79,14 +79,15 @@ export async function addExpenseAction(_previousState, formData) {
   }
   revalidatePath("/");
   revalidatePath("/transactions");
+  const name = expenseName(values.title, foundCategory.name);
   await announce(
     context,
     "expenses",
-    liveMessage("expenseAdded", { name: context.user.name, title: values.title, amount, currency: context.currency }),
+    liveMessage("expenseAdded", { name: context.user.name, title: name, amount, currency: context.currency }),
   );
   // Keep category, payer and date for the next entry (people often log several at once).
   return {
-    success: t("actions.added", { title: values.title, amount: formatMoney(amount, context.currency, await getLocale()) }),
+    success: t("actions.added", { title: name, amount: formatMoney(amount, context.currency, await getLocale()) }),
     values: { categoryId: values.categoryId, paidByUserId: values.paidByUserId, spentOn: values.spentOn },
   };
 }
@@ -100,10 +101,15 @@ export async function deleteExpenseAction(_previousState, formData) {
   const removed = await db
     .delete(expense)
     .where(and(eq(expense.id, expenseId), eq(expense.householdId, context.householdId)))
-    .returning({ id: expense.id, title: expense.title });
+    .returning({ id: expense.id, title: expense.title, categoryId: expense.categoryId });
   if (!removed.length) return { error: t("actions.notFound") };
+  let title = removed[0].title;
+  if (title === NO_EXPENSE_TITLE) {
+    const [found] = await db.select({ name: category.name }).from(category).where(eq(category.id, removed[0].categoryId));
+    title = expenseName(title, found?.name);
+  }
   revalidatePath("/");
   revalidatePath("/transactions");
-  await announce(context, "expenses", liveMessage("expenseDeleted", { name: context.user.name, title: removed[0].title }));
+  await announce(context, "expenses", liveMessage("expenseDeleted", { name: context.user.name, title }));
   return { success: t("actions.deleted") };
 }

@@ -31,13 +31,13 @@
   },
   "spending": {
     "title": "Spending per month",
-    "subtitle": "Logged expenses. The dashed line is your monthly income from the Budget page.",
+    "subtitle": "Logged expenses. The dashed line is your monthly income from the Finances page.",
     "valueHeading": "Spent",
     "income": "Income {amount}"
   },
   "leftOver": {
     "title": "Left over each month",
-    "subtitle": "Income minus fixed bills (both from your current Budget) minus other spending. Expenses in a bill's category only count above that bill, so nothing is subtracted twice. Red means more went out than came in. The current month is still in progress.",
+    "subtitle": "Income minus fixed bills (from the Finances and Spending pages) minus other spending. Expenses in a bill's category only count above that bill, so nothing is subtracted twice. Red means more went out than came in. The current month is still in progress.",
     "valueHeading": "Left over"
   },
   "categories": {

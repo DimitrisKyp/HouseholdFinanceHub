@@ -1,16 +1,12 @@
 {
   "metaTitle": "Notifications",
-  "eyebrow": "Notifications",
-  "heading": "What needs your attention.",
-  "intro": "Budget alerts at 80% and 100% of a category's monthly limit, goals that reach their target, and changes to who's in the household.",
+  "loading": "Loading…",
+  "loadFailed": "Couldn't load your notifications. Close this and try again.",
   "latest": {
-    "title": "Latest",
     "unread_one": "{count} unread.",
     "unread_other": "{count} unread.",
     "allRead": "All read.",
-    "hint": "Open one to see what it's about. The latest {shown} are kept here.",
-    "nothingYet": "Nothing yet.",
-    "empty": "You'll get one when a category nears its monthly limit, a goal reaches its target, or someone joins the household."
+    "empty": "You'll get one when a bill or task is due, a category nears its monthly limit, a goal reaches its target, or someone joins the household."
   },
   "markAllRead": "Mark all as read",
   "marking": "Marking…",
@@ -19,7 +15,8 @@
     "budget": "Budget",
     "goal": "Goal",
     "member": "Members",
-    "other": "Update"
+    "other": "Update",
+    "reminder": "Reminder"
   },
   "messages": {
     "budget": {
@@ -61,6 +58,14 @@
         "viewer": "You can still see everything, but can no longer add or change anything.",
         "editor": "You can now add expenses and update budgets and goals."
       }
+    },
+    "reminder": {
+      "upcoming_one": "{title} is due tomorrow",
+      "upcoming_other": "{title} is due in {count} days",
+      "due": "{title} is due today",
+      "overdue": "{title} is overdue",
+      "billBody": "{amount}, due on {date}. Mark it as paid on the Reminders page.",
+      "taskBody": "Due on {date}. Mark it as done on the Reminders page."
     }
   }
 }

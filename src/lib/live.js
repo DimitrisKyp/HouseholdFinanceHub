@@ -13,7 +13,7 @@ const CHANNEL = "household_events";
 const RECONNECT_MS = 2_000;
 
 /** What changed. The browser refreshes the page's data for these. */
-export const LIVE_KINDS = ["expenses", "budget", "goals", "members", "notifications"];
+export const LIVE_KINDS = ["expenses", "budget", "goals", "members", "notifications", "reminders"];
 
 /**
  * Announces a change to everyone connected in the household.

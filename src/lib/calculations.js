@@ -6,6 +6,12 @@ import { goalsTranslator } from "@/lib/goal-messages";
 
 export const FREQUENCIES = ["weekly", "monthly", "yearly"];
 
+/** What an asset can be (the asset_kind enum). */
+export const ASSET_KINDS = ["bank", "crypto", "stocks", "real_estate", "other"];
+
+/** Net worth: the sum of what the household owns, to the cent. */
+export const netWorth = assets => Math.round(assets.reduce((sum, item) => sum + item.value * 100, 0)) / 100;
+
 // How many times per month something with this frequency happens, on average.
 const PER_MONTH = { weekly: 52 / 12, monthly: 1, yearly: 1 / 12 };
 

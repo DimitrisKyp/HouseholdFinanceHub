@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import NotificationsMenu from "@/components/Notifications/NotificationsMenu";
 import { signOutAction } from "@/lib/actions/auth";
 import { useTranslations } from "@/i18n/client";
 
@@ -25,7 +26,7 @@ function InitialsAvatar({ name, avatarUrl }) {
 }
 
 // Labels (balance, date) are computed on the server in the household's currency and timezone.
-export default function TopBar({ balanceLabel, balanceNegative, dateLabel, currentUser }) {
+export default function TopBar({ balanceLabel, balanceNegative, dateLabel, currentUser, unreadCount = 0 }) {
   const t = useTranslations("common");
   return (
     <div className="flex items-center justify-between gap-4">
@@ -37,12 +38,14 @@ export default function TopBar({ balanceLabel, balanceNegative, dateLabel, curre
       <p className="hidden shrink-0 text-sm text-slate-400 sm:block">{dateLabel}</p>
 
       <div className="flex shrink-0 items-center gap-2">
+        <NotificationsMenu unreadCount={unreadCount} />
         <Link
           href="/account"
           title={t("topBar.yourAccount")}
-          className="group flex items-center gap-3 rounded-2xl px-4 py-2 transition hover:border-cyan-400/30 hover:bg-white/10"
+          className="group flex items-center gap-3 rounded-2xl px-1 py-2 transition hover:border-cyan-400/30 hover:bg-white/10 sm:px-4"
         >
-          <div className="text-right">
+          {/* Phones: just the avatar, so the bell, avatar and sign-out fit beside the balance. */}
+          <div className="sr-only text-right sm:not-sr-only">
             <p className="text-sm leading-tight font-semibold text-white transition-colors group-hover:text-cyan-300">{currentUser.name}</p>
             <p className="text-xs text-slate-400">
               {[currentUser.householdName, currentUser.role && t(`roles.${currentUser.role}`)].filter(Boolean).join(" · ")}

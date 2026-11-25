@@ -119,7 +119,9 @@ dashboard), and there are **no downloadable backups**, so make your own (see "Ba
 ### Vercel (the app)
 
 1. **Add New → Project** → import the GitHub repo. Framework: Next.js (detected).
-2. **Settings → Environment Variables** (Production):
+2. **Settings → Environment Variables**, for **Production only** (untick Preview and Development, so
+   preview deployments of `develop` can't reach the live database). On the import screen, paste the
+   lines from `.env.vercel.local` into the first Key field of **Environment Variables**:
 
    | Variable             | Value                                          |
    | -------------------- | ---------------------------------------------- |
@@ -130,14 +132,24 @@ dashboard), and there are **no downloadable backups**, so make your own (see "Ba
    | `BETTER_AUTH_URL`    | `https://nestestia.com`                        |
    | `SMTP_URL`           | `smtps://resend:<API key>@smtp.resend.com:465` |
    | `EMAIL_FROM`         | `Household Hub <no-reply@mail.nestestia.com>`  |
+   | `CRON_SECRET`        | a new random secret (for the reminders job)    |
 
 3. **Settings → Functions → Function Region**: **Frankfurt (fra1)**, next to the database.
-4. **Settings → Domains**: add `nestestia.com` and `www.nestestia.com` (redirect www to the bare
-   domain), then add the DNS records Vercel shows in Cloudflare, set to **DNS only** (grey cloud).
-   Remove the Cloudflare Worker's custom domains first (Workers & Pages → nestestia → Settings →
-   Domains & Routes), or the Worker keeps answering.
-5. **Migrations**: run `npm run db:migrate` against the session pooler (step 3 above) before
-   deploying code that adds one (a new file in `drizzle/`).
+4. **Settings → Domains**: add `nestestia.com` and `www.nestestia.com`, then add the DNS records
+   Vercel shows (**Show DNS configuration**) in Cloudflare, set to **DNS only** (grey cloud). Both
+   are CNAMEs to a `….vercel-dns-0xx.com` name, also for `@` (Cloudflare flattens it). Remove the
+   Cloudflare Worker's custom domains first (Workers & Pages → nestestia → Settings → Domains &
+   Routes), or the Worker keeps answering.
+   - `nestestia.com` must be **Connect to an environment → Production**, and `www.nestestia.com`
+     **Redirect → 308 → nestestia.com**. Adding `www` can make Vercel flip it the other way round
+     (bare domain redirecting to www): undo that, since sign-in and email links use
+     `BETTER_AUTH_URL` = the bare domain.
+
+### Releasing
+
+Work on `develop`; merging `develop` into `main` (a pull request) deploys to nestestia.com by itself.
+If the release adds a migration (a new file in `drizzle/`), run `npm run db:migrate` against the
+session pooler (Supabase, step 3) **before** merging, so the new code doesn't meet old tables.
 
 How the app copes with serverless hosting: live updates reconnect every few minutes (Vercel ends long
 requests; the browser catches up by itself), the sign-in attempt limits and the markets cache are per
@@ -221,6 +233,21 @@ Close it with Ctrl+C (or close VS Code), and the site shows "Currently offline".
 - The tunnel address itself is public too, but hard to guess, and every page still needs a sign-in.
 - **Moving to a real server later**: delete the Worker's custom domains (or the Worker), point
   `nestestia.com` at the server, and delete `.env.production.local`.
+
+## Reminders
+
+Bills from the Budget page can get a next due date, and the Reminders page keeps a list of tasks.
+A daily job, `/api/cron/reminders`, sends what's due: an in-app alert per bill or task (on the day, or
+the chosen number of days before), then one email per person with what they got. Each alert is sent
+once, so running the job again, or a day late, is harmless.
+
+- **On Vercel** the job runs by itself every day at 05:00 UTC (`vercel.json`; on the free plan Vercel
+  may run it any time within that hour). Set `CRON_SECRET` in the project's environment variables:
+  Vercel sends it with each call, and the route refuses to run without it.
+- **Elsewhere** (e.g. Coolify), schedule a daily request with the secret:
+  `curl -H "Authorization: Bearer $CRON_SECRET" https://nestestia.com/api/cron/reminders`.
+- **Locally**, set `CRON_SECRET` in `.env.local` and run the same `curl` against
+  `http://localhost:3000`. Without `SMTP_URL` the emails are printed in the `npm run dev` terminal.
 
 ## Email
 

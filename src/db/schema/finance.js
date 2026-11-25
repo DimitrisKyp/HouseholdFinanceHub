@@ -48,6 +48,21 @@ export const memberRole = pgEnum("member_role", ["owner", "editor", "viewer"]);
 export const recurringType = pgEnum("recurring_type", ["income", "expense"]);
 export const frequency = pgEnum("frequency", ["weekly", "monthly", "yearly"]);
 export const goalStatus = pgEnum("goal_status", ["active", "paused", "completed", "cancelled"]);
+// What a task is about, for the filters on the Reminders page.
+export const taskKind = pgEnum("task_kind", [
+  "vehicle",
+  "documents",
+  "subscriptions",
+  "warranties",
+  "bills",
+  "returns",
+  "prescriptions",
+  "free_trials",
+  "other",
+]);
+// How often a task comes back once it's done (null = just once).
+export const taskRepeat = pgEnum("task_repeat", ["daily", "weekly", "monthly", "yearly"]);
+export const assetKind = pgEnum("asset_kind", ["bank", "crypto", "stocks", "real_estate", "other"]);
 
 // ── Households and membership ────────────────────────────────────────────────
 
@@ -174,14 +189,72 @@ export const recurringItem = pgTable(
     startsOn: date("starts_on").notNull(),
     endsOn: date("ends_on"),
     isActive: boolean("is_active").notNull().default(true),
+    // Payment reminders for bills (lib/reminders.js). due_on is the first due date: later ones
+    // follow from it by `frequency`. null = no reminder. paid_through is the latest due date
+    // marked as paid, so the next one is the first due date after it.
+    dueOn: date("due_on"),
+    paidThrough: date("paid_through"),
+    // Also remind this many days before the due date (0 = only on the day).
+    remindDaysBefore: integer("remind_days_before").notNull().default(3),
     ...timestamps,
   },
   t => [
     check("recurring_item_amount_chk", sql`${t.amount} > 0`),
     check("recurring_item_day_chk", sql`${t.dayOfMonth} is null or ${t.dayOfMonth} between 1 and 31`),
     check("recurring_item_dates_chk", sql`${t.endsOn} is null or ${t.endsOn} >= ${t.startsOn}`),
+    check("recurring_item_remind_days_chk", sql`${t.remindDaysBefore} between 0 and 30`),
     index("recurring_item_household_idx").on(t.householdId, t.type, t.isActive),
   ],
+);
+
+// ── Tasks ────────────────────────────────────────────────────────────────────
+
+// Things to do for the house ("renew the car insurance"), optionally by a date and for one member.
+// A repeating task isn't finished when it's done: its due date moves on to the next one.
+export const task = pgTable(
+  "task",
+  {
+    id: id(),
+    householdId: householdId(),
+    title: varchar("title", { length: 120 }).notNull(),
+    kind: taskKind("kind").notNull().default("other"),
+    // Set = a bill to pay (shown with its amount, "Paid" instead of "Done"); null = just a reminder.
+    amount: money("amount"),
+    // null = whenever; no reminder is sent.
+    dueOn: date("due_on"),
+    // Needs a due date. Done moves due_on on by this much (lib/reminders.js, occurrence).
+    repeat: taskRepeat("repeat"),
+    remindDaysBefore: integer("remind_days_before").notNull().default(1),
+    // Who should do it; null = anyone (owner and editors get the reminder).
+    assigneeUserId: text("assignee_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    doneAt: timestamp("done_at", { withTimezone: true }),
+    doneByUserId: text("done_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  t => [
+    check("task_remind_days_chk", sql`${t.remindDaysBefore} between 0 and 30`),
+    check("task_amount_chk", sql`${t.amount} is null or ${t.amount} > 0`),
+    check("task_repeat_chk", sql`${t.repeat} is null or ${t.dueOn} is not null`),
+    index("task_household_open_idx").on(t.householdId, t.doneAt),
+  ],
+);
+
+// ── Assets ───────────────────────────────────────────────────────────────────
+
+// What the household owns (bank accounts, crypto, stocks, property), at its current value as
+// typed in by a member. Net worth = their sum. Values are updated by hand, not tracked over time.
+export const asset = pgTable(
+  "asset",
+  {
+    id: id(),
+    householdId: householdId(),
+    name: varchar("name", { length: 120 }).notNull(),
+    kind: assetKind("kind").notNull().default("other"),
+    value: money("value").notNull(),
+    ...timestamps,
+  },
+  t => [check("asset_value_chk", sql`${t.value} >= 0`), index("asset_household_idx").on(t.householdId)],
 );
 
 // ── Goals ────────────────────────────────────────────────────────────────────

@@ -15,8 +15,8 @@ test.beforeAll(async () => {
 
 test("explains what's missing before there's anything to forecast", async ({ page }) => {
   await page.goto("/goals");
-  await expect(forecastPanel(page)).toContainText("Add your income and bills on the Budget page");
-  await expect(forecastPanel(page).getByRole("link", { name: "Budget page" })).toHaveAttribute("href", "/budget");
+  await expect(forecastPanel(page)).toContainText("Add your income on the Finances page and your bills on the Spending page");
+  await expect(forecastPanel(page).getByRole("link", { name: "Finances page" })).toHaveAttribute("href", "/budget");
 });
 
 test.describe("with a budget, spending history and goals", () => {

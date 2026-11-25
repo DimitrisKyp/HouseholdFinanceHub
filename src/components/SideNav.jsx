@@ -4,13 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useId, useRef, useState } from "react";
 import { useDismiss } from "@/hooks/useDismiss";
-import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useTranslations } from "@/i18n/client";
 
-const NOTIFICATIONS_HREF = "/notifications";
-
 // On phones only the everyday pages fit in the bar; the others (setup and settings) go under "More".
-const PHONE_BAR = new Set(["/", "/transactions", "/insights", "/goals", NOTIFICATIONS_HREF]);
+const PHONE_BAR = new Set(["/", "/transactions", "/insights", "/goals"]);
 
 const navItems = [
   {
@@ -35,6 +32,19 @@ const navItems = [
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+  },
+  {
+    href: "/categories",
+    labelKey: "categories",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
         />
       </svg>
     ),
@@ -71,6 +81,19 @@ const navItems = [
     ),
   },
   {
+    href: "/reminders",
+    labelKey: "reminders",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M8 7V3m8 4V3M5 11h14M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1zm4 10l2 2 4-4"
+        />
+      </svg>
+    ),
+  },
+  {
     href: "/members",
     labelKey: "members",
     icon: (
@@ -83,37 +106,11 @@ const navItems = [
       </svg>
     ),
   },
-  {
-    href: NOTIFICATIONS_HREF,
-    labelKey: "alerts",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "/account",
-    labelKey: "account",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-    ),
-  },
 ];
 
 const isActivePath = (pathname, href) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
-function NavIcon({ icon, active, badge }) {
+function NavIcon({ icon, active }) {
   return (
     <span
       className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-all ${
@@ -121,14 +118,6 @@ function NavIcon({ icon, active, badge }) {
       }`}
     >
       {icon}
-      {badge ? (
-        <span
-          aria-hidden="true"
-          className="absolute -top-1.5 -right-1.5 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[10px] leading-4 font-semibold text-white"
-        >
-          {badge}
-        </span>
-      ) : null}
     </span>
   );
 }
@@ -196,30 +185,27 @@ function MoreMenu({ items, pathname, label }) {
   );
 }
 
-export default function SideNav({ unreadCount = 0 }) {
+export default function SideNav() {
   const pathname = usePathname();
-  const unread = useUnreadCount(unreadCount, pathname);
   const t = useTranslations("common");
   const items = navItems.map(item => ({ ...item, label: t(`nav.${item.labelKey}`) }));
 
   return (
-    <nav className="relative h-full rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl shadow-black/30">
+    <nav className="relative h-full rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl shadow-black/30 md:h-auto md:w-20">
       <div className="relative z-10 flex h-full flex-row items-center justify-around gap-1 md:flex-col md:justify-center md:gap-3">
         {items.map(({ href, label, icon }) => {
           const isActive = isActivePath(pathname, href);
-          const badge = href === NOTIFICATIONS_HREF && unread > 0 ? (unread > 99 ? "99+" : String(unread)) : null;
           return (
             <Link
               key={href}
               href={href}
-              title={badge ? t("nav.unreadTitle", { label, count: unread }) : label}
-              aria-label={badge ? t("nav.unreadLabel", { label, count: unread }) : undefined}
+              title={label}
               aria-current={isActive ? "page" : undefined}
               className={`group min-w-0 flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-all ${
                 PHONE_BAR.has(href) ? "flex" : "hidden md:flex"
               } ${isActive ? "text-cyan-300" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"}`}
             >
-              <NavIcon icon={icon} active={isActive} badge={badge} />
+              <NavIcon icon={icon} active={isActive} />
               <span className="text-[10px] leading-none font-medium md:text-[11px]">{label}</span>
             </Link>
           );

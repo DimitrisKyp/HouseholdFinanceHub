@@ -8,7 +8,7 @@
     "savedTowardsOpen": "Saved towards open goals",
     "backToDashboard": "Back to dashboard",
     "forecastTitle": "Savings forecast",
-    "forecastSubtitle": "What's likely left over each month, based on your Budget and recent spending.",
+    "forecastSubtitle": "What's likely left over each month, based on your income, fixed bills and recent spending.",
     "newGoalTitle": "New goal",
     "newGoalSubtitle": "What are you saving for, and how much do you need?",
     "listTitle": "Goals",
@@ -88,9 +88,9 @@
     "reachLate_other": "At your recent pace (about {amount} a month) you'd reach it in {month}, {count} months after the target date."
   },
   "forecast": {
-    "emptyBefore": "Add your income and bills on the",
-    "emptyLink": "Budget page",
-    "emptyAfter": "and log a month of expenses (or set category limits) to see a forecast.",
+    "emptyBefore": "Add your income on the",
+    "emptyLink": "Finances page",
+    "emptyAfter": "and your bills on the Spending page, then log a month of expenses (or set category limits) to see a forecast.",
     "leftOver": "Left over each month",
     "moreOut": "More goes out than comes in",
     "beforeSaving": "Expected, before saving",

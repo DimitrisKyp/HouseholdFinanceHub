@@ -1,45 +1,52 @@
 import { getTranslations } from "@/i18n/server";
 
-function MetricCard({ label, value, accent }) {
+function MetricCard({ label, value, accent, tone = "border-white/10 bg-slate-950/50", labelTone = "text-slate-400" }) {
   return (
-    <article className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3">
-      <div className={`h-8 w-1 shrink-0 rounded-full bg-linear-to-b ${accent}`} />
-      <div>
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className="text-lg leading-tight font-semibold text-white">{value}</p>
+    <article className={`flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 lg:gap-0 lg:px-3 2xl:gap-3 2xl:px-4 ${tone}`}>
+      {/* The colour bar makes way for the label in the one-row layout on laptop widths. */}
+      <div className={`h-8 w-1 shrink-0 rounded-full bg-linear-to-b lg:hidden 2xl:block ${accent}`} />
+      <div className="min-w-0">
+        <p className={`truncate text-xs ${labelTone}`} title={label}>
+          {label}
+        </p>
+        <p className="truncate text-lg leading-tight font-semibold text-white">{value}</p>
       </div>
     </article>
   );
 }
 
-// All values arrive as ready-to-show labels in the household currency.
+// All values arrive as ready-to-show labels in the household currency. On wide screens the title
+// and the six figures share one row, leaving the dashboard's panels more height.
 export default async function HeroSection({ monthLabel, incomeLabel, spentLabel, billsLabel, netLabel, savingsRate, incomeSourcesCount }) {
   const t = await getTranslations("dashboard");
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 shadow-xl shadow-black/20 backdrop-blur">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-2xl font-semibold tracking-[0.35em] text-cyan-300 uppercase">Household Hub</p>
+    <section className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 shadow-xl shadow-black/20 backdrop-blur">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:gap-6">
+        <div className="shrink-0">
+          <p className="text-2xl font-semibold tracking-[0.35em] text-cyan-300 uppercase xl:text-xl xl:tracking-[0.3em]">Household Hub</p>
           <p className="mt-1 text-sm text-slate-400">{monthLabel}</p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <article className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-2">
-            <p className="text-xs text-emerald-200">{t("hero.monthlyIncome")}</p>
-            <p className="text-xl leading-tight font-semibold">{incomeLabel}</p>
-          </article>
-          <article className="rounded-xl border border-rose-400/20 bg-rose-400/10 px-4 py-2">
-            <p className="text-xs text-rose-200">{t("hero.spentThisMonth")}</p>
-            <p className="text-xl leading-tight font-semibold">{spentLabel}</p>
-          </article>
+        <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <MetricCard
+            label={t("hero.monthlyIncome")}
+            value={incomeLabel}
+            accent="from-emerald-300 to-emerald-500"
+            tone="border-emerald-400/20 bg-emerald-400/10"
+            labelTone="text-emerald-200"
+          />
+          <MetricCard
+            label={t("hero.spentThisMonth")}
+            value={spentLabel}
+            accent="from-rose-300 to-rose-500"
+            tone="border-rose-400/20 bg-rose-400/10"
+            labelTone="text-rose-200"
+          />
+          <MetricCard label={t("hero.leftThisMonth")} value={netLabel} accent="from-cyan-400 to-sky-500" />
+          <MetricCard label={t("hero.savingsRate")} value={`${savingsRate}%`} accent="from-emerald-400 to-teal-500" />
+          <MetricCard label={t("hero.fixedBills")} value={billsLabel} accent="from-amber-400 to-orange-500" />
+          <MetricCard label={t("hero.incomeSources")} value={incomeSourcesCount} accent="from-violet-400 to-fuchsia-500" />
         </div>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <MetricCard label={t("hero.leftThisMonth")} value={netLabel} accent="from-cyan-400 to-sky-500" />
-        <MetricCard label={t("hero.savingsRate")} value={`${savingsRate}%`} accent="from-emerald-400 to-teal-500" />
-        <MetricCard label={t("hero.fixedBills")} value={billsLabel} accent="from-amber-400 to-orange-500" />
-        <MetricCard label={t("hero.incomeSources")} value={incomeSourcesCount} accent="from-violet-400 to-fuchsia-500" />
       </div>
     </section>
   );

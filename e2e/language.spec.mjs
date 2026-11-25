@@ -6,7 +6,7 @@ import { today } from "./helpers/dates.mjs";
 
 // English and Greek. The language is a per-user choice (Account page), kept in a cookie; visitors
 // who haven't chosen get their browser's preference.
-const APP_PAGES = ["/", "/budget", "/transactions", "/insights", "/goals", "/members", "/notifications", "/account"];
+const APP_PAGES = ["/", "/budget", "/categories", "/transactions", "/insights", "/goals", "/reminders", "/members", "/account"];
 const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/forgot-password"];
 // A message that's missing shows as "namespace.key" (see i18n/translate.js).
 const MISSING_MESSAGE =
@@ -98,7 +98,7 @@ test("the language chosen on the Account page applies at once and follows you to
   await otherPage.goto("/sign-in");
   await expect(otherPage.locator("html")).toHaveAttribute("lang", "en");
   await otherPage.getByLabel("Email").fill(USERS.owner.email);
-  await otherPage.getByLabel("Password").fill(PASSWORD);
+  await otherPage.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await otherPage.getByRole("button", { name: "Sign in" }).click();
   await expect(otherPage).toHaveURL(/\/$/);
   await expect(otherPage.locator("html")).toHaveAttribute("lang", "el");

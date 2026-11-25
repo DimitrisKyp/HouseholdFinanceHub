@@ -40,7 +40,7 @@ describe("adding an expense", () => {
   };
 
   async function submit(user, { title, amount }) {
-    await user.type(screen.getByLabelText("Expense"), title);
+    if (title) await user.type(screen.getByLabelText("Description (optional)"), title);
     await user.type(screen.getByLabelText("Amount"), amount);
     await user.selectOptions(screen.getByLabelText("Category"), "Groceries");
     await user.click(screen.getByRole("button", { name: "Add expense" }));
@@ -65,6 +65,21 @@ describe("adding an expense", () => {
     // The server's list (unchanged in this test, as props don't change) takes over again.
     expect(await screen.findByText("Bakery (€4.50) added.")).toBeInTheDocument();
     expect(within(recent).getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it("goes by its category when it has no description", async () => {
+    const save = deferred();
+    vi.mocked(addExpenseAction).mockReturnValue(save.promise);
+    const user = userEvent.setup();
+    render(<ExpenseTrackerPanel {...props} />);
+
+    await submit(user, { title: "", amount: "12" });
+    const [row] = within(screen.getByRole("list", { name: "Recent expenses" })).getAllByRole("listitem");
+    expect(row).toHaveTextContent("Groceries");
+    expect(row).toHaveTextContent("Saving… · 18 Nov 2026€12");
+
+    save.resolve({ success: "Groceries (€12) added.", values: {} });
+    expect(await screen.findByText("Groceries (€12) added.")).toBeInTheDocument();
   });
 
   it("removes it again when the server refuses", async () => {

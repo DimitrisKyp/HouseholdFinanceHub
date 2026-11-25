@@ -29,7 +29,7 @@ test("the theme applies at once, is remembered, and follows you to another brows
   await otherPage.goto("/sign-in");
   await expect(otherPage.locator("html")).toHaveAttribute("data-theme", "system");
   await otherPage.getByLabel("Email").fill(USERS.owner.email);
-  await otherPage.getByLabel("Password").fill(PASSWORD);
+  await otherPage.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await otherPage.getByRole("button", { name: "Sign in" }).click();
   await expect(otherPage).toHaveURL(/\/$/);
   await expect(otherPage.locator("html")).toHaveAttribute("data-theme", "light");
@@ -48,7 +48,7 @@ test("you can change your name", async ({ page }) => {
   await page.getByRole("button", { name: "Save name" }).click();
   await expect(page.getByText("Name saved.")).toBeVisible();
   await page.goto("/members");
-  await expect(page.getByText("Owner Renamed")).toBeVisible();
+  await expect(page.locator("main").getByText("Owner Renamed")).toBeVisible();
 });
 
 test("the owner changes the household's name and currency", async ({ page }) => {
@@ -72,4 +72,14 @@ test.describe("viewer", () => {
     await expect(page.getByLabel("Your name")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Household settings" })).toHaveCount(0);
   });
+});
+
+test("fits a laptop screen without scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("/account");
+
+  const overflow = el => el.scrollHeight - el.clientHeight;
+  expect(await page.locator("#content > div").first().evaluate(overflow)).toBeLessThanOrEqual(1);
+  await expect(page.getByRole("button", { name: "Save household settings" })).toBeInViewport();
+  await expect(page.getByLabel("Repeat new password")).toBeInViewport();
 });

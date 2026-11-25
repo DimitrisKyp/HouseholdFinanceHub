@@ -4,9 +4,16 @@ import { PASSWORD } from "./env.mjs";
 import { dayOf, formatMonth, monthStart, today } from "./helpers/dates.mjs";
 import { resetHousehold, sql } from "./helpers/db.mjs";
 
-// The "Alerts" link in the navigation; its name includes the unread count ("Alerts, 2 unread").
-const alertsLink = page => page.getByRole("navigation").getByRole("link", { name: /^Alerts/ });
-const notificationList = page => page.getByRole("heading", { name: "Latest" }).locator("xpath=ancestor::section[1]");
+// The "Alerts" bell on the dashboard, next to the profile; its name includes the unread count
+// ("Alerts, 2 unread"). It opens the notifications pop-up.
+const alertsLink = page => page.getByRole("button", { name: /^Alerts/ });
+const notificationList = page => page.getByRole("dialog", { name: "Notifications" });
+
+async function openAlerts(page) {
+  await page.goto("/");
+  await alertsLink(page).click();
+  return notificationList(page);
+}
 
 async function addExpense(page, { title, amount, category, date }) {
   await page.goto("/");
@@ -31,9 +38,15 @@ test.beforeAll(async () => {
 });
 
 test("starts empty", async ({ page }) => {
-  await page.goto("/notifications");
+  await page.goto("/");
   await expect(alertsLink(page)).toHaveAccessibleName("Alerts");
-  await expect(page.getByText("You'll get one when a category nears its monthly limit")).toBeVisible();
+  // Only on the dashboard, not in the side navigation.
+  await expect(page.getByRole("navigation").getByRole("link", { name: /^Alerts/ })).toHaveCount(0);
+  await alertsLink(page).click();
+  await expect(alertsLink(page)).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    notificationList(page).getByText("You'll get one when a bill or task is due, a category nears its monthly limit"),
+  ).toBeVisible();
 });
 
 test("budget alerts at 80% and 100%, once each", async ({ page }) => {
@@ -64,8 +77,8 @@ test.describe("viewer", () => {
   test("gets the alerts too, opens one and marks the rest read", async ({ page }) => {
     await page.goto("/");
     await expect(alertsLink(page)).toHaveAccessibleName("Alerts, 2 unread");
-    await page.goto("/notifications");
-    await expect(page.getByText("2 unread.")).toBeVisible();
+    await alertsLink(page).click();
+    await expect(notificationList(page).getByText("2 unread.")).toBeVisible();
 
     // Opening one goes to the category's transactions and marks it read.
     await notificationList(page)
@@ -73,13 +86,18 @@ test.describe("viewer", () => {
       .click();
     await expect(page).toHaveURL(new RegExp(`/transactions\\?category=${household.categoryIds.Groceries}$`));
     await expect(page.getByText("Party food")).toBeVisible();
+    await page.goto("/");
     await expect(alertsLink(page)).toHaveAccessibleName("Alerts, 1 unread");
 
-    await page.goto("/notifications");
+    await alertsLink(page).click();
     await page.getByRole("button", { name: "Mark all as read" }).click();
-    await expect(page.getByText("All read.")).toBeVisible();
-    await expect(alertsLink(page)).toHaveAccessibleName("Alerts");
+    await expect(notificationList(page).getByText("All read.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Mark all as read" })).toHaveCount(0);
+    await expect(alertsLink(page)).toHaveAccessibleName("Alerts");
+
+    // Escape closes it.
+    await page.keyboard.press("Escape");
+    await expect(notificationList(page)).toHaveCount(0);
   });
 });
 
@@ -97,7 +115,7 @@ test("everyone hears when a goal reaches its target", async ({ page, browser }) 
 
   const editor = await browser.newContext({ storageState: authFile("editor") });
   const editorPage = await editor.newPage();
-  await editorPage.goto("/notifications");
+  await openAlerts(editorPage);
   await expect(notificationList(editorPage)).toContainText("Goal reached: Bike");
   await expect(notificationList(editorPage)).toContainText("€500 saved of €500.");
   await editor.close();
@@ -111,7 +129,7 @@ test("a member hears when their role changes", async ({ page, browser }) => {
 
   const editor = await browser.newContext({ storageState: authFile("editor") });
   const editorPage = await editor.newPage();
-  await editorPage.goto("/notifications");
+  await openAlerts(editorPage);
   await expect(notificationList(editorPage)).toContainText("You're now a Viewer in Test Household");
   await editor.close();
 
@@ -139,13 +157,13 @@ test.describe("a new member joining through an invite", () => {
     await page.getByRole("button", { name: "Create account and join" }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(alertsLink(page)).toHaveAccessibleName("Alerts, 1 unread");
-    await page.goto("/notifications");
+    await openAlerts(page);
     await expect(notificationList(page)).toContainText("Welcome to Test Household");
     await expect(notificationList(page)).toContainText("Test Owner invited you as Viewer.");
 
     const owner = await browser.newContext({ storageState: authFile("owner") });
     const ownerPage = await owner.newPage();
-    await ownerPage.goto("/notifications");
+    await openAlerts(ownerPage);
     await expect(notificationList(ownerPage)).toContainText("Nova Newcomer joined Test Household");
     await expect(notificationList(ownerPage)).toContainText("They accepted the invitation and joined as Viewer.");
     await owner.close();

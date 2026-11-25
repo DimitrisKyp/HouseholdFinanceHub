@@ -147,6 +147,16 @@ body {
   outline-offset: 2px;
 }
 
+/* Text fields and dropdowns show focus with a softer accent border and a faint glow instead of
+   the ring above, which on top of their own border was too heavy. Checkboxes and radios keep the ring. */
+input:not([type="checkbox"], [type="radio"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus-ring) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 15%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

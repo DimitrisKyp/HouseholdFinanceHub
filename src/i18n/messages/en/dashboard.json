@@ -13,13 +13,13 @@
     "subtitleView": "Day-to-day household spending.",
     "viewOnly": "You have view-only access. Open the breakdown to see this month's spending.",
     "noCategoriesBefore": "Add a category on the",
-    "noCategoriesLink": "Budget page",
+    "noCategoriesLink": "Spending page",
     "noCategoriesAfter": "before logging expenses.",
     "recentThisMonth": "Recent this month",
     "viewBreakdown": "View budget breakdown & transactions →"
   },
   "form": {
-    "expense": "Expense",
+    "expense": "Description (optional)",
     "expensePlaceholder": "School supplies",
     "amount": "Amount",
     "date": "Date",
@@ -40,7 +40,7 @@
     "description": "{month}: spending by category and transactions",
     "categories": "Categories",
     "noLimit": "{spent} · no limit",
-    "noCategories": "No spending or limits yet. Set limits on the Budget page.",
+    "noCategories": "No spending or limits yet. Set limits on the Spending page.",
     "transactions": "Transactions ({count})",
     "noTransactions": "No transactions this month yet.",
     "searchAll": "Search all transactions →",
@@ -80,7 +80,6 @@
     "opensInNewTab": " (opens {source} in a new tab)"
   },
   "actions": {
-    "titleMissing": "What was it for?",
     "titleTooLong": "That description is too long.",
     "amountInvalid": "Enter an amount above zero, e.g. 45 or 12.50.",
     "dateInvalid": "Enter a valid date.",

@@ -1,0 +1,132 @@
+{
+  "metaTitle": "Reminders",
+  "eyebrow": "Reminders",
+  "heading": "Bills to pay and things to do.",
+  "introEdit": "Give a bill its next due date to be reminded before it's due, and keep a list of things to do for the house. Reminders show up in Alerts and by email, to the person they're for (or to everyone who can edit).",
+  "introView": "Bills that are coming up and things to do for the house. You can see them, but only owners and editors can change them.",
+  "backToDashboard": "Back to dashboard",
+  "status": {
+    "overdue_one": "Overdue by {count} day",
+    "overdue_other": "Overdue by {count} days",
+    "today": "Due today",
+    "tomorrow": "Tomorrow",
+    "inDays": "In {count} days"
+  },
+  "everyone": "Anyone",
+  "bills": {
+    "title": "Bills to pay",
+    "subtitle": "Your recurring bills from the Spending page. Set when the next one is due to be reminded.",
+    "empty": "No recurring bills yet.",
+    "emptyLink": "Add them on the Spending page",
+    "nextDue": "Next due {date}",
+    "noReminder": "No reminder",
+    "paysLabel": "Pays: {name}",
+    "markPaid": "Mark as paid",
+    "markPaidFor": "Mark {title} as paid",
+    "logExpense": "Also log it as an expense",
+    "setReminder": "Set a reminder",
+    "editReminder": "Change reminder",
+    "dueOn": "Next due date",
+    "remindDaysBefore": "Remind me",
+    "whoPays": "Who pays",
+    "save": "Save reminder",
+    "remove": "Remove reminder",
+    "removeFor": "Remove the reminder for {title}"
+  },
+  "remindChoices": {
+    "0": "On the day",
+    "1": "1 day before",
+    "2": "2 days before",
+    "3": "3 days before",
+    "5": "5 days before",
+    "7": "1 week before",
+    "14": "2 weeks before"
+  },
+  "tasks": {
+    "newTitle": "New reminder",
+    "title": "Things to do",
+    "subtitle": "Things to do for the house, once or on repeat. With a date, the person it's for gets a reminder.",
+    "whatLabel": "What needs doing",
+    "whatPlaceholder": "Renew the car insurance",
+    "dueOn": "By (optional)",
+    "remindDaysBefore": "Remind",
+    "assignee": "For",
+    "add": "Add task",
+    "empty": "Nothing to do. Nice.",
+    "noDate": "Whenever",
+    "done": "Done",
+    "doneFor": "Mark {title} as done",
+    "reopen": "Undo",
+    "reopenFor": "Put {title} back on the list",
+    "delete": "Delete",
+    "deleteFor": "Delete {title}",
+    "confirmDelete": "Delete \"{title}\"?",
+    "doneTitle": "Done recently",
+    "doneBy": "Done by {name}",
+    "kind": "Type",
+    "repeat": "Repeats",
+    "emptyFiltered": "Nothing to do in {kind}.",
+    "dueHint": "Needed for a task that repeats.",
+    "amount": "Amount (optional)",
+    "amountPlaceholder": "0.00",
+    "amountHint": "With an amount it's a bill to pay.",
+    "paid": "Paid"
+  },
+  "list": {
+    "title": "Reminders",
+    "subtitle": "Bills to pay and things to do, soonest first. Recurring bills come from the Spending page: give one a due date to be reminded."
+  },
+  "dashboard": {
+    "title": "Coming up",
+    "all": "All reminders",
+    "empty": "Nothing due this week."
+  },
+  "errors": {
+    "billGone": "That bill no longer exists. Refresh the page.",
+    "taskGone": "That task no longer exists. Refresh the page.",
+    "noReminder": "That bill has no reminder.",
+    "alreadyPaid": "Someone already marked it as paid. Refresh the page.",
+    "dueDate": "Enter a valid date.",
+    "remindDays": "Choose when to be reminded.",
+    "chooseMember": "Choose someone from the household.",
+    "taskTitle": "What needs doing?",
+    "titleTooLong": "Keep it under 120 characters.",
+    "chooseKind": "Choose a type.",
+    "chooseRepeat": "Choose how often it repeats.",
+    "repeatNeedsDate": "Pick the first date for a task that repeats.",
+    "amount": "Enter an amount above zero, or leave it empty."
+  },
+  "success": {
+    "reminderSaved": "Reminder saved for {title}.",
+    "reminderRemoved": "Reminder removed.",
+    "paid": "{title} marked as paid.",
+    "paidAndLogged": "{title} marked as paid and logged as an expense.",
+    "taskAdded": "Added \"{title}\".",
+    "taskDone": "\"{title}\" is done.",
+    "taskReopened": "\"{title}\" is back on the list.",
+    "taskDeleted": "Task deleted.",
+    "taskRepeats": "{title} done. Next due {date}."
+  },
+  "filters": {
+    "label": "Show",
+    "all": "All"
+  },
+  "kinds": {
+    "vehicle": "Vehicle",
+    "documents": "Documents",
+    "subscriptions": "Subscriptions",
+    "warranties": "Warranties",
+    "bills": "Bills",
+    "returns": "Returns",
+    "prescriptions": "Prescriptions",
+    "free_trials": "Free trials",
+    "other": "Other"
+  },
+  "repeats": {
+    "none": "Doesn't repeat",
+    "daily": "Every day",
+    "weekly": "Every week",
+    "monthly": "Every month",
+    "yearly": "Every year"
+  }
+}
