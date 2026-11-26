@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import AddGoalForm from "@/components/Goals/AddGoalForm";
 import GoalCard from "@/components/Goals/GoalCard";
@@ -12,7 +13,7 @@ import { formatMoney, todayIn } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { buttonClasses } from "@/components/ui/Button";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("goals"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }

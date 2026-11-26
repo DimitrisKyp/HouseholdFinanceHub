@@ -1,4 +1,6 @@
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
+import type { CSSProperties } from "react";
 import WebVitals from "@/components/WebVitals";
 import { OG_LOCALES } from "@/i18n/config";
 import Messages from "@/i18n/MessagesProvider";
@@ -24,7 +26,7 @@ const greek = Inter({ subsets: ["greek"], preload: false, adjustFontFallback: fa
 const [geistFamily, ...geistFallbacks] = geistSans.style.fontFamily.split(",").map(name => name.trim());
 const textFontStack = [geistFamily, greek.style.fontFamily, ...geistFallbacks].join(", ");
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const description = (await getTranslations("common", locale))("siteDescription");
   return {
@@ -37,14 +39,14 @@ export async function generateMetadata() {
   };
 }
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
     { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
   ],
 };
 
-export default async function RootLayout({ children }) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
   // The theme comes from a cookie (set on the Account page), so it applies before anything loads.
   const theme = await currentTheme();
   // The language comes from a cookie too (chosen on the Account page), or the browser's preference.
@@ -54,7 +56,8 @@ export default async function RootLayout({ children }) {
       lang={locale}
       data-theme={theme}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      style={{ "--font-text": textFontStack }}
+      // CSS custom properties aren't in CSSProperties, hence the cast.
+      style={{ "--font-text": textFontStack } as CSSProperties}
     >
       <body className="h-full overflow-hidden bg-slate-950 text-white">
         <WebVitals />

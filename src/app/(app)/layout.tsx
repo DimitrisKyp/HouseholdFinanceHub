@@ -10,11 +10,12 @@ import { requireHousehold } from "@/lib/dal";
 import { monthSummary } from "@/lib/finance";
 import { formatMoney } from "@/lib/format";
 import { unreadNotificationCount } from "@/lib/notifications";
+import type { Metadata } from "next";
 
 // Signed-in pages are private: keep them out of search results.
-export const metadata = { robots: { index: false, follow: false } };
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-export default async function AppLayout({ children }) {
+export default async function AppLayout({ children }: LayoutProps<"/">) {
   // Redirects to /sign-in (no valid session) or /onboarding (no household).
   const { user, householdId, householdName, role, currency, timezone } = await requireHousehold();
   const [t, locale, { net }, unreadCount] = await Promise.all([

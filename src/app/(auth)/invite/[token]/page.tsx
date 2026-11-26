@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { rich } from "@/components/Auth/rich";
 import { AcceptInviteButton, NewAccountInviteForm } from "@/components/Invite/AcceptInviteForms";
 import Messages from "@/i18n/MessagesProvider";
@@ -9,12 +11,12 @@ import { getInviteByToken } from "@/lib/invites";
 import { buttonClasses } from "@/components/ui/Button";
 
 // The token is in the URL: don't leak it to other sites through the Referer header.
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("meta.invite") }), referrer: "no-referrer" };
 }
 
-function Notice({ title, children }) {
+function Notice({ title, children }: { title: string; children: ReactNode }) {
   return (
     <>
       <h1 className="text-2xl font-semibold">{title}</h1>
@@ -24,9 +26,9 @@ function Notice({ title, children }) {
 }
 
 const linkClass = "text-cyan-300 hover:text-cyan-200";
-const strong = value => <span className="font-medium text-white">{value}</span>;
+const strong = (value: ReactNode) => <span className="font-medium text-white">{value}</span>;
 
-export default async function InvitePage({ params }) {
+export default async function InvitePage({ params }: PageProps<"/invite/[token]">) {
   const { token } = await params;
   const invite = await getInviteByToken(token);
   const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);

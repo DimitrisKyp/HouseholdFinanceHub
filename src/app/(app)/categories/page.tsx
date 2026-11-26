@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import CategoriesPanel from "@/components/Budget/CategoriesPanel";
 import RecurringItemsPanel from "@/components/Budget/RecurringItemsPanel";
@@ -11,7 +12,7 @@ import { listCategories, listRecurringItems, recurringTotals } from "@/lib/finan
 import { formatMoney } from "@/lib/format";
 import { can } from "@/lib/permissions";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("budget"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("categoriesPage.metaTitle") }) };
 }
@@ -23,7 +24,7 @@ export default async function CategoriesPage() {
   const canEdit = can(role, "finance:write");
   const [locale, t] = await Promise.all([getLocale(), getTranslations("budget")]);
 
-  const money = amount => formatMoney(amount, currency, locale);
+  const money = (amount: number) => formatMoney(amount, currency, locale);
   const [allCategories, recurring] = await Promise.all([
     listCategories(householdId, { includeArchived: true }),
     listRecurringItems(householdId),

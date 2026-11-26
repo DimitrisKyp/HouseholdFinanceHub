@@ -1,15 +1,16 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import SignInForm from "@/components/Auth/SignInForm";
 import Messages from "@/i18n/MessagesProvider";
 import { getTranslations } from "@/i18n/server";
 import { getSession } from "@/lib/dal";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("meta.signIn") }) };
 }
 
-export default async function SignInPage({ searchParams }) {
+export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   if (await getSession()) redirect("/");
   const { next, reset } = await searchParams;
   const t = await getTranslations("auth");

@@ -1,13 +1,14 @@
+import type { Metadata } from "next";
 import ForgotPasswordForm from "@/components/Auth/ForgotPasswordForm";
 import Messages from "@/i18n/MessagesProvider";
 import { getTranslations } from "@/i18n/server";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("meta.forgotPassword") }) };
 }
 
-export default async function ForgotPasswordPage({ searchParams }) {
+export default async function ForgotPasswordPage({ searchParams }: PageProps<"/forgot-password">) {
   const { email } = await searchParams;
   const t = await getTranslations("auth");
 

@@ -1,21 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import ResendVerificationForm from "@/components/Auth/ResendVerificationForm";
 import Messages from "@/i18n/MessagesProvider";
 import { getTranslations } from "@/i18n/server";
 import { getSession } from "@/lib/dal";
+import { isOneOf } from "@/lib/forms";
 import { safeRedirectPath } from "@/lib/redirects";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("meta.confirmEmail") }) };
 }
 
 // Better Auth sends the confirmation link here after checking it: with ?error=... if the link
 // was bad, otherwise with the user already logged in.
-const KNOWN_ERRORS = ["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND", "INVALID_USER"];
+const KNOWN_ERRORS = ["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND", "INVALID_USER"] as const;
 
-export default async function EmailVerifiedPage({ searchParams }) {
+export default async function EmailVerifiedPage({ searchParams }: PageProps<"/email-verified">) {
   const { error, next } = await searchParams;
 
   if (!error) {
@@ -25,7 +27,7 @@ export default async function EmailVerifiedPage({ searchParams }) {
   }
 
   const t = await getTranslations("auth");
-  const message = t(`emailVerified.errors.${KNOWN_ERRORS.includes(error) ? error : "other"}`);
+  const message = t(`emailVerified.errors.${isOneOf(KNOWN_ERRORS, error) ? error : "other"}`);
 
   return (
     <Messages namespaces={["auth"]}>

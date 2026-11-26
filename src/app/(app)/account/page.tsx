@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import ChangePasswordForm from "@/components/Account/ChangePasswordForm";
 import HouseholdSettingsForm from "@/components/Account/HouseholdSettingsForm";
@@ -13,7 +14,7 @@ import { can } from "@/lib/permissions";
 import { CURRENCIES, currentTheme, THEMES, timezones } from "@/lib/preferences";
 import { buttonClasses } from "@/components/ui/Button";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("account"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }

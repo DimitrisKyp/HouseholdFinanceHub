@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
+import type { ColumnPoint } from "@/components/Insights/ColumnChart";
 import CategoryBars from "@/components/Insights/CategoryBars";
 import SavingsForecast from "@/components/Goals/SavingsForecast";
 import ColumnChart from "@/components/Insights/LazyColumnChart";
@@ -20,12 +23,12 @@ import { formatMoney, formatMonth, todayIn } from "@/lib/format";
 import { INSIGHT_RANGES, monthlySeries, parseInsightRange, rangeMonths, topCategories } from "@/lib/insights";
 import { buttonClasses } from "@/components/ui/Button";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("insights"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }
 
-function StatTile({ label, value, detail }) {
+function StatTile({ label, value, detail }: { label: string; value: ReactNode; detail?: string | null }) {
   return (
     <article className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3">
       <p className="text-xs text-slate-400">{label}</p>
@@ -36,7 +39,7 @@ function StatTile({ label, value, detail }) {
 }
 
 // "Nov", or "Jan 27" for January and the first month, so a range across years stays unambiguous.
-function shortMonth(isoDate, isFirst, locale) {
+function shortMonth(isoDate: string, isFirst: boolean, locale: string) {
   const [year, month] = isoDate.split("-").map(Number);
   const name = new Intl.DateTimeFormat(dateLocale(locale), { month: "short", timeZone: "UTC" }).format(
     new Date(Date.UTC(year, month - 1, 1)),
@@ -44,10 +47,10 @@ function shortMonth(isoDate, isFirst, locale) {
   return month === 1 || isFirst ? `${name} ${String(year).slice(2)}` : name;
 }
 
-export default async function InsightsPage({ searchParams }) {
+export default async function InsightsPage({ searchParams }: PageProps<"/insights">) {
   const { householdId, currency, timezone } = await requireHousehold();
   const [locale, t] = await Promise.all([getLocale(), getTranslations("insights")]);
-  const money = amount => formatMoney(amount, currency, locale);
+  const money = (amount: number) => formatMoney(amount, currency, locale);
   const today = todayIn(timezone);
   const rangeKey = parseInsightRange((await searchParams)?.range);
   const { months, from, to } = rangeMonths(rangeKey, today);
@@ -77,7 +80,7 @@ export default async function InsightsPage({ searchParams }) {
     totalLabel: money(row.total),
   }));
 
-  const toPoint = (row, index, value) => ({
+  const toPoint = (row: (typeof series)[number], index: number, value: number): ColumnPoint => ({
     key: row.month,
     label: shortMonth(row.month, index === 0, locale),
     fullLabel: formatMonth(row.month, locale),
@@ -87,7 +90,10 @@ export default async function InsightsPage({ searchParams }) {
   const spentData = series.map((row, index) => toPoint(row, index, row.spent));
   const netData = series.map((row, index) => toPoint(row, index, row.net));
   // Label selectively: the current month and the extreme; the axis, tooltip and table carry the rest.
-  const labelKeys = (data, size) => [data.at(-1).key, data.reduce((best, item) => (size(item) > size(best) ? item : best)).key];
+  const labelKeys = (data: ColumnPoint[], size: (item: ColumnPoint) => number) => [
+    data[data.length - 1].key,
+    data.reduce((best, item) => (size(item) > size(best) ? item : best)).key,
+  ];
   const spentLabels = labelKeys(spentData, item => item.value);
   const netLabels = labelKeys(netData, item => Math.abs(item.value));
   const rangeLabel = t(`rangesInline.${rangeKey}`);

@@ -1,15 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import ResendVerificationForm from "@/components/Auth/ResendVerificationForm";
 import { rich } from "@/components/Auth/rich";
 import Messages from "@/i18n/MessagesProvider";
 import { getTranslations } from "@/i18n/server";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("meta.checkEmail") }) };
 }
 
-export default async function CheckEmailPage({ searchParams }) {
+export default async function CheckEmailPage({ searchParams }: PageProps<"/check-email">) {
   const { email: rawEmail, reason } = await searchParams;
   const email = typeof rawEmail === "string" && rawEmail.length <= 254 ? rawEmail : "";
   const fromSignIn = reason === "sign-in";

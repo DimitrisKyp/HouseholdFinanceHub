@@ -1,7 +1,7 @@
 // Centered card layout for sign-in, sign-up and onboarding (no side navigation).
 import LanguageSwitch from "@/components/LanguageSwitch";
 
-export default function AuthLayout({ children }) {
+export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex h-full overflow-y-auto px-4 py-10">
       <main className="m-auto w-full max-w-md">

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import ResetPasswordForm from "@/components/Auth/ResetPasswordForm";
 import { buttonClasses } from "@/components/ui/Button";
@@ -5,14 +6,14 @@ import Messages from "@/i18n/MessagesProvider";
 import { getTranslations } from "@/i18n/server";
 
 // The token is in the URL: don't leak it to other sites through the Referer header.
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("auth"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("meta.resetPassword") }), referrer: "no-referrer" };
 }
 
 // The emailed link goes to Better Auth first, which checks it and forwards here with
 // ?token=... (valid) or ?error=INVALID_TOKEN (expired, used or tampered with).
-export default async function ResetPasswordPage({ searchParams }) {
+export default async function ResetPasswordPage({ searchParams }: PageProps<"/reset-password">) {
   const { token, error } = await searchParams;
   const t = await getTranslations("auth");
 

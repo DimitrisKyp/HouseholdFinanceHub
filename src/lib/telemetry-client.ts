@@ -13,6 +13,19 @@ export function sendEvent(event: { type: string } & Record<string, unknown>) {
   }
 }
 
+/**
+ * Reads `message` and `digest` from whatever an error boundary caught. Next.js types it as
+ * `unknown`: errors from Server Components are `Error`s with a `digest` matching the server log,
+ * but a Client Component can throw anything.
+ */
+export function thrownDetails(error: unknown): { message?: string; digest?: string } {
+  if (typeof error !== "object" || error === null) return {};
+  return {
+    message: "message" in error && typeof error.message === "string" ? error.message : undefined,
+    digest: "digest" in error && typeof error.digest === "string" ? error.digest : undefined,
+  };
+}
+
 /** Reports a browser error once per message and page load, and at most a few per page. */
 export function reportClientError(message: unknown, source?: string) {
   const text = String(message ?? "Unknown error");

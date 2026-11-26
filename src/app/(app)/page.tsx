@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   const { user, householdId, role, currency, timezone } = await requireHousehold();
   const canEdit = can(role, "finance:write");
   const locale = await getLocale();
-  const money = amount => formatMoney(amount, currency, locale);
+  const money = (amount: number) => formatMoney(amount, currency, locale);
   const today = todayIn(timezone);
 
   // This month's numbers are shared with the top bar (see the layout), which shows what's left.
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
   const reminderRows = reminders.map(item => ({
     key: `${item.kind}-${item.id}`,
     title: item.title,
-    badge: reminderBadge(item, remindersT, date => formatDay(date, locale)),
+    badge: reminderBadge(item, remindersT, (date: string) => formatDay(date, locale)),
     amountLabel: item.amount ? money(item.amount) : null,
   }));
 

@@ -6,12 +6,14 @@
 import { useEffect } from "react";
 import "./globals.css";
 import { buttonClasses } from "@/components/ui/Button";
-import { reportClientError } from "@/lib/telemetry-client";
+import { reportClientError, thrownDetails } from "@/lib/telemetry-client";
 
-export default function GlobalError({ error, unstable_retry }) {
+export default function GlobalError({ error, retry }: { error: unknown; retry: () => void }) {
+  const { digest } = thrownDetails(error);
   useEffect(() => {
     console.error(error);
-    reportClientError(error?.digest ? `${error.message} (digest ${error.digest})` : error?.message, "boundary");
+    const { message, digest } = thrownDetails(error);
+    reportClientError(digest ? `${message} (digest ${digest})` : message, "boundary");
   }, [error]);
 
   return (
@@ -27,12 +29,8 @@ export default function GlobalError({ error, unstable_retry }) {
           <p lang="el" className="mt-2 text-sm leading-6 text-slate-300">
             Δοκιμάστε ξανά σε λίγο.
           </p>
-          {error?.digest ? <p className="mt-3 font-mono text-xs text-slate-500">Reference / Κωδικός: {error.digest}</p> : null}
-          <button
-            type="button"
-            onClick={() => unstable_retry()}
-            className={buttonClasses({ variant: "primary", size: "sm", className: "mt-5" })}
-          >
+          {digest ? <p className="mt-3 font-mono text-xs text-slate-500">Reference / Κωδικός: {digest}</p> : null}
+          <button type="button" onClick={() => retry()} className={buttonClasses({ variant: "primary", size: "sm", className: "mt-5" })}>
             Try again / Δοκιμάστε ξανά
           </button>
         </div>

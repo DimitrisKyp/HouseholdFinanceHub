@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Panel from "@/components/Panel";
 import TaskPanel, { AddTaskForm } from "@/components/Reminders/TaskPanel";
@@ -6,20 +7,23 @@ import Messages from "@/i18n/MessagesProvider";
 import { getLocale, getTranslations } from "@/i18n/server";
 import { requireHousehold } from "@/lib/dal";
 import { formatDay, formatMoney, todayIn } from "@/lib/format";
+import type { TaskKind } from "@/db/schema";
+import type { Translator } from "@/i18n/translate";
+import { isOneOf } from "@/lib/forms";
 import { can } from "@/lib/permissions";
 import { listAssignableMembers, listBillReminders, listTasks } from "@/lib/reminder-data";
 import { reminderBadge, TASK_KINDS } from "@/lib/reminders";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("reminders"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }
 
-const FILTERS = [null, ...TASK_KINDS];
-const filterHref = kind => (kind ? `/reminders?kind=${kind}` : "/reminders");
+const FILTERS: (TaskKind | null)[] = [null, ...TASK_KINDS];
+const filterHref = (kind: TaskKind | null) => (kind ? `/reminders?kind=${kind}` : "/reminders");
 
 /** Filter chips: All, then each kind of task. "Bills" also shows the bill reminders. */
-function ReminderFilters({ active, t }) {
+function ReminderFilters({ active, t }: { active: TaskKind | null; t: Translator }) {
   return (
     <nav aria-label={t("filters.label")} className="flex flex-wrap gap-2">
       {FILTERS.map(kind => {
@@ -43,15 +47,15 @@ function ReminderFilters({ active, t }) {
   );
 }
 
-export default async function RemindersPage({ searchParams }) {
+export default async function RemindersPage({ searchParams }: PageProps<"/reminders">) {
   const { kind } = await searchParams;
-  const filter = TASK_KINDS.includes(kind) ? kind : null;
+  const filter = isOneOf(TASK_KINDS, kind) ? kind : null;
   const showBills = !filter || filter === "bills";
   const { householdId, role, currency, timezone } = await requireHousehold();
   const canEdit = can(role, "finance:write");
   const today = todayIn(timezone);
   const [locale, t, budget] = await Promise.all([getLocale(), getTranslations("reminders"), getTranslations("budget")]);
-  const day = date => formatDay(date, locale);
+  const day = (date: string) => formatDay(date, locale);
 
   const [bills, tasks, members] = await Promise.all([
     listBillReminders(householdId, today),
@@ -61,7 +65,7 @@ export default async function RemindersPage({ searchParams }) {
 
   // Labels are built here, in the household's currency and the reader's language.
   const billRows = bills.map(item => ({
-    type: "bill",
+    type: "bill" as const,
     id: item.id,
     title: item.title,
     amountLabel: formatMoney(item.amount, currency, locale),
@@ -75,9 +79,10 @@ export default async function RemindersPage({ searchParams }) {
     canLog: Boolean(item.categoryId),
   }));
   // "Bills" shows the recurring bills and the tasks with an amount or of that type.
-  const matches = item => !filter || item.kind === filter || (filter === "bills" && item.amount);
+  const matches = (item: { kind: TaskKind; amount: number | null }) =>
+    !filter || item.kind === filter || (filter === "bills" && item.amount);
   const taskRows = tasks.open.filter(matches).map(item => ({
-    type: "task",
+    type: "task" as const,
     id: item.id,
     title: item.title,
     dueDate: item.dueDate,

@@ -6,21 +6,24 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { buttonClasses } from "@/components/ui/Button";
 import { useTranslations } from "@/i18n/client";
-import { reportClientError } from "@/lib/telemetry-client";
+import { reportClientError, thrownDetails } from "@/lib/telemetry-client";
 
 type ErrorStateProps = {
-  // What Next.js passes to error.js: an Error, plus a `digest` that matches the server log.
-  error: Error & { digest?: string };
+  // What Next.js passes to error.tsx: usually an Error with a `digest` that matches the server
+  // log, but typed `unknown` because a Client Component can throw any value.
+  error: unknown;
   onRetry: () => void;
   homeHref?: string;
 };
 
 export default function ErrorState({ error, onRetry, homeHref = "/" }: ErrorStateProps) {
   const t = useTranslations("errors");
+  const { digest } = thrownDetails(error);
   useEffect(() => {
     console.error(error);
     // Errors caught by an error boundary never reach window.onerror, so report them here.
-    reportClientError(error?.digest ? `${error.message} (digest ${error.digest})` : error?.message, "boundary");
+    const { message, digest } = thrownDetails(error);
+    reportClientError(digest ? `${message} (digest ${digest})` : message, "boundary");
   }, [error]);
 
   return (
@@ -28,7 +31,7 @@ export default function ErrorState({ error, onRetry, homeHref = "/" }: ErrorStat
       <p className="text-sm font-semibold tracking-[0.3em] text-rose-300 uppercase">{t("somethingWrong")}</p>
       <h1 className="mt-3 text-xl font-semibold">{t("couldntLoad")}</h1>
       <p className="mt-2 text-sm leading-6 text-slate-300">{t("temporary")}</p>
-      {error?.digest ? <p className="mt-3 font-mono text-xs text-slate-500">{t("reference", { digest: error.digest })}</p> : null}
+      {digest ? <p className="mt-3 font-mono text-xs text-slate-500">{t("reference", { digest })}</p> : null}
       <div className="mt-5 flex justify-center gap-3">
         <button type="button" onClick={onRetry} className={buttonClasses({ variant: "primary", size: "sm" })}>
           {t("tryAgain")}

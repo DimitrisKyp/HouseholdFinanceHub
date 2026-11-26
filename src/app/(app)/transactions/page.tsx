@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Panel from "@/components/Panel";
 import TransactionFilters from "@/components/Transactions/TransactionFilters";
@@ -12,18 +13,18 @@ import { can } from "@/lib/permissions";
 import { datePresets, parseTransactionFilters } from "@/lib/transaction-filters";
 import { buttonClasses } from "@/components/ui/Button";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("transactions"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }
 
-export default async function TransactionsPage({ searchParams }) {
+export default async function TransactionsPage({ searchParams }: PageProps<"/transactions">) {
   const { householdId, role, currency, timezone } = await requireHousehold();
   const canEdit = can(role, "finance:write");
   const today = todayIn(timezone);
   const filters = parseTransactionFilters(await searchParams, { today });
   const [locale, t] = await Promise.all([getLocale(), getTranslations("transactions")]);
-  const day = isoDate => formatDay(isoDate, locale);
+  const day = (isoDate: string) => formatDay(isoDate, locale);
 
   const [result, categories, members] = await Promise.all([
     searchExpenses(householdId, filters),

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import AssetsPanel from "@/components/Budget/AssetsPanel";
 import RecurringItemsPanel from "@/components/Budget/RecurringItemsPanel";
@@ -13,7 +14,7 @@ import { listMembers } from "@/lib/invites";
 import { can } from "@/lib/permissions";
 import { buttonClasses } from "@/components/ui/Button";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("budget"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }
@@ -24,7 +25,7 @@ export default async function BudgetPage() {
   const { householdId, role, currency } = await requireHousehold();
   const canEdit = can(role, "finance:write");
   const [locale, t] = await Promise.all([getLocale(), getTranslations("budget")]);
-  const money = amount => formatMoney(amount, currency, locale);
+  const money = (amount: number) => formatMoney(amount, currency, locale);
 
   const [recurring, assets, members] = await Promise.all([
     listRecurringItems(householdId),

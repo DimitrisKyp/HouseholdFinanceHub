@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import InvitePanel from "@/components/Members/InvitePanel";
 import MemberList from "@/components/Members/MemberList";
@@ -7,15 +8,16 @@ import Messages from "@/i18n/MessagesProvider";
 import { getLocale, getTranslations } from "@/i18n/server";
 import { requireHousehold } from "@/lib/dal";
 import { listMembers, listOpenInvites } from "@/lib/invites";
+import type { MemberRole } from "@/db/schema";
 import { can } from "@/lib/permissions";
 import { buttonClasses } from "@/components/ui/Button";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("members"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("metaTitle") }) };
 }
 
-const ROLES = ["owner", "editor", "viewer"];
+const ROLES = ["owner", "editor", "viewer"] as const satisfies readonly MemberRole[];
 
 export default async function MembersPage() {
   const { user, householdId, householdName, role, timezone } = await requireHousehold();
@@ -23,7 +25,7 @@ export default async function MembersPage() {
   const canManage = can(role, "members:manage");
 
   // Dates are formatted here, in the household's timezone, so server and browser agree.
-  const formatDate = date =>
+  const formatDate = (date: Date) =>
     new Intl.DateTimeFormat(dateLocale(locale), { day: "numeric", month: "short", year: "numeric", timeZone: timezone }).format(date);
   const now = new Date();
 

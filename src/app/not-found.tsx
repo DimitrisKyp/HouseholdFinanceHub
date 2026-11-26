@@ -1,8 +1,9 @@
 import { buttonClasses } from "@/components/ui/Button";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "@/i18n/server";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const [t, common] = await Promise.all([getTranslations("errors"), getTranslations("common")]);
   return { title: common("pageTitle", { page: t("notFound.metaTitle") }) };
 }
