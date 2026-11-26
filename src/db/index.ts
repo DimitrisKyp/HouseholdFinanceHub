@@ -3,7 +3,7 @@
 import "server-only";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import * as schema from "./schema/index.js";
+import * as schema from "./schema/index";
 
 // Reuse one connection pool across hot reloads in development.
 const globalForDb = globalThis as typeof globalThis & { __dbPool?: Pool };

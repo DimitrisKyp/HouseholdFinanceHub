@@ -2,7 +2,7 @@
 import { check, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { Locale } from "../../i18n/config";
-import { user } from "./auth.js";
+import { user } from "./auth";
 
 export const THEMES = ["system", "dark", "light"] as const;
 export type Theme = (typeof THEMES)[number];
