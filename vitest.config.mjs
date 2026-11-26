@@ -8,7 +8,7 @@ export default defineConfig({
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   test: {
-    include: ["tests/**/*.test.{js,jsx}"],
+    include: ["tests/**/*.test.{js,jsx,ts,tsx}"],
     // Unit tests run in Node; component tests opt into a browser-like DOM with
     // a "// @vitest-environment jsdom" comment at the top of the file.
     environment: "node",

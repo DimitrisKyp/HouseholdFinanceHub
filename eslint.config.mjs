@@ -1,12 +1,14 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier/flat";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
+  ...nextTs,
   prettier,
   {
-    files: ["**/*.{js,jsx,mjs,cjs}"],
+    files: ["**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
     rules: {
       "react/jsx-no-target-blank": "off",
       "max-len": [
@@ -28,6 +30,14 @@ const eslintConfig = defineConfig([
       "function-paren-newline": "off",
       "function-call-argument-newline": ["error", "consistent"],
       "multiline-comment-style": "off",
+    },
+  },
+  // TypeScript: the core rule doesn't understand type-only usages, so use the type-aware one.
+  {
+    files: ["**/*.{ts,tsx,mts,cts}"],
+    rules: {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
     },
   },
   // Browser tests: Playwright fixtures call `use()`, which isn't a React hook, and test steps
