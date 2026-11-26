@@ -7,11 +7,19 @@ import Panel from "@/components/Panel";
 import Badge from "@/components/ui/Badge";
 import { dateLocale, numberLocale } from "@/i18n/config";
 import { getLocale, getTranslations } from "@/i18n/server";
+import type { Translator } from "@/i18n/translate";
+import type { Cached } from "@/lib/cache";
 import { getHeadlines, getRates, NEWS_SOURCE } from "@/lib/market";
 
-function timeLabel(date, timezone, locale) {
-  const sameDay = d => new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(d);
-  const options = {
+type RatesResult = Awaited<ReturnType<typeof getRates>>;
+type HeadlinesResult = Awaited<ReturnType<typeof getHeadlines>>;
+
+/** What every part of the panel needs to show times and text in the reader's language. */
+type DisplayProps = { timezone: string; t: Translator; locale: string };
+
+function timeLabel(date: Date, timezone: string, locale: string) {
+  const sameDay = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(d);
+  const options: Intl.DateTimeFormatOptions = {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: timezone,
@@ -21,7 +29,7 @@ function timeLabel(date, timezone, locale) {
 }
 
 /** "Updated 14:05", or a warning that the data couldn't be refreshed. */
-function Freshness({ result, staleKey, timezone, t, locale }) {
+function Freshness({ result, staleKey, timezone, t, locale }: DisplayProps & { result: Cached<unknown>; staleKey: string }) {
   const when = timeLabel(result.fetchedAt, timezone, locale);
   if (!result.stale) return <p className="text-xs text-slate-500">{t("market.updated", { time: when })}</p>;
   return (
@@ -32,7 +40,7 @@ function Freshness({ result, staleKey, timezone, t, locale }) {
   );
 }
 
-function Failed({ messageKey, t }) {
+function Failed({ messageKey, t }: { messageKey: string; t: Translator }) {
   return (
     <div role="alert" className="rounded-xl border border-rose-400/20 bg-rose-400/5 p-4 text-sm">
       <p className="text-rose-200">{t(messageKey)}</p>
@@ -44,13 +52,13 @@ function Failed({ messageKey, t }) {
   );
 }
 
-const rateFormat = (rate, locale) =>
+const rateFormat = (rate: number, locale: string) =>
   new Intl.NumberFormat(numberLocale(locale), {
     minimumFractionDigits: rate >= 100 ? 2 : 4,
     maximumFractionDigits: rate >= 100 ? 2 : 4,
   }).format(rate);
 
-function Rates({ result, currency, timezone, t, locale }) {
+function Rates({ result, currency, timezone, t, locale }: DisplayProps & { result: RatesResult; currency: string }) {
   const { rows, date } = result.data;
   if (!rows.length) return <p className="text-sm text-slate-400">{t("market.noRates", { currency })}</p>;
   return (
@@ -79,7 +87,13 @@ function Rates({ result, currency, timezone, t, locale }) {
               <td className="py-1.5 text-right text-slate-200 tabular-nums">{rateFormat(row.rate, locale)}</td>
               <td
                 className={`py-1.5 text-right tabular-nums ${
-                  row.changePercent > 0 ? "text-emerald-300" : row.changePercent < 0 ? "text-rose-300" : "text-slate-400"
+                  row.changePercent === null
+                    ? "text-slate-400"
+                    : row.changePercent > 0
+                      ? "text-emerald-300"
+                      : row.changePercent < 0
+                        ? "text-rose-300"
+                        : "text-slate-400"
                 }`}
               >
                 {row.changePercent === null
@@ -96,7 +110,7 @@ function Rates({ result, currency, timezone, t, locale }) {
   );
 }
 
-function Headlines({ result, timezone, t, locale }) {
+function Headlines({ result, timezone, t, locale }: DisplayProps & { result: HeadlinesResult }) {
   if (!result.data.length) return <p className="text-sm text-slate-400">{t("market.noHeadlines")}</p>;
   return (
     <div className="space-y-2">
@@ -116,7 +130,7 @@ function Headlines({ result, timezone, t, locale }) {
   );
 }
 
-export default async function MarketPanel({ currency, timezone }) {
+export default async function MarketPanel({ currency, timezone }: { currency: string; timezone: string }) {
   const [[rates, news], t, locale] = await Promise.all([
     Promise.allSettled([getRates(currency), getHeadlines()]),
     getTranslations("dashboard"),

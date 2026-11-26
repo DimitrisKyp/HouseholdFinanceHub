@@ -4,16 +4,30 @@ import Link from "next/link";
 import { useActionState } from "react";
 import Modal from "@/components/ui/Modal";
 import { InlineMessage } from "@/components/ui/Field";
+import type { ExpenseListItem } from "@/hooks/usePendingExpenses";
 import { deleteExpenseAction } from "@/lib/actions/expenses";
+import type { categorySpending } from "@/lib/calculations";
 import { useTranslations } from "@/i18n/client";
 
-function barColor(percent) {
+/** A category's spending this month with formatted amounts (limitLabel is null without a limit). */
+export type CategoryTotalItem = ReturnType<typeof categorySpending>[number] & { spentLabel: string; limitLabel: string | null };
+
+export type ExpenseBreakdownDrawerProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  monthLabel: string;
+  categoryTotals: CategoryTotalItem[];
+  expenses: ExpenseListItem[];
+  canEdit: boolean;
+};
+
+function barColor(percent: number) {
   if (percent >= 90) return "bg-linear-to-r from-rose-400 to-red-500";
   if (percent >= 70) return "bg-linear-to-r from-amber-400 to-orange-500";
   return "bg-linear-to-r from-cyan-400 to-sky-500";
 }
 
-function TransactionRow({ item, canEdit }) {
+function TransactionRow({ item, canEdit }: { item: ExpenseListItem; canEdit: boolean }) {
   const [state, formAction, pending] = useActionState(deleteExpenseAction, {});
   const t = useTranslations("dashboard");
 
@@ -51,7 +65,14 @@ function TransactionRow({ item, canEdit }) {
   );
 }
 
-export default function ExpenseBreakdownDrawer({ isOpen, onClose, monthLabel, categoryTotals, expenses, canEdit }) {
+export default function ExpenseBreakdownDrawer({
+  isOpen,
+  onClose,
+  monthLabel,
+  categoryTotals,
+  expenses,
+  canEdit,
+}: ExpenseBreakdownDrawerProps) {
   const t = useTranslations("dashboard");
   return (
     <Modal open={isOpen} onClose={onClose} title={t("breakdown.title")} description={t("breakdown.description", { month: monthLabel })}>
@@ -64,7 +85,7 @@ export default function ExpenseBreakdownDrawer({ isOpen, onClose, monthLabel, ca
                 <li key={item.id}>
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-slate-300">{item.name}</span>
-                    <span className={item.percent >= 100 ? "text-rose-300" : "text-slate-400"}>
+                    <span className={item.percent !== null && item.percent >= 100 ? "text-rose-300" : "text-slate-400"}>
                       {item.limitLabel ? `${item.spentLabel} / ${item.limitLabel}` : t("breakdown.noLimit", { spent: item.spentLabel })}
                     </span>
                   </div>

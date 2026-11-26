@@ -4,9 +4,14 @@
 // a few months out, and whether that covers what the goals need. Plain numbers, not a chart:
 // with the same amount every month, a chart would only draw a straight line.
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useTranslations } from "@/i18n/client";
+import type { forecastView } from "@/lib/forecast";
 
-function Tile({ label, value, detail }) {
+/** The forecast's display labels (forecastView), or null when there's nothing to forecast. */
+export type SavingsForecastView = ReturnType<typeof forecastView>;
+
+function Tile({ label, value, detail }: { label: string; value: ReactNode; detail?: ReactNode }) {
   return (
     <article className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3">
       <p className="text-xs text-slate-400">{label}</p>
@@ -16,11 +21,8 @@ function Tile({ label, value, detail }) {
   );
 }
 
-/**
- * forecast: null, or { monthlyLabel, monthlyNegative, horizons: [{ months, valueLabel, detail }], breakdown, basisNote,
- *   goals: { neededLabel, verdict } | null } (see forecastView in lib/forecast.js, already in the UI language)
- */
-export default function SavingsForecast({ forecast }) {
+/** forecast: forecastView's labels (lib/forecast.ts), already in the UI language; null shows how to start. */
+export default function SavingsForecast({ forecast }: { forecast: SavingsForecastView }) {
   const t = useTranslations("goals");
 
   if (!forecast) {

@@ -1,8 +1,9 @@
 // Presentational: this month's latest expenses. A row being saved is marked "Saving…".
+import type { ExpenseListItem } from "@/hooks/usePendingExpenses";
 import { useTranslations } from "@/i18n/client";
 
 /** This month's latest expenses. A row being saved shows straight away, marked "Saving…". */
-export default function RecentExpenses({ items }) {
+export default function RecentExpenses({ items }: { items: ExpenseListItem[] }) {
   const t = useTranslations("dashboard");
   if (!items.length) return <p className="text-sm text-slate-500">{t("recent.empty")}</p>;
   return (

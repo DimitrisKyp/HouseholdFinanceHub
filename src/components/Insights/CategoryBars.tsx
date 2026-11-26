@@ -6,7 +6,10 @@ import { useTranslations } from "@/i18n/client";
 
 const BAR_COLOR = "var(--chart-positive)"; // series slot 1, from the theme tokens in globals.css
 
-export default function CategoryBars({ rows }) {
+/** One bar: a category (or the folded "other" row) from topCategories, with its formatted total. */
+export type CategoryBarRow = { id: string; name: string; total: number; share: number; totalLabel: string };
+
+export default function CategoryBars({ rows }: { rows: CategoryBarRow[] }) {
   const t = useTranslations("insights");
   if (!rows.length) return <p className="text-sm text-slate-500">{t("categories.empty")}</p>;
   const max = Math.max(...rows.map(row => row.total));

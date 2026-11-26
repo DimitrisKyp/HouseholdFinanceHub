@@ -9,6 +9,17 @@ import TextField, { FormError, FormSuccess, InlineMessage, SelectField } from "@
 import { useTranslations } from "@/i18n/client";
 import { addAssetAction, deleteAssetAction, updateAssetValueAction } from "@/lib/actions/budget";
 import { ASSET_KINDS } from "@/lib/calculations";
+import type { listAssets } from "@/lib/finance";
+
+/** An asset as the Finances page passes it: a row from listAssets plus its formatted value. */
+export type AssetListItem = Awaited<ReturnType<typeof listAssets>>[number] & { valueLabel: string };
+
+type AssetsPanelProps = {
+  assets: AssetListItem[];
+  /** The net worth, formatted. */
+  totalLabel: string;
+  canEdit: boolean;
+};
 
 const smallButton =
   "rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:text-white disabled:opacity-60";
@@ -63,7 +74,7 @@ function AddAssetForm() {
   );
 }
 
-function AssetRow({ item, canEdit }) {
+function AssetRow({ item, canEdit }: { item: AssetListItem; canEdit: boolean }) {
   const [valueState, valueAction, valuePending] = useActionState(updateAssetValueAction, {});
   const [deleteState, deleteAction, deletePending] = useActionState(deleteAssetAction, {});
   const t = useTranslations("budget");
@@ -121,7 +132,7 @@ function AssetRow({ item, canEdit }) {
   );
 }
 
-export default function AssetsPanel({ assets, totalLabel, canEdit }) {
+export default function AssetsPanel({ assets, totalLabel, canEdit }: AssetsPanelProps) {
   const t = useTranslations("budget");
   return (
     <div className="space-y-4">

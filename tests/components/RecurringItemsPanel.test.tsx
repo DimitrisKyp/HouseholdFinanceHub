@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen, within } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import RecurringItemsPanel from "@/components/Budget/RecurringItemsPanel";
+import RecurringItemsPanel, { type RecurringListItem } from "@/components/Budget/RecurringItemsPanel";
 import { addRecurringItemAction, updateBillCategoryAction } from "@/lib/actions/budget";
 
 // The real actions talk to the database; the component only needs their (state, formData) contract.
@@ -12,28 +13,35 @@ vi.mock("@/lib/actions/budget", () => ({
   updateBillCategoryAction: vi.fn(async () => ({ success: "Now in Bills." })),
 }));
 
-const items = [
-  { id: "1", title: "Rent", categoryId: "c-housing", detail: "Monthly · Housing", amountLabel: "€850", monthlyLabel: null },
-  { id: "2", title: "Car insurance", categoryId: "c-bills", detail: "Yearly · Bills", amountLabel: "€480", monthlyLabel: "€40" },
+const items: RecurringListItem[] = [
+  {
+    id: "1",
+    title: "Rent",
+    categoryId: "c-housing",
+    categoryName: "Housing",
+    detail: "Monthly · Housing",
+    amountLabel: "€850",
+    monthlyLabel: null,
+  },
+  {
+    id: "2",
+    title: "Car insurance",
+    categoryId: "c-bills",
+    categoryName: "Bills",
+    detail: "Yearly · Bills",
+    amountLabel: "€480",
+    monthlyLabel: "€40",
+  },
 ];
 const categories = [
   { id: "c-housing", name: "Housing" },
   { id: "c-bills", name: "Bills" },
 ];
 
-function renderBills(props = {}) {
-  return render(
-    <RecurringItemsPanel
-      type="expense"
-      title="Fixed bills"
-      subtitle="Costs you expect every time."
-      totalLabel="€890"
-      items={items}
-      categories={categories}
-      canEdit
-      {...props}
-    />,
-  );
+// Partial<ComponentProps<…>>: any subset of the panel's real props, so a typo or a prop it
+// doesn't take is a type error.
+function renderBills(props: Partial<ComponentProps<typeof RecurringItemsPanel>> = {}) {
+  return render(<RecurringItemsPanel type="expense" totalLabel="€890" items={items} categories={categories} canEdit {...props} />);
 }
 
 beforeEach(() => vi.mocked(addRecurringItemAction).mockReset());

@@ -3,7 +3,7 @@
 // Column chart in plain SVG, sized to its container. One series, optionally diverging around zero
 // (positive and negative columns in two colours), with an optional labelled reference line.
 // Each column's whole band is a hover/focus target showing a tooltip; a table view sits below.
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { numberLocale } from "@/i18n/config";
 import { useLocale, useTranslations } from "@/i18n/client";
 import { formatMoney } from "@/lib/format";
@@ -19,13 +19,38 @@ const COLORS = {
   grid: "var(--chart-grid)",
   baseline: "var(--chart-baseline)",
 };
+/** One column: `label` on the axis (e.g. "Nov"), `fullLabel` in the tooltip and table ("November 2026"). */
+export type ColumnPoint = {
+  key: string;
+  label: string;
+  fullLabel: string;
+  value: number;
+  /** Extra context, e.g. "month in progress". */
+  note?: string | null;
+};
+
+export type ColumnChartProps = {
+  /** The chart's accessible name. */
+  title: string;
+  data: ColumnPoint[];
+  currency: string;
+  /** Colour negative columns differently (for values that go below zero). */
+  diverging?: boolean;
+  /** A labelled horizontal line, e.g. monthly income. */
+  reference?: { value: number; label: string } | null;
+  /** Keys of the columns whose value is printed on the cap (label selectively). */
+  labelKeys?: string[];
+  /** Heading of the value column in the table view. */
+  valueHeading: ReactNode;
+};
+
 const HEIGHT = 240;
 const MARGIN = { top: 24, right: 16, bottom: 28, left: 56 };
 const MAX_BAR = 24;
 const RADIUS = 4;
 
 /** Path for a column with a rounded data end and a square end at the baseline. */
-function columnPath(x, width, y0, y1) {
+function columnPath(x: number, width: number, y0: number, y1: number) {
   const up = y1 < y0; // positive value: data end is above the baseline
   const height = Math.abs(y1 - y0);
   const r = Math.min(RADIUS, height, width / 2);
@@ -36,8 +61,9 @@ function columnPath(x, width, y0, y1) {
   return `M${x},${y0} V${y1 - r} Q${x},${y1} ${x + r},${y1} H${x + width - r} Q${x + width},${y1} ${x + width},${y1 - r} V${y0} Z`;
 }
 
+/** A ref for an element and its current width in pixels (0 until measured). */
 function useWidth() {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   useEffect(() => {
     const node = ref.current;
@@ -46,24 +72,29 @@ function useWidth() {
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  return [ref, width];
+  // `as const`: a tuple [ref, number], not an array whose items could be either.
+  return [ref, width] as const;
 }
 
-const compactTick = (value, currency, locale) =>
+const compactTick = (value: number, currency: string, locale: string) =>
   Math.abs(value) >= 10_000
     ? new Intl.NumberFormat(numberLocale(locale), { style: "currency", currency, notation: "compact", maximumFractionDigits: 1 }).format(
         value,
       )
     : formatMoney(value, currency, locale);
 
-/**
- * data: [{ key, label (axis, e.g. "Nov"), fullLabel ("November 2026"), value, note? }]
- * reference: { value, label } | null — a horizontal line, e.g. monthly income.
- * labelKeys: keys of the columns whose value is printed on the cap (label selectively).
- */
-export default function ColumnChart({ title, data, currency, diverging = false, reference = null, labelKeys = [], valueHeading }) {
+export default function ColumnChart({
+  title,
+  data,
+  currency,
+  diverging = false,
+  reference = null,
+  labelKeys = [],
+  valueHeading,
+}: ColumnChartProps) {
   const [containerRef, width] = useWidth();
-  const [active, setActive] = useState(null);
+  // Index of the column being hovered or focused.
+  const [active, setActive] = useState<number | null>(null);
   const tooltipId = useId();
   const t = useTranslations("insights");
   const locale = useLocale();
@@ -75,10 +106,10 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
 
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right);
   const plotHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
-  const y = value => MARGIN.top + ((max - value) / (max - min || 1)) * plotHeight;
+  const y = (value: number) => MARGIN.top + ((max - value) / (max - min || 1)) * plotHeight;
   const band = data.length ? plotWidth / data.length : 0;
   const barWidth = Math.min(MAX_BAR, Math.max(4, band * 0.6));
-  const money = value => formatMoney(value, currency, locale);
+  const money = (value: number) => formatMoney(value, currency, locale);
   const activeItem = active === null ? null : data[active];
 
   return (
@@ -173,7 +204,7 @@ export default function ColumnChart({ title, data, currency, diverging = false, 
           </svg>
         ) : null}
 
-        {activeItem ? (
+        {activeItem && active !== null ? (
           <div
             id={tooltipId}
             role="tooltip"

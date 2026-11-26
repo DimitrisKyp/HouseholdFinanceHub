@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import SavingsForecast from "@/components/Goals/SavingsForecast";
-import { forecastView, savingsForecast } from "@/lib/forecast";
+import { forecastView, savingsForecast, type SpendingBasis } from "@/lib/forecast";
 import { formatMoney } from "@/lib/format";
 
 describe("SavingsForecast", () => {
@@ -12,7 +12,8 @@ describe("SavingsForecast", () => {
   });
 
   it("flags a monthly shortfall in words, not only as a negative number", () => {
-    const spending = { amount: 700, basis: "limits" };
+    // Annotated: otherwise basis is inferred as any string, not the "limits" variant of the union.
+    const spending: SpendingBasis = { amount: 700, basis: "limits" };
     const forecast = forecastView({
       forecast: savingsForecast({ income: 2000, bills: 1500, spending }),
       income: 2000,

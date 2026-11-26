@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import ExpenseTrackerPanel from "@/components/Dashboard/ExpenseTrackerPanel";
 import CategoryBars from "@/components/Insights/CategoryBars";
 import TransactionsTable from "@/components/Transactions/TransactionsTable";
+import type { TransactionFilters } from "@/lib/transaction-filters";
 
 vi.mock("@/lib/actions/expenses", () => ({ addExpenseAction: vi.fn(), deleteExpenseAction: vi.fn() }));
 
@@ -28,7 +29,16 @@ describe("CategoryBars", () => {
 });
 
 describe("TransactionsTable", () => {
-  const filters = { from: "2026-11-01", to: "2026-11-30", categoryId: "", paidByUserId: "", q: "", sort: "amount", dir: "desc", page: 2 };
+  const filters: TransactionFilters = {
+    from: "2026-11-01",
+    to: "2026-11-30",
+    categoryId: "",
+    paidByUserId: "",
+    q: "",
+    sort: "amount",
+    dir: "desc",
+    page: 2,
+  };
   const rows = [
     { id: "e1", title: "Supermarket", categoryName: "Groceries", paidByName: null, dayLabel: "2 Nov 2026", amountLabel: "€120.40" },
   ];

@@ -4,10 +4,22 @@ import Link from "next/link";
 import DeleteExpenseButton from "@/components/Transactions/DeleteExpenseButton";
 import { useTranslations } from "@/i18n/client";
 import { expenseName } from "@/lib/format";
-import { sortHref, transactionsHref } from "@/lib/transaction-filters";
+import { sortHref, transactionsHref, type TransactionFilters, type TransactionSort } from "@/lib/transaction-filters";
 
-// labelKey: under "table" in the transactions messages.
-const COLUMNS = [
+/** An expense row as the Transactions page passes it, with its date and amount formatted. */
+export type TransactionRow = {
+  id: string;
+  title: string;
+  categoryName: string;
+  paidByName: string | null;
+  dayLabel: string;
+  amountLabel: string;
+};
+
+/** key: what the column sorts by (null: not sortable). labelKey: under "table" in the transactions messages. */
+type Column = { key: TransactionSort | null; labelKey: string; align?: "right" };
+
+const COLUMNS: Column[] = [
   { key: "date", labelKey: "date" },
   { key: "title", labelKey: "description" },
   { key: "category", labelKey: "category" },
@@ -15,7 +27,7 @@ const COLUMNS = [
   { key: "amount", labelKey: "amount", align: "right" },
 ];
 
-function SortHeader({ column, filters }) {
+function SortHeader({ column, filters }: { column: Column; filters: TransactionFilters }) {
   const t = useTranslations("transactions");
   const label = t(`table.${column.labelKey}`);
   const align = column.align === "right" ? "text-right" : "text-left";
@@ -43,7 +55,7 @@ function SortHeader({ column, filters }) {
   );
 }
 
-function Pagination({ filters, pageCount }) {
+function Pagination({ filters, pageCount }: { filters: TransactionFilters; pageCount: number }) {
   const t = useTranslations("transactions");
   if (pageCount <= 1) return null;
   const linkClass = "rounded-lg border border-white/10 px-3 py-1.5 text-xs transition hover:border-cyan-400/40 hover:text-white";
@@ -68,7 +80,14 @@ function Pagination({ filters, pageCount }) {
   );
 }
 
-export default function TransactionsTable({ rows, filters, pageCount, canEdit }) {
+type TransactionsTableProps = {
+  rows: TransactionRow[];
+  filters: TransactionFilters;
+  pageCount: number;
+  canEdit: boolean;
+};
+
+export default function TransactionsTable({ rows, filters, pageCount, canEdit }: TransactionsTableProps) {
   const t = useTranslations("transactions");
   if (!rows.length) {
     return <p className="rounded-xl border border-white/5 bg-white/5 px-4 py-6 text-center text-sm text-slate-400">{t("table.empty")}</p>;

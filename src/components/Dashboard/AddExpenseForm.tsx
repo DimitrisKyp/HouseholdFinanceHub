@@ -2,14 +2,25 @@
 
 // The expense form. onSubmitting(formData) runs first (for optimistic UI), then the Server Action.
 import { useActionState } from "react";
+import type { CategoryOption, MemberOption } from "@/components/Budget/RecurringItemsPanel";
 import TextField, { FormError, FormSuccess, SelectField } from "@/components/ui/Field";
-import { addExpenseAction } from "@/lib/actions/expenses";
+import { addExpenseAction, type ExpenseFormState } from "@/lib/actions/expenses";
 import { buttonClasses } from "@/components/ui/Button";
 import { useTranslations } from "@/i18n/client";
 
-export default function AddExpenseForm({ categories, members, currentUserId, today, onSubmitting }) {
+export type AddExpenseFormProps = {
+  categories: CategoryOption[];
+  members: MemberOption[];
+  currentUserId: string;
+  /** Today in the household's time zone ("YYYY-MM-DD"): the default and latest date. */
+  today: string;
+  /** Called with the submitted form before the Server Action runs (for optimistic UI). */
+  onSubmitting: (formData: FormData) => void;
+};
+
+export default function AddExpenseForm({ categories, members, currentUserId, today, onSubmitting }: AddExpenseFormProps) {
   const [state, formAction, pending] = useActionState(
-    async (previous, formData) => {
+    async (previous: ExpenseFormState, formData: FormData) => {
       onSubmitting(formData);
       return addExpenseAction(previous, formData);
     },

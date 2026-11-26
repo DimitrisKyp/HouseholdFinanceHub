@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import GoalCard from "@/components/Goals/GoalCard";
+import GoalCard, { type GoalCardItem } from "@/components/Goals/GoalCard";
 import { addContributionAction } from "@/lib/actions/goals";
 
 vi.mock("@/lib/actions/goals", () => ({
@@ -11,7 +11,7 @@ vi.mock("@/lib/actions/goals", () => ({
   deleteGoalAction: vi.fn(async () => ({})),
 }));
 
-const goal = {
+const goal: GoalCardItem = {
   id: "g1",
   name: "Holiday",
   note: "Summer trip",
@@ -21,6 +21,7 @@ const goal = {
   savedLabel: "€250",
   targetLabel: "€1,000",
   planLabel: "Save about €150 a month to reach it by 1 Jun 2027.",
+  forecastLabel: null,
   contributionCount: 2,
   contributions: [
     { id: "c2", amount: -50, amountLabel: "−€50", dayLabel: "18 Nov 2026", userName: "Alex", note: null },
@@ -32,7 +33,7 @@ describe("GoalCard", () => {
   it("shows progress, plan and history", () => {
     render(<GoalCard goal={goal} canEdit />);
     expect(screen.getByRole("progressbar", { name: "Holiday progress" })).toHaveAttribute("aria-valuenow", "25");
-    expect(screen.getByText(goal.planLabel)).toBeInTheDocument();
+    expect(screen.getByText("Save about €150 a month to reach it by 1 Jun 2027.")).toBeInTheDocument();
     expect(screen.getByText("History (2 entries)")).toBeInTheDocument();
     expect(screen.getByText("1 Nov 2026 · Maria · Bonus")).toBeInTheDocument();
   });

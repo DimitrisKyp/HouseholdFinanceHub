@@ -1,13 +1,30 @@
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import { getTranslations } from "@/i18n/server";
+import type { goalView } from "@/lib/calculations";
+import type { reminderBadge } from "@/lib/reminders";
+
+/** A goal's progress, as goalView returns it (only these fields are shown here). */
+export type GoalSummaryItem = Pick<ReturnType<typeof goalView>, "id" | "name" | "savedLabel" | "targetLabel" | "percent">;
+/** A bill or task due soon, with its due-date badge (null without a due date). */
+export type ReminderSummaryItem = {
+  key: string;
+  title: string;
+  badge: ReturnType<typeof reminderBadge>;
+  amountLabel: string | null;
+};
+
+type GoalsRemindersPanelProps = {
+  goals: GoalSummaryItem[];
+  reminders?: ReminderSummaryItem[];
+};
 
 const smallLink =
   "shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-400/40 hover:text-white";
 
 // Bills and tasks due this week (or overdue), then the goals' progress. Both lists scroll together
 // inside the panel when the dashboard fills the screen.
-export default async function GoalsRemindersPanel({ goals, reminders = [] }) {
+export default async function GoalsRemindersPanel({ goals, reminders = [] }: GoalsRemindersPanelProps) {
   const [t, r] = await Promise.all([getTranslations("dashboard"), getTranslations("reminders")]);
   return (
     <section className="flex flex-col rounded-3xl border border-white/10 bg-white/5 p-5 shadow-xl shadow-black/10 backdrop-blur lg:max-h-[50%] lg:min-h-0 lg:shrink-0">

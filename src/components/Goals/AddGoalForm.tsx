@@ -6,7 +6,8 @@ import { useTranslations } from "@/i18n/client";
 import { addGoalAction } from "@/lib/actions/goals";
 import { buttonClasses } from "@/components/ui/Button";
 
-export default function AddGoalForm({ minDate }) {
+/** minDate: the earliest target date allowed ("YYYY-MM-DD"), usually today. */
+export default function AddGoalForm({ minDate }: { minDate: string }) {
   const [state, formAction, pending] = useActionState(addGoalAction, {});
   const values = state.values ?? {};
   const t = useTranslations("goals");

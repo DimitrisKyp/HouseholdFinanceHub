@@ -4,14 +4,26 @@
 // so the filters end up in the URL and a filtered view can be bookmarked or shared.
 import Form from "next/form";
 import Link from "next/link";
-import { transactionsHref } from "@/lib/transaction-filters";
+import type { MemberOption } from "@/components/Budget/RecurringItemsPanel";
+import { transactionsHref, type datePresets, type TransactionFilters as Filters } from "@/lib/transaction-filters";
 import { buttonClasses } from "@/components/ui/Button";
 import { useTranslations } from "@/i18n/client";
 
 const inputClass =
   "w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400";
 
-export default function TransactionFilters({ filters, presets, categories, members }) {
+/** A category to filter by; archived ones are still listed (marked) so old expenses can be found. */
+export type FilterCategoryOption = { id: string; name: string; isArchived: boolean };
+
+type TransactionFiltersProps = {
+  filters: Filters;
+  presets: ReturnType<typeof datePresets>;
+  categories: FilterCategoryOption[];
+  members: MemberOption[];
+};
+
+// The component shares its name with the TransactionFilters type, so the type is imported as Filters.
+export default function TransactionFilters({ filters, presets, categories, members }: TransactionFiltersProps) {
   const t = useTranslations("transactions");
   const activePreset = presets.find(item => item.from === (filters.from ?? "") && item.to === (filters.to ?? ""));
 

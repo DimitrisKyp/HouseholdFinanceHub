@@ -4,15 +4,49 @@
 // (recurring bills, and tasks with an amount) and things to do, then the recently finished ones (Undo).
 // A repeating task never shows as finished: Done moves it on to its next due date.
 import { useActionState } from "react";
-import { BillRow } from "@/components/Reminders/BillReminderList";
+import type { MemberOption } from "@/components/Budget/RecurringItemsPanel";
+import { BillRow, type BillReminderItem, type DueBadge } from "@/components/Reminders/BillReminderList";
 import Badge from "@/components/ui/Badge";
 import { buttonClasses, SubmitButton } from "@/components/ui/Button";
 import TextField, { FormError, FormSuccess, InlineMessage, SelectField } from "@/components/ui/Field";
 import { useTranslations } from "@/i18n/client";
 import { addTaskAction, deleteTaskAction, setTaskDoneAction } from "@/lib/actions/reminders";
+import type { TaskKind } from "@/db/schema";
 import { REMIND_DAY_CHOICES, TASK_KINDS, TASK_REPEATS } from "@/lib/reminders";
 
-export function AddTaskForm({ members, defaultKind = "other" }) {
+/** An open task in the Reminders list. With an amountLabel it's a bill to pay. */
+export type TaskReminderItem = {
+  type: "task";
+  id: string;
+  title: string;
+  dueDate: string | null;
+  kindLabel: string;
+  amountLabel: string | null;
+  badge: DueBadge;
+  detail: string;
+};
+
+/**
+ * One row of the list: a bill or a task. A discriminated union: checking `item.type` tells
+ * TypeScript which of the two shapes the item has.
+ */
+export type ReminderListItem = BillReminderItem | TaskReminderItem;
+
+/** A recently finished task. */
+export type DoneTaskItem = { id: string; title: string; detail: string | null };
+
+type TaskPanelProps = {
+  /** Bills and tasks together, soonest first. */
+  items: ReminderListItem[];
+  done: DoneTaskItem[];
+  members: MemberOption[];
+  canEdit: boolean;
+  today: string;
+  /** Shown when the list is empty (e.g. for a filter). */
+  emptyText?: string;
+};
+
+export function AddTaskForm({ members, defaultKind = "other" }: { members: MemberOption[]; defaultKind?: TaskKind }) {
   const [state, formAction, pending] = useActionState(addTaskAction, {});
   const values = state.values ?? {};
   const t = useTranslations("reminders");
@@ -121,7 +155,7 @@ export function AddTaskForm({ members, defaultKind = "other" }) {
   );
 }
 
-function OpenTask({ item, canEdit }) {
+function OpenTask({ item, canEdit }: { item: TaskReminderItem; canEdit: boolean }) {
   const [doneState, doneAction, donePending] = useActionState(setTaskDoneAction, {});
   const [deleteState, deleteAction, deletePending] = useActionState(deleteTaskAction, {});
   const t = useTranslations("reminders");
@@ -182,7 +216,7 @@ function OpenTask({ item, canEdit }) {
   );
 }
 
-function DoneTask({ item, canEdit }) {
+function DoneTask({ item, canEdit }: { item: DoneTaskItem; canEdit: boolean }) {
   const [state, formAction, pending] = useActionState(setTaskDoneAction, {});
   const t = useTranslations("reminders");
   return (
@@ -210,8 +244,7 @@ function DoneTask({ item, canEdit }) {
   );
 }
 
-/** items: bills ({ type: "bill" }) and tasks ({ type: "task" }) together, soonest first. */
-export default function TaskPanel({ items, done, members, canEdit, today, emptyText }) {
+export default function TaskPanel({ items, done, members, canEdit, today, emptyText }: TaskPanelProps) {
   const t = useTranslations("reminders");
   return (
     <div className="space-y-4">

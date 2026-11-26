@@ -2,12 +2,12 @@
 // Optimistic UI: a new expense or invitation is listed while its Server Action runs, then replaced
 // by the server's data, or removed again if the server says no.
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ExpenseTrackerPanel from "@/components/Dashboard/ExpenseTrackerPanel";
-import InvitePanel from "@/components/Members/InvitePanel";
-import { addExpenseAction } from "@/lib/actions/expenses";
-import { inviteMemberAction } from "@/lib/actions/members";
+import InvitePanel, { type InviteListItem } from "@/components/Members/InvitePanel";
+import { addExpenseAction, type ExpenseFormState } from "@/lib/actions/expenses";
+import { inviteMemberAction, type InviteFormState } from "@/lib/actions/members";
 
 vi.mock("@/lib/actions/expenses", () => ({ addExpenseAction: vi.fn(), deleteExpenseAction: vi.fn() }));
 vi.mock("@/lib/actions/members", () => ({ inviteMemberAction: vi.fn(), resendInviteAction: vi.fn(), revokeInviteAction: vi.fn() }));
@@ -16,9 +16,10 @@ vi.mock("@/lib/actions/members", () => ({ inviteMemberAction: vi.fn(), resendInv
  * A promise the test settles by hand, standing in for a slow Server Action. Every test settles its
  * own: React waits for all pending actions together, so one left hanging would stall the next test.
  */
-function deferred() {
-  let resolve;
-  const promise = new Promise(done => (resolve = done));
+function deferred<T>() {
+  // `!`: definitely assigned, since the Promise constructor runs its callback straight away.
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(done => (resolve = done));
   return { promise, resolve };
 }
 
@@ -39,7 +40,7 @@ describe("adding an expense", () => {
     recentExpenses: [{ id: "e1", title: "Bus pass", amountLabel: "€30", detail: "2 Nov 2026 · Transport" }],
   };
 
-  async function submit(user, { title, amount }) {
+  async function submit(user: UserEvent, { title, amount }: { title: string; amount: string }) {
     if (title) await user.type(screen.getByLabelText("Description (optional)"), title);
     await user.type(screen.getByLabelText("Amount"), amount);
     await user.selectOptions(screen.getByLabelText("Category"), "Groceries");
@@ -47,7 +48,7 @@ describe("adding an expense", () => {
   }
 
   it("lists it straight away while it's saved", async () => {
-    const save = deferred();
+    const save = deferred<ExpenseFormState>();
     vi.mocked(addExpenseAction).mockReturnValue(save.promise);
     const user = userEvent.setup();
     render(<ExpenseTrackerPanel {...props} />);
@@ -68,7 +69,7 @@ describe("adding an expense", () => {
   });
 
   it("goes by its category when it has no description", async () => {
-    const save = deferred();
+    const save = deferred<ExpenseFormState>();
     vi.mocked(addExpenseAction).mockReturnValue(save.promise);
     const user = userEvent.setup();
     render(<ExpenseTrackerPanel {...props} />);
@@ -83,7 +84,7 @@ describe("adding an expense", () => {
   });
 
   it("removes it again when the server refuses", async () => {
-    const save = deferred();
+    const save = deferred<ExpenseFormState>();
     vi.mocked(addExpenseAction).mockReturnValue(save.promise);
     const user = userEvent.setup();
     render(<ExpenseTrackerPanel {...props} />);
@@ -96,7 +97,7 @@ describe("adding an expense", () => {
   });
 
   it("doesn't list what the server will reject anyway", async () => {
-    const save = deferred();
+    const save = deferred<ExpenseFormState>();
     vi.mocked(addExpenseAction).mockReturnValue(save.promise);
     const user = userEvent.setup();
     render(<ExpenseTrackerPanel {...props} />);
@@ -109,10 +110,10 @@ describe("adding an expense", () => {
 });
 
 describe("sending an invitation", () => {
-  const invites = [{ id: "i1", email: "sam@example.com", role: "viewer", expired: false, expiresLabel: "25 Nov 2026" }];
+  const invites: InviteListItem[] = [{ id: "i1", email: "sam@example.com", role: "viewer", expired: false, expiresLabel: "25 Nov 2026" }];
 
   it("lists it as sending, without actions, until it's saved", async () => {
-    const send = deferred();
+    const send = deferred<InviteFormState>();
     vi.mocked(inviteMemberAction).mockReturnValue(send.promise);
     const user = userEvent.setup();
     render(<InvitePanel invites={invites} />);
@@ -121,6 +122,7 @@ describe("sending an invitation", () => {
     await user.click(screen.getByRole("button", { name: "Send invitation" }));
     const list = screen.getByRole("list", { name: "Pending invitations" });
     const sending = within(list).getByText("alex@example.com").closest("li");
+    if (!sending) throw new Error("The sending invitation isn't in a list item.");
     expect(sending).toHaveTextContent("Editor · Sending…");
     expect(within(sending).queryByRole("button")).not.toBeInTheDocument();
 
@@ -130,7 +132,7 @@ describe("sending an invitation", () => {
   });
 
   it("re-inviting a pending address replaces its row instead of adding one", async () => {
-    const send = deferred();
+    const send = deferred<InviteFormState>();
     vi.mocked(inviteMemberAction).mockReturnValue(send.promise);
     const user = userEvent.setup();
     render(<InvitePanel invites={invites} />);

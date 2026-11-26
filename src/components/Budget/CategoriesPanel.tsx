@@ -2,15 +2,33 @@
 
 // Spending categories with an optional monthly limit. Shared by expenses, recurring bills and budgets.
 import { useActionState } from "react";
+import type { listCategories } from "@/lib/finance";
+import type { FormState } from "@/lib/forms";
 import TextField, { FormError, FormSuccess, InlineMessage } from "@/components/ui/Field";
 import { addCategoryAction, deleteCategoryAction, setCategoryArchivedAction, updateCategoryLimitAction } from "@/lib/actions/budget";
 import { buttonClasses } from "@/components/ui/Button";
 import { useTranslations } from "@/i18n/client";
 
+type CategoryQueryRow = Awaited<ReturnType<typeof listCategories>>[number];
+
+/** An active category as the Spending page passes it, with its limit formatted (null when none). */
+export type CategoryListItem = CategoryQueryRow & { limitLabel: string | null };
+/** An archived category: only what's needed to restore or delete it. */
+export type ArchivedCategoryItem = Pick<CategoryQueryRow, "id" | "name">;
+
+/** The form action from useActionState that a row's buttons submit to. */
+type RowAction = (formData: FormData) => void;
+
+type CategoriesPanelProps = {
+  categories: CategoryListItem[];
+  archived: ArchivedCategoryItem[];
+  canEdit: boolean;
+};
+
 const smallButton =
   "rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:text-white disabled:opacity-60";
 
-function ArchiveButton({ item, archive, onResult }) {
+function ArchiveButton({ item, archive, onResult }: { item: ArchivedCategoryItem; archive: boolean; onResult: RowAction }) {
   const t = useTranslations("budget");
   return (
     <form action={onResult}>
@@ -24,7 +42,7 @@ function ArchiveButton({ item, archive, onResult }) {
 }
 
 // Only works for a category with no expenses; otherwise the server says to archive it instead.
-function DeleteButton({ item, onResult }) {
+function DeleteButton({ item, onResult }: { item: ArchivedCategoryItem; onResult: RowAction }) {
   const t = useTranslations("budget");
   return (
     <form
@@ -45,12 +63,12 @@ function DeleteButton({ item, onResult }) {
   );
 }
 
-function CategoryRow({ item, canEdit }) {
+function CategoryRow({ item, canEdit }: { item: CategoryListItem; canEdit: boolean }) {
   const [limitState, limitAction, limitPending] = useActionState(updateCategoryLimitAction, {});
   const [archiveState, archiveAction] = useActionState(setCategoryArchivedAction, {});
   const [deleteState, deleteAction] = useActionState(deleteCategoryAction, {});
   const t = useTranslations("budget");
-  let message = archiveState;
+  let message: FormState = archiveState;
   if (limitState.error || limitState.success) message = limitState;
   else if (deleteState.error) message = deleteState;
 
@@ -92,7 +110,7 @@ function CategoryRow({ item, canEdit }) {
   );
 }
 
-function ArchivedRow({ item }) {
+function ArchivedRow({ item }: { item: ArchivedCategoryItem }) {
   const [state, action] = useActionState(setCategoryArchivedAction, {});
   const [deleteState, deleteAction] = useActionState(deleteCategoryAction, {});
   const error = [state, deleteState].find(result => result.error);
@@ -145,7 +163,7 @@ function AddCategoryForm() {
   );
 }
 
-export default function CategoriesPanel({ categories, archived, canEdit }) {
+export default function CategoriesPanel({ categories, archived, canEdit }: CategoriesPanelProps) {
   const t = useTranslations("budget");
   return (
     <div className="space-y-4">

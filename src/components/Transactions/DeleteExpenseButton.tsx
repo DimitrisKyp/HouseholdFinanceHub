@@ -4,7 +4,8 @@ import { useActionState } from "react";
 import { useTranslations } from "@/i18n/client";
 import { deleteExpenseAction } from "@/lib/actions/expenses";
 
-export default function DeleteExpenseButton({ id, title }) {
+/** title: the expense's name for the confirm prompt and the button's label. */
+export default function DeleteExpenseButton({ id, title }: { id: string; title: string }) {
   const [state, formAction, pending] = useActionState(deleteExpenseAction, {});
   const t = useTranslations("transactions");
 

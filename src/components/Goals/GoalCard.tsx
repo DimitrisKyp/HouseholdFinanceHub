@@ -4,19 +4,25 @@
 import { useActionState } from "react";
 import { InlineMessage } from "@/components/ui/Field";
 import { useTranslations } from "@/i18n/client";
+import type { GoalStatus } from "@/db/schema";
 import { addContributionAction, deleteGoalAction, setGoalStatusAction } from "@/lib/actions/goals";
+import type { goalView } from "@/lib/calculations";
+
+/** A goal as the Goals page passes it: goalView's labels in the UI language. */
+export type GoalCardItem = ReturnType<typeof goalView>;
 
 const smallButton =
   "rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:text-white disabled:opacity-60";
 
 // [message key, badge classes] per status.
-const STATUS_BADGES = {
+// "cancelled" (a database status the app no longer sets) has no badge.
+const STATUS_BADGES: Partial<Record<GoalStatus, readonly [messageKey: string, classes: string] | null>> = {
   active: null,
   paused: ["card.paused", "bg-amber-400/15 text-amber-200"],
   completed: ["card.completed", "bg-emerald-400/15 text-emerald-200"],
 };
 
-function ContributionForm({ goal }) {
+function ContributionForm({ goal }: { goal: GoalCardItem }) {
   const [state, formAction, pending] = useActionState(addContributionAction, {});
   const t = useTranslations("goals");
   const errorId = `contribution-${goal.id}-error`;
@@ -75,11 +81,12 @@ function ContributionForm({ goal }) {
   );
 }
 
-function StatusButtons({ goal }) {
+function StatusButtons({ goal }: { goal: GoalCardItem }) {
   const [statusState, statusAction, statusPending] = useActionState(setGoalStatusAction, {});
   const [deleteState, deleteAction, deletePending] = useActionState(deleteGoalAction, {});
   const t = useTranslations("goals");
-  const options =
+  // [status to switch to, button label]
+  const options: [GoalStatus, string][] =
     goal.status === "active"
       ? [
           ["completed", t("card.markCompleted")],
@@ -116,7 +123,7 @@ function StatusButtons({ goal }) {
   );
 }
 
-export default function GoalCard({ goal, canEdit }) {
+export default function GoalCard({ goal, canEdit }: { goal: GoalCardItem; canEdit: boolean }) {
   const t = useTranslations("goals");
   const badge = STATUS_BADGES[goal.status];
 

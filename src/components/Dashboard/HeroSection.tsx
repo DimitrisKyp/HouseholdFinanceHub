@@ -1,6 +1,16 @@
 import { getTranslations } from "@/i18n/server";
 
-function MetricCard({ label, value, accent, tone = "border-white/10 bg-slate-950/50", labelTone = "text-slate-400" }) {
+type MetricCardProps = {
+  label: string;
+  value: string | number;
+  /** Gradient classes for the colour bar. */
+  accent: string;
+  /** Border and background classes. */
+  tone?: string;
+  labelTone?: string;
+};
+
+function MetricCard({ label, value, accent, tone = "border-white/10 bg-slate-950/50", labelTone = "text-slate-400" }: MetricCardProps) {
   return (
     <article className={`flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 lg:gap-0 lg:px-3 2xl:gap-3 2xl:px-4 ${tone}`}>
       {/* The colour bar makes way for the label in the one-row layout on laptop widths. */}
@@ -17,7 +27,26 @@ function MetricCard({ label, value, accent, tone = "border-white/10 bg-slate-950
 
 // All values arrive as ready-to-show labels in the household currency. On wide screens the title
 // and the six figures share one row, leaving the dashboard's panels more height.
-export default async function HeroSection({ monthLabel, incomeLabel, spentLabel, billsLabel, netLabel, savingsRate, incomeSourcesCount }) {
+type HeroSectionProps = {
+  monthLabel: string;
+  incomeLabel: string;
+  spentLabel: string;
+  billsLabel: string;
+  netLabel: string;
+  /** Percentage of income left over this month (0-100). */
+  savingsRate: number;
+  incomeSourcesCount: number;
+};
+
+export default async function HeroSection({
+  monthLabel,
+  incomeLabel,
+  spentLabel,
+  billsLabel,
+  netLabel,
+  savingsRate,
+  incomeSourcesCount,
+}: HeroSectionProps) {
   const t = await getTranslations("dashboard");
   return (
     <section className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 shadow-xl shadow-black/20 backdrop-blur">

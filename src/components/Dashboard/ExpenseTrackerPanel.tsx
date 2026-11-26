@@ -3,11 +3,22 @@
 // Container: the expense form, the recent list (with expenses being saved) and the breakdown button.
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import Panel from "@/components/Panel";
 import AddExpenseForm from "@/components/Dashboard/AddExpenseForm";
 import RecentExpenses from "@/components/Dashboard/RecentExpenses";
-import { usePendingExpenses } from "@/hooks/usePendingExpenses";
+import type { AddExpenseFormProps } from "@/components/Dashboard/AddExpenseForm";
+import { usePendingExpenses, type ExpenseListItem } from "@/hooks/usePendingExpenses";
 import { useLocale, useTranslations } from "@/i18n/client";
+
+export type ExpenseTrackerPanelProps = Omit<AddExpenseFormProps, "onSubmitting"> & {
+  canEdit: boolean;
+  onOpenBreakdown: () => void;
+  /** This month's expenses, newest first. */
+  recentExpenses?: ExpenseListItem[];
+  /** The household currency, for expenses shown while they're being saved. */
+  currency?: string;
+};
 
 export default function ExpenseTrackerPanel({
   categories,
@@ -18,13 +29,13 @@ export default function ExpenseTrackerPanel({
   onOpenBreakdown,
   recentExpenses = [],
   currency = "EUR",
-}) {
+}: ExpenseTrackerPanelProps) {
   // Optimistic UI: a new expense is listed while the server saves it.
   const t = useTranslations("dashboard");
   const locale = useLocale();
   const { items: recent, showPending } = usePendingExpenses({ recentExpenses, categories, members, today, currency, locale });
 
-  let body;
+  let body: ReactNode;
   if (!canEdit) {
     body = <p className="text-sm text-slate-400">{t("tracker.viewOnly")}</p>;
   } else if (!categories.length) {

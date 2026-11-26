@@ -7,6 +7,15 @@ import { useCallback, useState } from "react";
 
 const ExpenseBreakdownDrawer = dynamic(() => import("@/components/Dashboard/ExpenseBreakdownDrawer"), { ssr: false });
 import ExpenseTrackerPanel from "@/components/Dashboard/ExpenseTrackerPanel";
+import type { ExpenseBreakdownDrawerProps } from "@/components/Dashboard/ExpenseBreakdownDrawer";
+import type { ExpenseTrackerPanelProps } from "@/components/Dashboard/ExpenseTrackerPanel";
+import type { ExpenseListItem } from "@/hooks/usePendingExpenses";
+
+type ExpenseSectionProps = Omit<ExpenseTrackerPanelProps, "onOpenBreakdown" | "recentExpenses"> &
+  Pick<ExpenseBreakdownDrawerProps, "monthLabel" | "categoryTotals"> & {
+    /** This month's expenses: the recent list and the breakdown's transactions. */
+    expenses: ExpenseListItem[];
+  };
 
 export default function ExpenseSection({
   categories,
@@ -18,7 +27,7 @@ export default function ExpenseSection({
   categoryTotals,
   expenses,
   currency,
-}) {
+}: ExpenseSectionProps) {
   const [open, setOpen] = useState(false);
   const [opened, setOpened] = useState(false);
   const close = useCallback(() => setOpen(false), []);

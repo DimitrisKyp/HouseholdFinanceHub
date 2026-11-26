@@ -3,19 +3,41 @@
 // Recurring income (salary, side income) or recurring bills (rent, subscriptions) for the budget page.
 import { useActionState } from "react";
 import TextField, { FormError, FormSuccess, InlineMessage, SelectField } from "@/components/ui/Field";
-import { buttonClasses } from "@/components/ui/Button";
+import { buttonClasses, type ButtonVariant } from "@/components/ui/Button";
+import type { Frequency, RecurringType } from "@/db/schema";
 import { useTranslations } from "@/i18n/client";
 import { addRecurringItemAction, deleteRecurringItemAction, updateBillCategoryAction } from "@/lib/actions/budget";
+import type { recurringRow } from "@/lib/budget-view";
 
-const FREQUENCIES = ["monthly", "weekly", "yearly"];
+/** A recurring income or bill as the pages pass it (built on the server by recurringRow). */
+export type RecurringListItem = ReturnType<typeof recurringRow>;
+/** A category a bill can belong to. */
+export type CategoryOption = { id: string; name: string };
+/** A member an income can belong to. */
+export type MemberOption = { userId: string; name: string };
+
+type RecurringItemsPanelProps = {
+  type: RecurringType;
+  /** The monthly total, formatted. */
+  totalLabel: string;
+  items: RecurringListItem[];
+  /** Categories to pick from (bills only). */
+  categories?: CategoryOption[];
+  /** Members to pick from (income only). */
+  members?: MemberOption[];
+  canEdit: boolean;
+};
+
+// Order shown in the picker (monthly first, as the most common).
+const FREQUENCIES = ["monthly", "weekly", "yearly"] as const satisfies readonly Frequency[];
 
 // Texts per type are under recurring.income / recurring.expense in the "budget" messages.
 const COPY = {
   income: { amountPlaceholder: "2400", button: "success", amountColor: "text-emerald-200" },
   expense: { amountPlaceholder: "850", button: "danger", amountColor: "text-rose-200" },
-};
+} satisfies Record<RecurringType, { amountPlaceholder: string; button: ButtonVariant; amountColor: string }>;
 
-function AddItemForm({ type, categories, members }) {
+function AddItemForm({ type, categories, members }: { type: RecurringType; categories: CategoryOption[]; members: MemberOption[] }) {
   const copy = COPY[type];
   const [state, formAction, pending] = useActionState(addRecurringItemAction, { values: { frequency: "monthly" } });
   const values = state.values ?? {};
@@ -108,10 +130,17 @@ const smallButton =
   "rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-cyan-400/50 hover:text-white disabled:opacity-60";
 
 // Change which category a bill belongs to: logged expenses in that category count against it.
-function BillCategoryForm({ item, categories, formAction, pending }) {
+type BillCategoryFormProps = {
+  item: RecurringListItem;
+  categories: CategoryOption[];
+  formAction: (formData: FormData) => void;
+  pending: boolean;
+};
+
+function BillCategoryForm({ item, categories, formAction, pending }: BillCategoryFormProps) {
   const t = useTranslations("budget");
   // An archived category isn't in the list; keep it selectable so the form shows the truth.
-  const options =
+  const options: CategoryOption[] =
     categories.some(category => category.id === item.categoryId) || !item.categoryId
       ? categories
       : [...categories, { id: item.categoryId, name: item.categoryName ?? t("recurring.archivedCategory") }];
@@ -146,7 +175,15 @@ function BillCategoryForm({ item, categories, formAction, pending }) {
   );
 }
 
-function ItemRow({ item, canEdit, amountColor, categories }) {
+type ItemRowProps = {
+  item: RecurringListItem;
+  canEdit: boolean;
+  amountColor: string;
+  /** Categories for the bill's category picker; null for income (no picker). */
+  categories: CategoryOption[] | null;
+};
+
+function ItemRow({ item, canEdit, amountColor, categories }: ItemRowProps) {
   const [state, formAction, pending] = useActionState(deleteRecurringItemAction, {});
   const [categoryState, categoryAction, categoryPending] = useActionState(updateBillCategoryAction, {});
   const t = useTranslations("budget");
@@ -194,7 +231,7 @@ function ItemRow({ item, canEdit, amountColor, categories }) {
 }
 
 /** Income sources or fixed bills. Goes inside a Panel, which gives it its title. */
-export default function RecurringItemsPanel({ type, totalLabel, items, categories = [], members = [], canEdit }) {
+export default function RecurringItemsPanel({ type, totalLabel, items, categories = [], members = [], canEdit }: RecurringItemsPanelProps) {
   const copy = COPY[type];
   const t = useTranslations("budget");
 

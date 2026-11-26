@@ -4,12 +4,14 @@
 // A Server Component can't code-split a Client Component it imports, so this thin client
 // wrapper does it with next/dynamic. The chart is still rendered on the server.
 import dynamic from "next/dynamic";
+import type { ColumnChartProps } from "@/components/Insights/ColumnChart";
 import Skeleton from "@/components/ui/Skeleton";
 
 const ColumnChart = dynamic(() => import("@/components/Insights/ColumnChart"), {
   loading: () => <Skeleton className="h-60 w-full" />,
 });
 
-export default function LazyColumnChart(props) {
+// dynamic() keeps the imported component's props, so ColumnChart is still type-checked here.
+export default function LazyColumnChart(props: ColumnChartProps) {
   return <ColumnChart {...props} />;
 }
