@@ -56,7 +56,8 @@ export function spendingBeyondBills(rows: { categoryId: string; total: number }[
   return total / 100;
 }
 
-export const GOAL_STATUSES: GoalStatus[] = ["active", "paused", "completed"];
+/** The statuses a person can set (cancelled is never chosen in the app). `as const` keeps the exact values. */
+export const GOAL_STATUSES = ["active", "paused", "completed"] as const satisfies readonly GoalStatus[];
 
 /** Whole months from `today` until `targetDate` ("YYYY-MM-DD"), at least 1; null if no date or it has passed. */
 export function monthsUntil(today: string, targetDate: string | null | undefined): number | null {

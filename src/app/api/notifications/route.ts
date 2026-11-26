@@ -19,9 +19,9 @@ export async function GET() {
   // The year only when it isn't this year.
   const intlLocale = dateLocale(locale);
   const { timezone } = membership;
-  const yearOf = date => new Intl.DateTimeFormat(intlLocale, { year: "numeric", timeZone: timezone }).format(date);
+  const yearOf = (date: Date) => new Intl.DateTimeFormat(intlLocale, { year: "numeric", timeZone: timezone }).format(date);
   const thisYear = yearOf(new Date());
-  const whenLabel = date =>
+  const whenLabel = (date: Date) =>
     new Intl.DateTimeFormat(intlLocale, {
       day: "numeric",
       month: "short",

@@ -9,13 +9,17 @@ import { getLocale, getTranslations } from "@/i18n/server";
 import { category, expense, householdMember } from "@/db/schema";
 import { requirePermission } from "@/lib/dal";
 import { expenseName, formatMoney, NO_EXPENSE_TITLE, todayIn } from "@/lib/format";
-import { field, parseAmount, parseDate, UUID_PATTERN } from "@/lib/forms";
+import { field, parseAmount, parseDate, UUID_PATTERN, type FieldErrors, type FormState } from "@/lib/forms";
 import { announce, liveMessage } from "@/lib/live";
 import { checkBudgetAlert } from "@/lib/notifications";
 
 const MAX_TITLE_LENGTH = 120;
 
-export async function addExpenseAction(_previousState, formData) {
+export type ExpenseFormState = FormState<
+  Partial<{ title: string; amount: string; categoryId: string; paidByUserId: string; spentOn: string }>
+>;
+
+export async function addExpenseAction(_previousState: ExpenseFormState, formData: FormData): Promise<ExpenseFormState> {
   const context = await requirePermission("finance:write");
   const values = {
     title: field(formData, "title"),
@@ -27,7 +31,7 @@ export async function addExpenseAction(_previousState, formData) {
   const today = todayIn(context.timezone);
   const t = await getTranslations("dashboard");
 
-  const errors = {};
+  const errors: FieldErrors = {};
   // The description is optional: without one the expense goes by its category.
   if (values.title.length > MAX_TITLE_LENGTH) errors.title = t("actions.titleTooLong");
   const amount = parseAmount(values.amount);
@@ -44,7 +48,7 @@ export async function addExpenseAction(_previousState, formData) {
     : [];
   if (!foundCategory) errors.categoryId = t("actions.chooseCategory");
 
-  let paidByUserId = null;
+  let paidByUserId: string | null = null;
   if (values.paidByUserId) {
     const [member] = await db
       .select({ userId: householdMember.userId })
@@ -54,7 +58,8 @@ export async function addExpenseAction(_previousState, formData) {
     else errors.paidByUserId = t("actions.chooseMember");
   }
 
-  if (Object.keys(errors).length) return { errors, values };
+  // The null checks are already covered by `errors`; repeating them lets TypeScript narrow the types.
+  if (Object.keys(errors).length || amount === null || !spentOn || !foundCategory) return { errors, values };
 
   await db.insert(expense).values({
     householdId: context.householdId,
@@ -92,7 +97,7 @@ export async function addExpenseAction(_previousState, formData) {
   };
 }
 
-export async function deleteExpenseAction(_previousState, formData) {
+export async function deleteExpenseAction(_previousState: FormState, formData: FormData): Promise<FormState> {
   const context = await requirePermission("finance:write");
   const t = await getTranslations("dashboard");
   const expenseId = field(formData, "expenseId");

@@ -14,7 +14,9 @@ import { memberIds, notify } from "@/lib/notifications";
 
 export const INVITE_TTL_DAYS = 7;
 /** Roles an invite can give (never "owner"; the database checks that too). */
-export const INVITABLE_ROLES: MemberRole[] = ["editor", "viewer"];
+/** Roles an invite (or a role change) can give; "owner" is never handed out. `as const` keeps the exact values. */
+export const INVITABLE_ROLES = ["editor", "viewer"] as const satisfies readonly MemberRole[];
+export type InvitableRole = (typeof INVITABLE_ROLES)[number];
 
 export const newInviteToken = () => randomBytes(32).toString("base64url");
 export const hashInviteToken = (token: string) => createHash("sha256").update(token).digest("hex");

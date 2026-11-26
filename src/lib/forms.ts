@@ -11,10 +11,24 @@ export const field = (formData: FormData, key: string) => String(formData.get(ke
 /** A password field, untrimmed (spaces are allowed in passwords). */
 export const passwordField = (formData: FormData, key: string) => String(formData.get(key) ?? "");
 
-/** Field errors for a new password + its confirmation ({} if both are fine). */
 /** Error message per form field name, e.g. { email: "Enter a valid email." }. */
 export type FieldErrors = Record<string, string>;
 
+/**
+ * What a Server Action used with useActionState returns to its form (and receives back as the
+ * previous state). Every field is optional: a form shows whichever ones are set.
+ * - error: one message for the whole form; success: a confirmation message
+ * - errors: a message per field; values: what was typed, to refill the form after a round trip
+ * Actions with extra fields (e.g. `sent`) intersect this: `FormState<{ email: string }> & { sent?: boolean }`.
+ */
+export type FormState<Values extends object = Record<string, string>> = {
+  error?: string;
+  success?: string;
+  errors?: FieldErrors;
+  values?: Values;
+};
+
+/** Field errors for a new password + its confirmation ({} if both are fine). */
 export function newPasswordErrors(password: string, confirmPassword: string, passwordKey = "password"): FieldErrors {
   const errors: FieldErrors = {};
   if (password.length < MIN_PASSWORD_LENGTH) errors[passwordKey] = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
@@ -27,6 +41,16 @@ export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0
 
 /** True for a Postgres unique-constraint error (also when wrapped by Drizzle). */
 export const isUniqueViolation = (error: unknown) => (errorCode(errorCause(error)) ?? errorCode(error)) === "23505";
+
+/** True for a Postgres foreign-key error (also when wrapped by Drizzle), e.g. a row still referenced. */
+export const isForeignKeyViolation = (error: unknown) => (errorCode(errorCause(error)) ?? errorCode(error)) === "23503";
+
+/**
+ * Type guard: the value is one of `options`, e.g. a frequency picked in a form's <select>.
+ * After `if (isOneOf(FREQUENCIES, raw))`, TypeScript knows raw is a Frequency, not just a string.
+ */
+export const isOneOf = <T extends string>(options: readonly T[], value: unknown): value is T =>
+  (options as readonly unknown[]).includes(value);
 
 // `catch` gives `unknown`: check it's an object with the property before reading it.
 function errorCode(value: unknown) {

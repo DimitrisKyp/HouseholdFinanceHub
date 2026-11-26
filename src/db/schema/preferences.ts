@@ -1,6 +1,7 @@
 // Per-user settings that don't belong in Better Auth's own `user` table.
 import { check, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { Locale } from "../../i18n/config";
 import { user } from "./auth.js";
 
 export const THEMES = ["system", "dark", "light"] as const;
@@ -13,9 +14,10 @@ export const userPreference = pgTable(
       .primaryKey()
       .references(() => user.id, { onDelete: "cascade" }),
     // "system" follows the device; the theme is also kept in a cookie so every page renders in it.
-    theme: varchar("theme", { length: 10 }).notNull().default("system"),
+    // $type: the check constraints below guarantee these values, so queries get the narrow types.
+    theme: varchar("theme", { length: 10 }).$type<Theme>().notNull().default("system"),
     // The UI language ("en", "el"); null follows the browser. Also kept in a cookie.
-    locale: varchar("locale", { length: 5 }),
+    locale: varchar("locale", { length: 5 }).$type<Locale>(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow()

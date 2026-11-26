@@ -50,7 +50,10 @@ export const requireHousehold = cache(async () => {
   return { user, ...membership };
 });
 
-/** Like requireHousehold, but also enforces a permission from lib/permissions.js. */
+/** What requireHousehold / requirePermission return: the user, their household and their role. */
+export type HouseholdContext = Awaited<ReturnType<typeof requireHousehold>>;
+
+/** Like requireHousehold, but also enforces a permission from lib/permissions.ts. */
 export async function requirePermission(permission: Permission) {
   const context = await requireHousehold();
   if (!can(context.role, permission)) {

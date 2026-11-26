@@ -10,24 +10,30 @@ import { db } from "@/db";
 import { user as userTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getMembership, requireUser } from "@/lib/dal";
-import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, passwordField } from "@/lib/forms";
+import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, passwordField, type FormState } from "@/lib/forms";
 import { createHouseholdWithOwner } from "@/lib/households";
 import { translatedPasswordErrors } from "@/lib/password-errors";
 import { checkEmailPath, safeRedirectPath, verificationCallbackPath } from "@/lib/redirects";
 import { clientIp } from "@/lib/request";
 import { blockedFor, clearAttempts, countAttempt, isTooSoon, LIMITS, tooManyMessage, withMinimumDuration } from "@/lib/throttle";
 import { getLocale, getTranslations, rememberLocale } from "@/i18n/server";
+import type { Translator } from "@/i18n/translate";
 import { rememberTheme, saveLocale, savedLocale, savedTheme } from "@/lib/preferences";
 
 const MAX_NAME_LENGTH = 100;
 
-function validateHouseholdName(name, t) {
+export type SignUpState = FormState<{ name: string; email: string; householdName: string }>;
+export type SignInState = FormState<{ email: string }>;
+export type ResendVerificationState = FormState & { sent?: boolean };
+export type CreateHouseholdState = FormState<{ householdName: string }>;
+
+function validateHouseholdName(name: string, t: Translator) {
   if (!name) return t("errors.householdNameMissing");
   if (name.length > MAX_NAME_LENGTH) return t("errors.householdNameTooLong", { max: MAX_NAME_LENGTH });
   return null;
 }
 
-export async function signUpAction(_previousState, formData) {
+export async function signUpAction(_previousState: SignUpState, formData: FormData): Promise<SignUpState> {
   const t = await getTranslations("auth");
   const values = {
     name: field(formData, "name"),
@@ -85,7 +91,7 @@ export async function signUpAction(_previousState, formData) {
   redirect(checkEmailPath(values.email));
 }
 
-export async function signInAction(_previousState, formData) {
+export async function signInAction(_previousState: SignInState, formData: FormData): Promise<SignInState> {
   const t = await getTranslations("auth");
   const values = { email: field(formData, "email").toLowerCase() };
   const password = passwordField(formData, "password");
@@ -133,7 +139,10 @@ export async function signInAction(_previousState, formData) {
   redirect(next);
 }
 
-export async function resendVerificationAction(_previousState, formData) {
+export async function resendVerificationAction(
+  _previousState: ResendVerificationState,
+  formData: FormData,
+): Promise<ResendVerificationState> {
   const t = await getTranslations("auth");
   const email = field(formData, "email").toLowerCase();
   if (!EMAIL_PATTERN.test(email)) return { error: t("errors.emailInvalid") };
@@ -159,7 +168,7 @@ export async function signOutAction() {
   redirect("/sign-in");
 }
 
-export async function createHouseholdAction(_previousState, formData) {
+export async function createHouseholdAction(_previousState: CreateHouseholdState, formData: FormData): Promise<CreateHouseholdState> {
   const user = await requireUser();
   if (await getMembership(user.id)) redirect("/");
 

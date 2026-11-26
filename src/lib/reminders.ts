@@ -90,8 +90,11 @@ export function nextDueDate({
  * A repeating task's next due date once it's done: the first one after its current due date, or
  * after today if it was done late (a daily task done three days late is next due tomorrow).
  */
-export function nextRepeatDate(dueOn: string, repeat: TaskRepeat, today: string) {
-  return nextDueDate({ dueOn, frequency: repeat, paidThrough: dueOn > today ? dueOn : today });
+export function nextRepeatDate(dueOn: string, repeat: TaskRepeat, today: string): string {
+  const next = nextDueDate({ dueOn, frequency: repeat, paidThrough: dueOn > today ? dueOn : today });
+  // nextDueDate only gives null without a due date or for dates thousands of periods ahead; neither happens here.
+  if (!next) throw new Error(`No next date for a ${repeat} task due ${dueOn}`);
+  return next;
 }
 
 /**

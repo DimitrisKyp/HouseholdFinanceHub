@@ -7,11 +7,21 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { householdMember, invite, user } from "@/db/schema";
+import { householdMember, invite, user, type MemberRole } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { requirePermission, requireUser } from "@/lib/dal";
+import { requirePermission, requireUser, type HouseholdContext } from "@/lib/dal";
 import { sendInviteEmail, siteUrl } from "@/lib/email";
-import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, isUniqueViolation, passwordField, UUID_PATTERN } from "@/lib/forms";
+import {
+  EMAIL_COOLDOWN_MS,
+  EMAIL_PATTERN,
+  field,
+  isOneOf,
+  isUniqueViolation,
+  passwordField,
+  UUID_PATTERN,
+  type FieldErrors,
+  type FormState,
+} from "@/lib/forms";
 import { translatedPasswordErrors } from "@/lib/password-errors";
 import {
   acceptInviteAsExistingUser,
@@ -31,9 +41,12 @@ import { isTooSoon } from "@/lib/throttle";
 
 const MAX_NAME_LENGTH = 100;
 
+export type InviteFormState = FormState<{ email: string; role: string }>;
+export type AcceptInviteFormState = FormState<{ name: string }>;
+
 // Creates the invite (or refreshes the open one for that email with a new link and expiry)
 // and emails it. Returns a message for the form.
-async function issueInvite(context, email, role) {
+async function issueInvite(context: HouseholdContext, email: string, role: MemberRole): Promise<FormState> {
   const t = await getTranslations("members");
   if (isTooSoon(`invite:${context.householdId}:${email}`, EMAIL_COOLDOWN_MS)) {
     return { error: t("errors.inviteTooSoon") };
@@ -82,15 +95,17 @@ async function issueInvite(context, email, role) {
   return { success: t("success.inviteSent", { email }) };
 }
 
-export async function inviteMemberAction(_previousState, formData) {
+export async function inviteMemberAction(_previousState: InviteFormState, formData: FormData): Promise<InviteFormState> {
   const context = await requirePermission("members:manage");
   const t = await getTranslations("members");
   const values = { email: field(formData, "email").toLowerCase(), role: field(formData, "role") };
 
-  const errors = {};
+  const errors: FieldErrors = {};
   if (!EMAIL_PATTERN.test(values.email) || values.email.length > 255) errors.email = t("errors.invalidEmail");
-  if (!INVITABLE_ROLES.includes(values.role)) errors.role = t("errors.chooseRole");
-  if (Object.keys(errors).length) return { errors, values };
+  const role = isOneOf(INVITABLE_ROLES, values.role) ? values.role : null;
+  if (!role) errors.role = t("errors.chooseRole");
+  // The null check is already covered by `errors`; repeating it lets TypeScript narrow the type.
+  if (Object.keys(errors).length || !role) return { errors, values };
 
   const [alreadyMember] = await db
     .select({ id: householdMember.id })
@@ -99,13 +114,13 @@ export async function inviteMemberAction(_previousState, formData) {
     .where(and(eq(householdMember.householdId, context.householdId), sql`lower(${user.email}) = ${values.email}`));
   if (alreadyMember) return { values, errors: { email: t("errors.alreadyMember") } };
 
-  const result = await issueInvite(context, values.email, values.role);
+  const result = await issueInvite(context, values.email, role);
   // Clear the email after a success; keep what was typed after an error.
   return result.success ? { ...result, values: { email: "", role: values.role } } : { ...result, values };
 }
 
 // Loads an open invite of the current household by id (from a hidden form field).
-async function findOpenInvite(householdId, inviteId) {
+async function findOpenInvite(householdId: string, inviteId: string) {
   if (!UUID_PATTERN.test(inviteId)) return null;
   const [row] = await db
     .select({ id: invite.id, email: invite.email, role: invite.role })
@@ -114,14 +129,14 @@ async function findOpenInvite(householdId, inviteId) {
   return row ?? null;
 }
 
-export async function resendInviteAction(_previousState, formData) {
+export async function resendInviteAction(_previousState: FormState, formData: FormData): Promise<FormState> {
   const context = await requirePermission("members:manage");
   const open = await findOpenInvite(context.householdId, field(formData, "inviteId"));
   if (!open) return { error: (await getTranslations("members"))("errors.inviteGone") };
   return issueInvite(context, open.email.toLowerCase(), open.role);
 }
 
-export async function revokeInviteAction(_previousState, formData) {
+export async function revokeInviteAction(_previousState: FormState, formData: FormData): Promise<FormState> {
   const context = await requirePermission("members:manage");
   const open = await findOpenInvite(context.householdId, field(formData, "inviteId"));
   if (!open) return { error: (await getTranslations("members"))("errors.inviteGone") };
@@ -131,15 +146,15 @@ export async function revokeInviteAction(_previousState, formData) {
 }
 
 // Member rows are identified by household_member.id; the owner's row can never be changed here.
-const nonOwnerMemberOf = (householdId, memberId) =>
+const nonOwnerMemberOf = (householdId: string, memberId: string) =>
   and(eq(householdMember.id, memberId), eq(householdMember.householdId, householdId), ne(householdMember.role, "owner"));
 
-export async function changeMemberRoleAction(_previousState, formData) {
+export async function changeMemberRoleAction(_previousState: FormState, formData: FormData): Promise<FormState> {
   const context = await requirePermission("members:manage");
   const memberId = field(formData, "memberId");
   const role = field(formData, "role");
   const [t, common] = await Promise.all([getTranslations("members"), getTranslations("common")]);
-  if (!INVITABLE_ROLES.includes(role) || !UUID_PATTERN.test(memberId)) return { error: t("errors.chooseRole") };
+  if (!isOneOf(INVITABLE_ROLES, role) || !UUID_PATTERN.test(memberId)) return { error: t("errors.chooseRole") };
 
   const updated = await db
     .update(householdMember)
@@ -159,7 +174,7 @@ export async function changeMemberRoleAction(_previousState, formData) {
   return { success: t("success.roleChanged", { role: common(`roles.${role}`) }) };
 }
 
-export async function removeMemberAction(_previousState, formData) {
+export async function removeMemberAction(_previousState: FormState, formData: FormData): Promise<FormState> {
   const context = await requirePermission("members:manage");
   const memberId = field(formData, "memberId");
   const t = await getTranslations("members");
@@ -178,7 +193,10 @@ export async function removeMemberAction(_previousState, formData) {
 }
 
 /** Invite link, new person: choose a name and password, join, and get signed in. */
-export async function acceptInviteWithNewAccountAction(_previousState, formData) {
+export async function acceptInviteWithNewAccountAction(
+  _previousState: AcceptInviteFormState,
+  formData: FormData,
+): Promise<AcceptInviteFormState> {
   const token = field(formData, "token");
   const values = { name: field(formData, "name") };
   const password = passwordField(formData, "password");
@@ -189,7 +207,7 @@ export async function acceptInviteWithNewAccountAction(_previousState, formData)
   else if (values.name.length > MAX_NAME_LENGTH) errors.name = t("errors.nameTooLong");
   if (Object.keys(errors).length) return { errors, values };
 
-  let email;
+  let email: string;
   try {
     ({ email } = await acceptInviteAsNewUser({ token, name: values.name, password }));
   } catch (error) {
@@ -213,7 +231,7 @@ export async function acceptInviteWithNewAccountAction(_previousState, formData)
 }
 
 /** Invite link, already signed in with the invited email. */
-export async function acceptInviteAction(_previousState, formData) {
+export async function acceptInviteAction(_previousState: FormState, formData: FormData): Promise<FormState> {
   const signedInUser = await requireUser();
   try {
     await acceptInviteAsExistingUser({ token: field(formData, "token"), userId: signedInUser.id, email: signedInUser.email });

@@ -11,17 +11,24 @@ import { isLocale } from "@/i18n/config";
 import { getTranslations, rememberLocale } from "@/i18n/server";
 import { auth } from "@/lib/auth";
 import { getMembership, getSession, requirePermission, requireUser } from "@/lib/dal";
-import { field } from "@/lib/forms";
+import { field, type FieldErrors, type FormState } from "@/lib/forms";
 import { liveMessage, publish } from "@/lib/live";
-import { CURRENCIES, rememberTheme, saveLocale, saveTheme, THEMES, timezones } from "@/lib/preferences";
+import { CURRENCIES, isTheme, rememberTheme, saveLocale, saveTheme, timezones, type Theme } from "@/lib/preferences";
+import type { Locale } from "@/i18n/config";
 
 const MAX_NAME_LENGTH = 100;
 
-export async function updateThemeAction(_previousState, formData) {
+export type ThemeFormState = FormState & { theme?: Theme };
+export type LanguageFormState = FormState & { locale?: Locale };
+export type ProfileFormState = FormState<{ name: string }>;
+export type HouseholdSettings = { name: string; currency: string; timezone: string };
+export type HouseholdFormState = FormState<HouseholdSettings>;
+
+export async function updateThemeAction(_previousState: ThemeFormState, formData: FormData): Promise<ThemeFormState> {
   const user = await requireUser();
   const t = await getTranslations("account");
   const theme = field(formData, "theme");
-  if (!THEMES.includes(theme)) return { error: t("appearance.chooseTheme") };
+  if (!isTheme(theme)) return { error: t("appearance.chooseTheme") };
   await saveTheme(user.id, theme);
   await rememberTheme(theme);
   revalidatePath("/", "layout");
@@ -29,7 +36,7 @@ export async function updateThemeAction(_previousState, formData) {
 }
 
 /** Account page: saves the language to the account (so other devices get it at sign-in) and this browser. */
-export async function updateLanguageAction(_previousState, formData) {
+export async function updateLanguageAction(_previousState: LanguageFormState, formData: FormData): Promise<LanguageFormState> {
   const user = await requireUser();
   const locale = field(formData, "locale");
   if (!isLocale(locale)) return { error: (await getTranslations("account"))("appearance.chooseLanguage") };
@@ -41,7 +48,7 @@ export async function updateLanguageAction(_previousState, formData) {
 }
 
 /** Language links on the sign-in pages: this browser only, plus the account if someone is signed in. */
-export async function chooseLanguageAction(formData) {
+export async function chooseLanguageAction(formData: FormData) {
   const locale = field(formData, "locale");
   if (!isLocale(locale)) return;
   await rememberLocale(locale);
@@ -50,7 +57,7 @@ export async function chooseLanguageAction(formData) {
   revalidatePath("/", "layout");
 }
 
-export async function updateProfileAction(_previousState, formData) {
+export async function updateProfileAction(_previousState: ProfileFormState, formData: FormData): Promise<ProfileFormState> {
   const user = await requireUser();
   const t = await getTranslations("account");
   const values = { name: field(formData, "name") };
@@ -65,12 +72,16 @@ export async function updateProfileAction(_previousState, formData) {
   return { success: t("profile.saved"), values };
 }
 
-export async function updateHouseholdAction(_previousState, formData) {
+export async function updateHouseholdAction(_previousState: HouseholdFormState, formData: FormData): Promise<HouseholdFormState> {
   const context = await requirePermission("household:manage");
   const t = await getTranslations("account");
-  const values = { name: field(formData, "name"), currency: field(formData, "currency"), timezone: field(formData, "timezone") };
+  const values: HouseholdSettings = {
+    name: field(formData, "name"),
+    currency: field(formData, "currency"),
+    timezone: field(formData, "timezone"),
+  };
 
-  const errors = {};
+  const errors: FieldErrors = {};
   if (!values.name) errors.name = t("household.nameMissing");
   else if (values.name.length > MAX_NAME_LENGTH) errors.name = t("household.nameTooLong");
   if (!CURRENCIES.includes(values.currency)) errors.currency = t("household.chooseCurrency");

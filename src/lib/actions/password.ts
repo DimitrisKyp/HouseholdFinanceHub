@@ -8,13 +8,20 @@ import { auth } from "@/lib/auth";
 import { requireUser } from "@/lib/dal";
 import { sendPasswordChangedEmail, siteUrl } from "@/lib/email";
 import { getTranslations } from "@/i18n/server";
-import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, passwordField } from "@/lib/forms";
+import { EMAIL_COOLDOWN_MS, EMAIL_PATTERN, field, passwordField, type FormState } from "@/lib/forms";
 import { translatedPasswordErrors } from "@/lib/password-errors";
 import { clientIp } from "@/lib/request";
 import { blockedFor, clearAttempts, countAttempt, isTooSoon, LIMITS, tooManyMessage, withMinimumDuration } from "@/lib/throttle";
 
+export type PasswordResetRequestState = FormState<{ email: string }> & { sent?: boolean };
+export type ResetPasswordState = FormState & { linkInvalid?: boolean };
+export type ChangePasswordState = FormState & { signOutOthers?: boolean };
+
 /** "Forgot password": emails a reset link if the account exists. Always answers the same way. */
-export async function requestPasswordResetAction(_previousState, formData) {
+export async function requestPasswordResetAction(
+  _previousState: PasswordResetRequestState,
+  formData: FormData,
+): Promise<PasswordResetRequestState> {
   const t = await getTranslations("auth");
   const values = { email: field(formData, "email").toLowerCase() };
   if (!EMAIL_PATTERN.test(values.email)) {
@@ -40,7 +47,7 @@ export async function requestPasswordResetAction(_previousState, formData) {
 }
 
 /** Sets a new password using the token from the reset link. */
-export async function resetPasswordAction(_previousState, formData) {
+export async function resetPasswordAction(_previousState: ResetPasswordState, formData: FormData): Promise<ResetPasswordState> {
   const t = await getTranslations("auth");
   const token = field(formData, "token");
   const password = passwordField(formData, "password");
@@ -68,7 +75,7 @@ export async function resetPasswordAction(_previousState, formData) {
 }
 
 /** Signed-in password change. Needs the current password. */
-export async function changePasswordAction(_previousState, formData) {
+export async function changePasswordAction(_previousState: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
   const user = await requireUser();
   const t = await getTranslations("auth");
   const currentPassword = passwordField(formData, "currentPassword");
