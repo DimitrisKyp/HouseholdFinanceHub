@@ -2,12 +2,17 @@
 
 import { useActionState } from "react";
 import { changeMemberRoleAction, removeMemberAction } from "@/lib/actions/members";
+import type { FormState } from "@/lib/forms";
+import type { listMembers } from "@/lib/invites";
 import { useTranslations } from "@/i18n/client";
+
+/** A member as the members page passes it: a row from listMembers, with the join date as a label. */
+export type MemberListItem = Omit<Awaited<ReturnType<typeof listMembers>>[number], "joinedAt"> & { joinedLabel: string };
 
 const selectClass =
   "rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 disabled:opacity-60";
 
-function Message({ state }) {
+function Message({ state }: { state: FormState }) {
   if (state.error)
     return (
       <p role="alert" className="mt-2 text-xs text-rose-300">
@@ -25,7 +30,15 @@ function Message({ state }) {
 
 // Removing is handled by the list, not the row: the row disappears once it works, and the
 // result ("Sam was removed from the household.") has to stay on screen.
-function MemberRow({ member, canManage, isYou, removeAction, removePending }) {
+type MemberRowProps = {
+  member: MemberListItem;
+  canManage: boolean;
+  isYou: boolean;
+  removeAction: (formData: FormData) => void;
+  removePending: boolean;
+};
+
+function MemberRow({ member, canManage, isYou, removeAction, removePending }: MemberRowProps) {
   const [roleState, roleAction, rolePending] = useActionState(changeMemberRoleAction, {});
   const editable = canManage && member.role !== "owner";
   const t = useTranslations("members");
@@ -92,7 +105,13 @@ function MemberRow({ member, canManage, isYou, removeAction, removePending }) {
   );
 }
 
-export default function MemberList({ members, canManage, currentUserId }) {
+type MemberListProps = {
+  members: MemberListItem[];
+  canManage: boolean;
+  currentUserId: string;
+};
+
+export default function MemberList({ members, canManage, currentUserId }: MemberListProps) {
   const [removeState, removeAction, removePending] = useActionState(removeMemberAction, {});
 
   return (

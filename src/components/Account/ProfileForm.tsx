@@ -6,7 +6,7 @@ import TextField, { FormError, FormSuccess } from "@/components/ui/Field";
 import { useTranslations } from "@/i18n/client";
 import { updateProfileAction } from "@/lib/actions/account";
 
-export default function ProfileForm({ name, email }) {
+export default function ProfileForm({ name, email }: { name: string; email: string }) {
   const [state, formAction, pending] = useActionState(updateProfileAction, { values: { name } });
   const t = useTranslations("account");
   const common = useTranslations("common");

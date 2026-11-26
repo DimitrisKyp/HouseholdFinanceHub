@@ -7,7 +7,7 @@ import { acceptInviteAction, acceptInviteWithNewAccountAction } from "@/lib/acti
 import { useTranslations } from "@/i18n/client";
 
 /** New person: the invited email is fixed; they pick a name and password. */
-export function NewAccountInviteForm({ token, email }) {
+export function NewAccountInviteForm({ token, email }: { token: string; email: string }) {
   const [state, formAction, pending] = useActionState(acceptInviteWithNewAccountAction, {});
   const t = useTranslations("auth");
 
@@ -57,7 +57,7 @@ export function NewAccountInviteForm({ token, email }) {
 }
 
 /** Already signed in with the invited email: one click to join. */
-export function AcceptInviteButton({ token, householdName }) {
+export function AcceptInviteButton({ token, householdName }: { token: string; householdName: string }) {
   const [state, formAction, pending] = useActionState(acceptInviteAction, {});
   const t = useTranslations("auth");
 

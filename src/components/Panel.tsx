@@ -1,7 +1,16 @@
 // A titled Card: the building block of every page.
+import type { ReactNode } from "react";
 import Card from "@/components/ui/Card";
 
-export default function Panel({ title, subtitle, children, className = "", contentClassName = "" }) {
+type PanelProps = {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+};
+
+export default function Panel({ title, subtitle, children, className = "", contentClassName = "" }: PanelProps) {
   return (
     <Card className={className}>
       <div className="mb-3">

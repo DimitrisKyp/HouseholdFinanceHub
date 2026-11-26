@@ -1,3 +1,5 @@
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
+
 // Buttons in the app's variants. buttonClasses() styles a <Link> or <a> the same way.
 const VARIANTS = {
   primary: "bg-accent text-on-accent hover:bg-accent-hover",
@@ -12,7 +14,18 @@ const SIZES = {
   pill: "rounded-full px-4 py-2 text-sm",
 };
 
-export function buttonClasses({ variant = "primary", size = "md", block = false, className = "" } = {}) {
+export type ButtonVariant = keyof typeof VARIANTS;
+export type ButtonSize = keyof typeof SIZES;
+
+/** The styling options shared by Button, SubmitButton and buttonClasses(). */
+export type ButtonStyle = {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  block?: boolean;
+  className?: string;
+};
+
+export function buttonClasses({ variant = "primary", size = "md", block = false, className = "" }: ButtonStyle = {}) {
   return [
     "inline-flex items-center justify-center text-center font-medium transition disabled:cursor-wait disabled:opacity-60",
     VARIANTS[variant],
@@ -24,12 +37,21 @@ export function buttonClasses({ variant = "primary", size = "md", block = false,
     .join(" ");
 }
 
-export default function Button({ variant, size, block, className, type = "button", ...props }) {
+/** Every native <button> prop (onClick, disabled, aria-*, …) plus the style options. */
+export type ButtonProps = ComponentPropsWithoutRef<"button"> & ButtonStyle;
+
+export default function Button({ variant, size, block, className, type = "button", ...props }: ButtonProps) {
   return <button type={type} className={buttonClasses({ variant, size, block, className })} {...props} />;
 }
 
+type SubmitButtonProps = ButtonStyle & {
+  pending: boolean;
+  pendingText: ReactNode;
+  children: ReactNode;
+};
+
 /** A form's main button: disabled with a "…ing" label while the form is being sent. */
-export function SubmitButton({ pending, pendingText, children, variant, size, block = true, className }) {
+export function SubmitButton({ pending, pendingText, children, variant, size, block = true, className }: SubmitButtonProps) {
   return (
     <Button type="submit" disabled={pending} variant={variant} size={size} block={block} className={className}>
       {pending ? pendingText : children}

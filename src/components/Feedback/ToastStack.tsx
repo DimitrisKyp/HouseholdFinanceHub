@@ -1,8 +1,18 @@
 // Short messages in the corner of the screen, announced politely to screen readers.
 // Presentational: the caller owns the list and decides when messages go away.
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { useTranslations } from "@/i18n/client";
 
-export default function ToastStack({ toasts, onDismiss, ...rest }) {
+/** A toast ready to show: its text is already translated. */
+export type ShownToast = { id: number; message: ReactNode };
+
+/** The list and a dismiss callback, plus any <div> attribute for the container (e.g. data-live). */
+type ToastStackProps = Omit<ComponentPropsWithoutRef<"div">, "children"> & {
+  toasts: ShownToast[];
+  onDismiss: (id: number) => void;
+};
+
+export default function ToastStack({ toasts, onDismiss, ...rest }: ToastStackProps) {
   const t = useTranslations("common");
   return (
     <div

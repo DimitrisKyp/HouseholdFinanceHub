@@ -8,7 +8,14 @@ import { buttonClasses } from "@/components/ui/Button";
 import { useTranslations } from "@/i18n/client";
 import { reportClientError } from "@/lib/telemetry-client";
 
-export default function ErrorState({ error, onRetry, homeHref = "/" }) {
+type ErrorStateProps = {
+  // What Next.js passes to error.js: an Error, plus a `digest` that matches the server log.
+  error: Error & { digest?: string };
+  onRetry: () => void;
+  homeHref?: string;
+};
+
+export default function ErrorState({ error, onRetry, homeHref = "/" }: ErrorStateProps) {
   const t = useTranslations("errors");
   useEffect(() => {
     console.error(error);

@@ -1,10 +1,22 @@
 // Form fields and form messages, wired up for screen readers (labels, aria-invalid, aria-describedby).
+import type { ComponentPropsWithoutRef, ReactNode, Ref } from "react";
+import type { FormState } from "@/lib/forms";
+
+/** Every native <input> prop, plus a label and the messages shown under it. `id` is required: it links them. */
+export type TextFieldProps = Omit<ComponentPropsWithoutRef<"input">, "id"> & {
+  id: string;
+  label: ReactNode;
+  error?: string;
+  hint?: ReactNode;
+  trailing?: ReactNode;
+  inputRef?: Ref<HTMLInputElement>;
+};
 
 /**
  * Labelled input with an optional hint and an inline error message. `trailing` is a small control
  * shown inside the input's right edge (e.g. PasswordField's show/hide button).
  */
-export default function TextField({ id, label, error, hint, trailing, inputRef, ...inputProps }) {
+export default function TextField({ id, label, error, hint, trailing, inputRef, ...inputProps }: TextFieldProps) {
   const describedBy = [error && `${id}-error`, hint && `${id}-hint`].filter(Boolean).join(" ") || undefined;
 
   const input = (
@@ -48,7 +60,9 @@ export default function TextField({ id, label, error, hint, trailing, inputRef, 
   );
 }
 
-export function FormError({ message }) {
+type MessageProps = { message?: string | null };
+
+export function FormError({ message }: MessageProps) {
   if (!message) return null;
   return (
     <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
@@ -57,7 +71,7 @@ export function FormError({ message }) {
   );
 }
 
-export function FormSuccess({ message }) {
+export function FormSuccess({ message }: MessageProps) {
   if (!message) return null;
   return (
     <p role="status" className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
@@ -66,8 +80,14 @@ export function FormSuccess({ message }) {
   );
 }
 
+type SelectFieldProps = Omit<ComponentPropsWithoutRef<"select">, "id"> & {
+  id: string;
+  label: ReactNode;
+  error?: string;
+};
+
 /** Labelled <select> with an inline error message, styled like TextField. */
-export function SelectField({ id, label, error, children, ...selectProps }) {
+export function SelectField({ id, label, error, children, ...selectProps }: SelectFieldProps) {
   return (
     <div>
       <label htmlFor={id} className="mb-1 block text-sm text-slate-300">
@@ -94,8 +114,11 @@ export function SelectField({ id, label, error, children, ...selectProps }) {
   );
 }
 
-/** One-line result message under a small inline form (role change, delete, save). */
-export function InlineMessage({ state }) {
+/**
+ * One-line result message under a small inline form (role change, delete, save).
+ * Takes any action state: `Pick` keeps only the two fields it reads, so every FormState fits.
+ */
+export function InlineMessage({ state }: { state: Pick<FormState, "error" | "success"> | null | undefined }) {
   if (state?.error)
     return (
       <p role="alert" className="mt-2 text-xs text-rose-300">

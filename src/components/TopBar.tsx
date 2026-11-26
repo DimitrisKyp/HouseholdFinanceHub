@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import NotificationsMenu from "@/components/Notifications/NotificationsMenu";
 import { signOutAction } from "@/lib/actions/auth";
+import type { MemberRole } from "@/db/schema";
 import { useTranslations } from "@/i18n/client";
 
-function InitialsAvatar({ name, avatarUrl }) {
+function InitialsAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
   const initials = name
     .split(" ")
     .map(part => part[0])
@@ -26,7 +27,15 @@ function InitialsAvatar({ name, avatarUrl }) {
 }
 
 // Labels (balance, date) are computed on the server in the household's currency and timezone.
-export default function TopBar({ balanceLabel, balanceNegative, dateLabel, currentUser, unreadCount = 0 }) {
+type TopBarProps = {
+  balanceLabel: string;
+  balanceNegative: boolean;
+  dateLabel: string;
+  currentUser: { name: string; avatarUrl: string | null; role: MemberRole; householdName: string };
+  unreadCount?: number;
+};
+
+export default function TopBar({ balanceLabel, balanceNegative, dateLabel, currentUser, unreadCount = 0 }: TopBarProps) {
   const t = useTranslations("common");
   return (
     <div className="flex items-center justify-between gap-4">

@@ -8,7 +8,7 @@ import { resetPasswordAction } from "@/lib/actions/password";
 import { buttonClasses } from "@/components/ui/Button";
 import { useTranslations } from "@/i18n/client";
 
-export default function ResetPasswordForm({ token }) {
+export default function ResetPasswordForm({ token }: { token: string }) {
   const [state, formAction, pending] = useActionState(resetPasswordAction, {});
   const t = useTranslations("auth");
   const common = useTranslations("common");

@@ -3,7 +3,7 @@
 // A modal built on the native <dialog> (showModal): the browser traps focus inside it, closes it
 // on Escape, puts it above everything and makes the rest of the page inert. A click on the
 // backdrop closes it too. placement "sheet" slides in from the right; "center" is a dialog box.
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useTranslations } from "@/i18n/client";
 
 const PLACEMENT = {
@@ -12,8 +12,18 @@ const PLACEMENT = {
   center: "m-auto w-[min(28rem,calc(100vw-2rem))] rounded-card border",
 };
 
-export default function Modal({ open, onClose, title, description, placement = "sheet", children }) {
-  const dialog = useRef(null);
+type ModalProps = {
+  open: boolean;
+  onClose: () => void;
+  title: ReactNode;
+  description?: ReactNode;
+  placement?: keyof typeof PLACEMENT;
+  children: ReactNode;
+};
+
+export default function Modal({ open, onClose, title, description, placement = "sheet", children }: ModalProps) {
+  // A DOM ref starts as null and React fills it in after the first render.
+  const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
   const t = useTranslations("common");

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useDismiss } from "@/hooks/useDismiss";
 import { useTranslations } from "@/i18n/client";
 
-const navItems = [
+// labelKey is a key under common.nav.* in the messages.
+const navItems: { href: string; labelKey: string; icon: ReactNode }[] = [
   {
     href: "/",
     labelKey: "dashboard",
@@ -105,9 +106,9 @@ const navItems = [
   },
 ];
 
-const isActivePath = (pathname, href) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+const isActivePath = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
-function NavIcon({ icon, active }) {
+function NavIcon({ icon, active }: { icon: ReactNode; active: boolean }) {
   return (
     <span
       className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-all ${
@@ -166,9 +167,9 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(pathname);
   const drawerId = useId();
-  const button = useRef(null);
-  const panel = useRef(null);
-  const closeButton = useRef(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
   if (open && openedAt !== pathname) setOpen(false);
 
   const close = useCallback(() => {
@@ -180,9 +181,10 @@ export function MobileNav() {
   useEffect(() => {
     if (!open) return undefined;
     closeButton.current?.focus();
-    const onKey = event => {
+    const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Tab" || !panel.current) return;
-      const focusable = panel.current.querySelectorAll("a[href], button");
+      // The generic says what the selector finds, so first/last have .focus().
+      const focusable = panel.current.querySelectorAll<HTMLElement>("a[href], button");
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       if (event.shiftKey && document.activeElement === first) {

@@ -8,7 +8,8 @@ import PasswordField from "@/components/ui/PasswordField";
 import { signInAction } from "@/lib/actions/auth";
 import { useTranslations } from "@/i18n/client";
 
-export default function SignInForm({ next }) {
+/** `next`: where to go after signing in (a path inside the app). */
+export default function SignInForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState(signInAction, {});
   const t = useTranslations("auth");
 

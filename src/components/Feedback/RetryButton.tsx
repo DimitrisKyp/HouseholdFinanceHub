@@ -2,11 +2,11 @@
 
 // Loads the page's server data again (e.g. after another service failed), showing progress.
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useTransition, type ReactNode } from "react";
 import { buttonClasses } from "@/components/ui/Button";
 import { useTranslations } from "@/i18n/client";
 
-export default function RetryButton({ children }) {
+export default function RetryButton({ children }: { children?: ReactNode }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const t = useTranslations("errors");

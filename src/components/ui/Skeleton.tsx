@@ -1,11 +1,17 @@
 // Placeholder shapes while something loads. Hidden from screen readers; the surrounding
 // region says what's loading instead (aria-busy and a visually hidden label).
-export default function Skeleton({ className = "" }) {
+export default function Skeleton({ className = "" }: { className?: string }) {
   return <span aria-hidden="true" className={`block animate-pulse rounded-lg bg-white/10 ${className}`} />;
 }
 
+type SkeletonBlockProps = {
+  label?: string;
+  lines?: number;
+  className?: string;
+};
+
 /** A labelled loading region with a few skeleton lines. */
-export function SkeletonBlock({ label = "Loading…", lines = 3, className = "" }) {
+export function SkeletonBlock({ label = "Loading…", lines = 3, className = "" }: SkeletonBlockProps) {
   return (
     <div role="status" aria-busy="true" className={`space-y-2 ${className}`}>
       <span className="sr-only">{label}</span>

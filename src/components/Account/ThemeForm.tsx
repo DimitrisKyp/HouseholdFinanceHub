@@ -1,20 +1,26 @@
 "use client";
 
-// Language choice. Saved to the account (and a cookie); the page then re-renders in the new language.
+// Theme choice. Applies at once in this browser, then is saved to the account (and a cookie).
 import { useActionState, useRef } from "react";
 import { InlineMessage } from "@/components/ui/Field";
+import type { Theme } from "@/db/schema";
 import { useTranslations } from "@/i18n/client";
-import { updateLanguageAction } from "@/lib/actions/account";
+import { updateThemeAction } from "@/lib/actions/account";
 
-export default function LanguageForm({ locale, options }) {
-  const [state, formAction, pending] = useActionState(updateLanguageAction, { locale });
-  const form = useRef(null);
+type ThemeFormProps = {
+  theme: Theme;
+  options: { value: Theme; label: string }[];
+};
+
+export default function ThemeForm({ theme, options }: ThemeFormProps) {
+  const [state, formAction, pending] = useActionState(updateThemeAction, { theme });
+  const form = useRef<HTMLFormElement>(null);
   const t = useTranslations("account");
 
   return (
     <form ref={form} action={formAction}>
       <fieldset disabled={pending}>
-        <legend className="mb-2 text-sm text-slate-300">{t("appearance.language")}</legend>
+        <legend className="mb-2 text-sm text-slate-300">{t("appearance.theme")}</legend>
         <div className="flex flex-wrap gap-2">
           {options.map(option => (
             <label
@@ -23,14 +29,16 @@ export default function LanguageForm({ locale, options }) {
             >
               <input
                 type="radio"
-                name="locale"
+                name="theme"
                 value={option.value}
-                defaultChecked={option.value === locale}
-                onChange={() => form.current.requestSubmit()}
+                defaultChecked={option.value === theme}
+                onChange={() => {
+                  document.documentElement.dataset.theme = option.value;
+                  form.current?.requestSubmit();
+                }}
                 className="accent-cyan-500"
               />
-              {/* Each language is named in itself; lang lets screen readers pronounce it right. */}
-              <span lang={option.value}>{option.label}</span>
+              {option.label}
             </label>
           ))}
         </div>

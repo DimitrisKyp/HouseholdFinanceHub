@@ -7,8 +7,8 @@ import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { signalUnreadChanged } from "@/lib/unread-signal";
 
 describe("useDismiss", () => {
-  function Menu({ open, onDismiss }) {
-    const ref = useRef(null);
+  function Menu({ open, onDismiss }: { open: boolean; onDismiss: () => void }) {
+    const ref = useRef<HTMLDivElement>(null);
     useDismiss(open, onDismiss, { containerRef: ref });
     return (
       <div>

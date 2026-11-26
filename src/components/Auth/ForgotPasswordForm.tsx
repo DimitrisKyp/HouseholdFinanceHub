@@ -8,7 +8,7 @@ import { requestPasswordResetAction } from "@/lib/actions/password";
 import { rich } from "@/components/Auth/rich";
 import { useTranslations } from "@/i18n/client";
 
-export default function ForgotPasswordForm({ email }) {
+export default function ForgotPasswordForm({ email }: { email: string }) {
   const [state, formAction, pending] = useActionState(requestPasswordResetAction, {});
   const t = useTranslations("auth");
 
@@ -17,7 +17,7 @@ export default function ForgotPasswordForm({ email }) {
       <FormError message={state.error} />
       {state.sent ? (
         <p role="status" className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
-          {rich(t("forgot.sent"), { email: <span className="font-medium">{state.values.email}</span> })}
+          {rich(t("forgot.sent"), { email: <span className="font-medium">{state.values?.email}</span> })}
         </p>
       ) : null}
       <TextField

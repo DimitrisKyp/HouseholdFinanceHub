@@ -8,7 +8,7 @@ import { useTranslations } from "@/i18n/client";
 
 // "Send the confirmation email again". If the address is known, it's a hidden field;
 // otherwise the user types it in.
-export default function ResendVerificationForm({ email }) {
+export default function ResendVerificationForm({ email }: { email?: string }) {
   const [state, formAction, pending] = useActionState(resendVerificationAction, {});
   const t = useTranslations("auth");
 

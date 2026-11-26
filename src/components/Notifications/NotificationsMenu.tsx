@@ -4,8 +4,8 @@
 // each time it opens (and again when a new one arrives while it's open), so it's never stale.
 // Opening a notification marks it read and goes to what it's about, if it's about a page.
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState, useTransition } from "react";
-import Badge from "@/components/ui/Badge";
+import { useCallback, useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
+import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import { useDismiss } from "@/hooks/useDismiss";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useTranslations } from "@/i18n/client";
@@ -13,7 +13,22 @@ import { markAllNotificationsReadAction, openNotificationAction } from "@/lib/ac
 import { signalUnreadChanged, UNREAD_CHANGED_EVENT } from "@/lib/unread-signal";
 
 // A word next to each notification (types.*), so the kind never depends on colour alone.
-const TYPE_TONES = { budget: "warning", goal: "success", member: "violet", reminder: "info" };
+// Partial<Record<string, …>>: any type string may be looked up, and the result may be undefined.
+const TYPE_TONES: Partial<Record<string, BadgeTone>> = { budget: "warning", goal: "success", member: "violet", reminder: "info" };
+
+/**
+ * One notification as /api/notifications sends it. It arrives as JSON, so dates are strings
+ * (readAt is an ISO date or null) — not the Date objects the database row has.
+ */
+type NotificationListItem = {
+  id: string;
+  type: string;
+  readAt: string | null;
+  title: string;
+  body: string | null;
+  whenLabel: string;
+};
+type NotificationsResponse = { unread: number; items: NotificationListItem[] };
 
 const BELL_ICON = (
   <svg
@@ -33,7 +48,13 @@ const BELL_ICON = (
   </svg>
 );
 
-function NotificationItem({ item, onOpen, disabled }) {
+type NotificationItemProps = {
+  item: NotificationListItem;
+  onOpen: (id: string) => void;
+  disabled: boolean;
+};
+
+function NotificationItem({ item, onOpen, disabled }: NotificationItemProps) {
   const t = useTranslations("notifications");
   const kind = TYPE_TONES[item.type] ? item.type : "other";
   return (
@@ -61,16 +82,17 @@ function NotificationItem({ item, onOpen, disabled }) {
   );
 }
 
-export default function NotificationsMenu({ unreadCount = 0 }) {
+export default function NotificationsMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   const t = useTranslations("notifications");
   const common = useTranslations("common");
   const router = useRouter();
   const unread = useUnreadCount(unreadCount, "/");
   const [open, setOpen] = useState(false);
-  // null while loading the first time; "error" if that failed.
-  const [items, setItems] = useState(null);
+  // null while loading the first time; "error" if that failed. A union of the three states, so
+  // TypeScript makes every use check which one it has (Array.isArray, === "error").
+  const [items, setItems] = useState<NotificationListItem[] | "error" | null>(null);
   const [pending, startTransition] = useTransition();
-  const wrapper = useRef(null);
+  const wrapper = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const headingId = useId();
 
@@ -81,7 +103,9 @@ export default function NotificationsMenu({ unreadCount = 0 }) {
     try {
       const response = await fetch("/api/notifications", { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      setItems((await response.json()).items);
+      // response.json() is untyped: this annotation trusts our own API's shape.
+      const data: NotificationsResponse = await response.json();
+      setItems(data.items);
     } catch {
       setItems(current => (Array.isArray(current) ? current : "error"));
     }
@@ -95,7 +119,7 @@ export default function NotificationsMenu({ unreadCount = 0 }) {
     return () => window.removeEventListener(UNREAD_CHANGED_EVENT, load);
   }, [open, load]);
 
-  const openItem = id =>
+  const openItem = (id: string) =>
     startTransition(async () => {
       const formData = new FormData();
       formData.set("notificationId", id);
@@ -116,7 +140,7 @@ export default function NotificationsMenu({ unreadCount = 0 }) {
   const label = common("nav.alerts");
   const shownUnread = Array.isArray(items) ? items.filter(item => !item.readAt).length : unread;
 
-  let body;
+  let body: ReactNode;
   if (items === null) body = <p className="px-1 py-3 text-sm text-slate-400">{t("loading")}</p>;
   else if (items === "error")
     body = (

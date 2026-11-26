@@ -2,19 +2,38 @@
 
 import { useActionState, useOptimistic } from "react";
 import TextField, { FormError, FormSuccess } from "@/components/ui/Field";
-import { inviteMemberAction, resendInviteAction, revokeInviteAction } from "@/lib/actions/members";
-import { EMAIL_PATTERN, field } from "@/lib/forms";
+import { inviteMemberAction, resendInviteAction, revokeInviteAction, type InviteFormState } from "@/lib/actions/members";
+import { EMAIL_PATTERN, field, isOneOf } from "@/lib/forms";
+import type { listOpenInvites } from "@/lib/invites";
 import { useTranslations } from "@/i18n/client";
 import { buttonClasses } from "@/components/ui/Button";
 
-function InviteForm({ onSubmitting }) {
+// Roles an invitation can give (the owner is never invited). lib/invites has the same list, but it's
+// server-only, so a Client Component can't import its values (only its types).
+const INVITABLE = ["editor", "viewer"] as const;
+
+/**
+ * An open invitation as the members page passes it: a row from listOpenInvites, with the expiry
+ * turned into a label on the server. Deriving it from the query keeps the two in step.
+ */
+export type InviteListItem = Omit<Awaited<ReturnType<typeof listOpenInvites>>[number], "expiresAt"> & {
+  expired: boolean;
+  expiresLabel: string;
+  sending?: false;
+};
+
+/** An invitation shown optimistically while it is being sent. `sending: true` tells the two apart. */
+type SendingInviteItem = { id: string; email: string; role: (typeof INVITABLE)[number]; sending: true };
+
+function InviteForm({ onSubmitting }: { onSubmitting: (formData: FormData) => void }) {
   const t = useTranslations("members");
   const [state, formAction, pending] = useActionState(
-    async (previous, formData) => {
+    async (previous: InviteFormState, formData: FormData) => {
       onSubmitting(formData);
       return inviteMemberAction(previous, formData);
     },
-    { values: { role: "editor" } },
+    // values needs both fields; an empty email renders exactly like a missing one.
+    { values: { email: "", role: "editor" } },
   );
 
   return (
@@ -54,7 +73,7 @@ function InviteForm({ onSubmitting }) {
 }
 
 /** An invitation being sent: shown straight away, without actions until it's saved. */
-function SendingInvite({ invite }) {
+function SendingInvite({ invite }: { invite: SendingInviteItem }) {
   const t = useTranslations("members");
   const common = useTranslations("common");
   return (
@@ -67,7 +86,7 @@ function SendingInvite({ invite }) {
   );
 }
 
-function PendingInvite({ invite }) {
+function PendingInvite({ invite }: { invite: InviteListItem }) {
   const t = useTranslations("members");
   const common = useTranslations("common");
   const [resendState, resendAction, resendPending] = useActionState(resendInviteAction, {});
@@ -121,22 +140,21 @@ function PendingInvite({ invite }) {
   );
 }
 
-// Roles an invitation can give (the owner is never invited).
-const INVITABLE = ["editor", "viewer"];
-
-export default function InvitePanel({ invites }) {
+export default function InvitePanel({ invites }: { invites: InviteListItem[] }) {
   const t = useTranslations("members");
   // Optimistic UI: the invitation is listed while it's saved and emailed. The page's fresh list
   // replaces it afterwards; after an error it disappears and the form says why. Inviting an
   // address that's already pending refreshes that invitation, so it replaces the row.
-  const [list, addSending] = useOptimistic(invites, (current, sending) => [
+  // The list can hold both kinds, so the state type is the union; the action is a sending invite.
+  const [list, addSending] = useOptimistic<(InviteListItem | SendingInviteItem)[], SendingInviteItem>(invites, (current, sending) => [
     ...current.filter(invite => invite.email !== sending.email),
     sending,
   ]);
-  const showSending = formData => {
+  const showSending = (formData: FormData) => {
     const email = field(formData, "email").toLowerCase();
     const role = field(formData, "role");
-    if (!EMAIL_PATTERN.test(email) || !INVITABLE.includes(role)) return;
+    // isOneOf is a type guard: after this line TypeScript knows role is "editor" | "viewer".
+    if (!EMAIL_PATTERN.test(email) || !isOneOf(INVITABLE, role)) return;
     addSending({ id: `sending-${email}`, email, role, sending: true });
   };
 

@@ -6,9 +6,15 @@ import { useActionState } from "react";
 import { SubmitButton } from "@/components/ui/Button";
 import TextField, { FormError, FormSuccess, SelectField } from "@/components/ui/Field";
 import { useTranslations } from "@/i18n/client";
-import { updateHouseholdAction } from "@/lib/actions/account";
+import { updateHouseholdAction, type HouseholdSettings } from "@/lib/actions/account";
 
-export default function HouseholdSettingsForm({ household, currencies, timezones }) {
+type HouseholdSettingsFormProps = {
+  household: HouseholdSettings;
+  currencies: readonly string[];
+  timezones: readonly string[];
+};
+
+export default function HouseholdSettingsForm({ household, currencies, timezones }: HouseholdSettingsFormProps) {
   const [state, formAction, pending] = useActionState(updateHouseholdAction, { values: household });
   const values = state.values ?? household;
   const t = useTranslations("account");
