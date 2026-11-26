@@ -1,5 +1,5 @@
 // Server-side monitoring: every error Next.js catches while handling a request is logged as one
-// JSON line (see lib/telemetry.js), with the digest that the error page shows as "Reference".
+// JSON line (see lib/telemetry.ts), with the digest that the error page shows as "Reference".
 import type { Instrumentation } from "next";
 
 export const onRequestError: Instrumentation.onRequestError = async (error, request, context) => {

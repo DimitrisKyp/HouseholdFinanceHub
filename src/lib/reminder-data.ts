@@ -1,7 +1,7 @@
 // Reminders: bills to pay (recurring bills with a due date) and tasks to do. The queries behind
 // the Reminders page and the dashboard, and the daily job (/api/cron/reminders) that sends the
 // alerts: an in-app notification for each, then one email per person with what they got.
-// Date logic lives in lib/reminders.js.
+// Date logic lives in lib/reminders.ts.
 // The daily job works through households, and sends emails, one at a time on purpose: it stays
 // gentle on the database and the mail server.
 /* eslint-disable no-await-in-loop */

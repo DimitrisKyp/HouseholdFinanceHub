@@ -2,7 +2,7 @@
 
 PostgreSQL 17, managed with [Drizzle ORM](https://orm.drizzle.team).
 
-- **Source of truth:** `src/db/schema/` (`auth.js` for accounts, `finance.js` for the app).
+- **Source of truth:** `src/db/schema/` (`auth.ts` for accounts, `finance.ts` for the app).
 - **Migrations:** generated SQL in `drizzle/`, committed to git.
 
 ## Commands

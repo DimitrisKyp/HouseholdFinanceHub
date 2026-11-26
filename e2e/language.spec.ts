@@ -9,7 +9,7 @@ import { today } from "./helpers/dates.ts";
 // who haven't chosen get their browser's preference.
 const APP_PAGES = ["/", "/budget", "/categories", "/transactions", "/insights", "/goals", "/reminders", "/members", "/account"];
 const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/forgot-password"];
-// A message that's missing shows as "namespace.key" (see i18n/translate.js).
+// A message that's missing shows as "namespace.key" (see i18n/translate.ts).
 const MISSING_MESSAGE =
   /\b(common|account|auth|email|dashboard|errors|budget|transactions|insights|goals|members|notifications)\.[a-z][\w.]*/;
 

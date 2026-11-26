@@ -11,7 +11,7 @@ const MAX_TOASTS = 3;
 const REFRESH_DELAY_MS = 300;
 
 /**
- * Listens to /api/events (Server-Sent Events, see lib/live.js). When someone else changes
+ * Listens to /api/events (Server-Sent Events, see lib/live.ts). When someone else changes
  * something, the page's data is refreshed and a short message is queued; a new notification
  * tells the unread badge to check again. After a dropped connection it catches up.
  * Returns { connected, toasts: [{ id, message }], dismiss(id) }.

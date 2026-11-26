@@ -1,4 +1,4 @@
-// What browser analytics/error events may contain (pure, so it's unit-tested). See lib/telemetry.js.
+// What browser analytics/error events may contain (pure, so it's unit-tested). See lib/telemetry.ts.
 
 export const CLIENT_EVENT_TYPES = ["page_view", "web_vital", "client_error"] as const;
 

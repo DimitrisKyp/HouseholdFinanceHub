@@ -6,8 +6,8 @@ people you live with. Built with [Next.js](https://nextjs.org), PostgreSQL and
 
 ## How the code is organised
 
-- **Server pages are the containers.** Each `src/app/(app)/*/page.js` checks access through the Data
-  Access Layer (`src/lib/dal.js`), loads data with the queries in `src/lib/finance.js` and friends, and
+- **Server pages are the containers.** Each `src/app/(app)/*/page.tsx` checks access through the Data
+  Access Layer (`src/lib/dal.ts`), loads data with the queries in `src/lib/finance.ts` and friends, and
   turns it into ready-to-show labels (money, dates) with the pure functions in `src/lib`.
 - **Presentational components** in `src/components` receive those labels as props and only render
   (e.g. `RecentExpenses`, `NotificationList`, `ToastStack`, the charts).
@@ -26,18 +26,18 @@ the sign-in pages have a language switch.
 - **Messages** are in `src/i18n/messages/<language>/<area>.json`, one file per area of the app. Every
   message must exist in both languages with the same `{placeholders}`: a unit test checks this.
 - **Server Components and Server Actions** translate with `const t = await getTranslations("budget")`
-  (`src/i18n/server.js`). **Client Components** use `useTranslations("budget")` and `useLocale()`
-  (`src/i18n/client.jsx`).
+  (`src/i18n/server.ts`). **Client Components** use `useTranslations("budget")` and `useLocale()`
+  (`src/i18n/client.tsx`).
 - **A page sends the browser only the messages its Client Components need**: wrap it in
-  `<Messages namespaces={["budget"]}>` (`src/i18n/MessagesProvider.jsx`). The root layout already
+  `<Messages namespaces={["budget"]}>` (`src/i18n/MessagesProvider.tsx`). The root layout already
   provides `common` and `errors`. A missing message shows as `budget.someKey` on the page.
 - **Amounts and dates** follow the language: pass the locale to `formatMoney`, `formatDay` and
   `formatMonth` (`1.250,50 €` and `18 Νοε 2026` in Greek).
 - **Notifications and live messages** store their values, not finished sentences, so each person
   reads them in their own language.
-- **Adding a language:** add it to `LOCALES` in `src/i18n/config.js` (with its date and number
+- **Adding a language:** add it to `LOCALES` in `src/i18n/config.ts` (with its date and number
   locales), copy `messages/en` to `messages/<language>`, translate, and add the files to
-  `messages/index.js` and to the check constraint on `user_preference.locale`.
+  `messages/index.ts` and to the check constraint on `user_preference.locale`.
 
 ## Requirements
 

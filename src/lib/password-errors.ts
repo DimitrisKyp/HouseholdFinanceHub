@@ -1,4 +1,4 @@
-// newPasswordErrors (lib/forms.js) with its messages in the visitor's language.
+// newPasswordErrors (lib/forms.ts) with its messages in the visitor's language.
 import type { Translator } from "@/i18n/translate";
 import { MIN_PASSWORD_LENGTH, newPasswordErrors } from "@/lib/forms";
 

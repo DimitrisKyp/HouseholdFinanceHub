@@ -4,7 +4,7 @@ import { UNREAD_CHANGED_EVENT } from "@/lib/unread-signal";
 /**
  * The unread notification count. Starts from the server's count and asks again after each
  * navigation (pass the pathname), when the window regains focus, and when told a notification
- * arrived (live, see useLiveUpdates and lib/unread-signal.js).
+ * arrived (live, see useLiveUpdates and lib/unread-signal.ts).
  */
 export function useUnreadCount(initial: number, pathname: string): number {
   const [unread, setUnread] = useState(initial);

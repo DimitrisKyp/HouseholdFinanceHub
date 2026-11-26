@@ -1,6 +1,6 @@
 // Every translated message, by language and namespace (one JSON file per area of the app).
 // Server-side only: pages send the browser just the namespaces their client components use
-// (see i18n/MessagesProvider.jsx).
+// (see i18n/MessagesProvider.tsx).
 import elAccount from "./el/account.json";
 import elAuth from "./el/auth.json";
 import elBudget from "./el/budget.json";

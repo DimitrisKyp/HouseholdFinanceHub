@@ -1,7 +1,7 @@
 // Market data for the dashboard, from public services that need no API key:
 //   - news: an RSS feed (default: BBC News Business)
 //   - exchange rates: ECB reference rates through the Frankfurter API
-// Results are cached in memory (lib/cache.js) for MARKET_CACHE_SECONDS (default 15 minutes);
+// Results are cached in memory (lib/cache.ts) for MARKET_CACHE_SECONDS (default 15 minutes);
 // when a refresh fails, the last good copy is shown and marked stale.
 import "server-only";
 import { createCache } from "@/lib/cache";

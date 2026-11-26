@@ -1,6 +1,6 @@
 "use client";
 
-// Fallback shown by the route error boundaries (error.js). Server error details are never shown:
+// Fallback shown by the route error boundaries (error.tsx). Server error details are never shown:
 // in production Next.js replaces them with a digest that matches the server log.
 import Link from "next/link";
 import { useEffect } from "react";

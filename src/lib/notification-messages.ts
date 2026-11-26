@@ -1,5 +1,5 @@
 // Wording and thresholds for in-app notifications. Pure functions, so they're easy to unit-test;
-// lib/notifications.js decides when to send them and to whom.
+// lib/notifications.ts decides when to send them and to whom.
 //
 // Each builder returns { title, body, data }. `data` holds the values the message is made of
 // (names, amounts as numbers, the month as "YYYY-MM-01"); it's stored with the notification so

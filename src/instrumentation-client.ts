@@ -1,5 +1,5 @@
 // Runs in the browser before the app becomes interactive: page views and browser errors are
-// reported to our own server (lib/telemetry-client.js). Core Web Vitals: components/WebVitals.jsx.
+// reported to our own server (lib/telemetry-client.ts). Core Web Vitals: components/WebVitals.tsx.
 import { reportClientError, sendEvent } from "@/lib/telemetry-client";
 
 try {

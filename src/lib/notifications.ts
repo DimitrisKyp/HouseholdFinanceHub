@@ -14,7 +14,7 @@ export const NOTIFICATIONS_SHOWN = 50;
 
 /**
  * Sends one notification to each user. executor: db or a transaction. title/body are English;
- * data (from lib/notification-messages.js) lets it be shown in each reader's language. Users who already have a
+ * data (from lib/notification-messages.ts) lets it be shown in each reader's language. Users who already have a
  * notification with the same dedupeKey are skipped. Returns true if anything was sent.
  */
 /** One notification for several users. title/body are the English text; data lets it be translated. */

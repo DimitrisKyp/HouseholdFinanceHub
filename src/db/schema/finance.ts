@@ -189,7 +189,7 @@ export const recurringItem = pgTable(
     startsOn: date("starts_on").notNull(),
     endsOn: date("ends_on"),
     isActive: boolean("is_active").notNull().default(true),
-    // Payment reminders for bills (lib/reminders.js). due_on is the first due date: later ones
+    // Payment reminders for bills (lib/reminders.ts). due_on is the first due date: later ones
     // follow from it by `frequency`. null = no reminder. paid_through is the latest due date
     // marked as paid, so the next one is the first due date after it.
     dueOn: date("due_on"),
@@ -222,7 +222,7 @@ export const task = pgTable(
     amount: money("amount"),
     // null = whenever; no reminder is sent.
     dueOn: date("due_on"),
-    // Needs a due date. Done moves due_on on by this much (lib/reminders.js, occurrence).
+    // Needs a due date. Done moves due_on on by this much (lib/reminders.ts, occurrence).
     repeat: taskRepeat("repeat"),
     remindDaysBefore: integer("remind_days_before").notNull().default(1),
     // Who should do it; null = anyone (owner and editors get the reminder).
@@ -309,7 +309,7 @@ export const notification = pgTable(
     title: varchar("title", { length: 160 }).notNull(),
     body: text("body"),
     // The values the message is built from (names, amounts...), so it's shown in each
-    // reader's language. See renderNotification in lib/notification-messages.js.
+    // reader's language. See renderNotification in lib/notification-messages.ts.
     data: jsonb("data"),
     link: text("link"),
     // Stops scheduled jobs from sending the same alert twice,

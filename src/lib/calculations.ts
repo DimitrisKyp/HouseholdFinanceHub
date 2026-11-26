@@ -1,5 +1,5 @@
 // Budget and goal calculations on plain data. No database or server-only imports, so these can be
-// used anywhere and unit-tested directly. The queries that feed them live in lib/finance.js.
+// used anywhere and unit-tested directly. The queries that feed them live in lib/finance.ts.
 import { goalProjection } from "@/lib/forecast";
 import { formatDay, formatMoney, formatMonth } from "@/lib/format";
 import { goalsTranslator } from "@/lib/goal-messages";
@@ -100,9 +100,9 @@ function projectionLabel(
 
 /**
  * A goal with display labels (money in the household currency, dates, progress, plan and,
- * when `pace` is given (see lib/forecast.js goalPace), a projected date), in the UI language `locale`.
+ * when `pace` is given (see lib/forecast.ts goalPace), a projected date), in the UI language `locale`.
  */
-/** A goal as listGoals (lib/finance.js) returns it. */
+/** A goal as listGoals (lib/finance.ts) returns it. */
 export type GoalViewInput = GoalAmounts & {
   id: string;
   name: string;

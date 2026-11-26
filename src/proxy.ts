@@ -1,6 +1,6 @@
 // Runs before every page request (Next.js 16 "Proxy", formerly Middleware).
 // Optimistic check only: it looks for the session cookie and sends visitors without one to
-// /sign-in. It does NOT validate the session — the Data Access Layer (lib/dal.js) does that.
+// /sign-in. It does NOT validate the session — the Data Access Layer (lib/dal.ts) does that.
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 

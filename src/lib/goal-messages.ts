@@ -1,4 +1,4 @@
-// Goal and forecast wording for the pure functions in lib/forecast.js and lib/calculations.js.
+// Goal and forecast wording for the pure functions in lib/forecast.ts and lib/calculations.ts.
 // Only the "goals" messages are imported, so these modules stay small wherever they're used.
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/i18n/config";
 import elGoals from "@/i18n/messages/el/goals.json";

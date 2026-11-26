@@ -1,3 +1,4 @@
+// @ts-check
 // Cloudflare Worker for nestestia.com while the app runs on a personal PC (temporary, personal use).
 //
 // Visitors to the domain reach the app through a VS Code port-forwarding address (TUNNEL_URL, a
@@ -8,10 +9,16 @@
 // (see next.config.mts). An error page from the tunnel service, or no answer at all, lacks it.
 // Paste this whole file into the Worker's editor in the Cloudflare dashboard: see README, "Running the
 // app on nestestia.com from your PC".
+// Types are JSDoc comments, so the file stays plain JavaScript that can be pasted as is.
 
 export const APP_MARKER = "x-household-app";
 
 const worker = {
+  /**
+   * @param {Request} request
+   * @param {{ TUNNEL_URL?: string }} env Worker variables from the Cloudflare dashboard.
+   * @returns {Promise<Response>}
+   */
   async fetch(request, env) {
     const url = new URL(request.url);
 
@@ -36,7 +43,8 @@ const worker = {
 
     let response;
     try {
-      response = await fetch(target, {
+      // `duplex` isn't in the standard RequestInit type yet, hence the JSDoc cast.
+      const init = /** @type {RequestInit & { duplex: "half" }} */ ({
         method: request.method,
         headers,
         body: request.body,
@@ -45,6 +53,7 @@ const worker = {
         // Needed by Node (the unit tests) to send a streamed body; Cloudflare ignores it.
         duplex: "half",
       });
+      response = await fetch(target, init);
     } catch {
       return offlinePage();
     }

@@ -1,4 +1,4 @@
-// Sends analytics and error events to /api/telemetry (see lib/telemetry.js for what's kept).
+// Sends analytics and error events to /api/telemetry (see lib/telemetry.ts for what's kept).
 // sendBeacon survives the page being closed and never delays it; nothing identifies the user.
 const MAX_ERRORS_PER_PAGE = 10;
 const reported = new Set<string>();

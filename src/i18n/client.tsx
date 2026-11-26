@@ -11,7 +11,7 @@ type I18nValue = { locale: Locale; messages: MessageNamespaces };
 
 const I18nContext = createContext<I18nValue | null>(null);
 
-// Component tests render without a provider; tests/setup.js supplies the English messages.
+// Component tests render without a provider; tests/setup.ts supplies the English messages.
 let fallback: I18nValue | null = null;
 export function setFallbackMessages(locale: Locale, messages: MessageNamespaces) {
   fallback = { locale, messages };

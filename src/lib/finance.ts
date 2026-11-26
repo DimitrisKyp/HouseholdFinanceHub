@@ -1,6 +1,6 @@
 // Read queries for household finance data. Callers pass the householdId from the DAL
 // (requireHousehold), so every query is scoped to the household the user belongs to.
-// Pure calculations live in lib/calculations.js and are re-exported here for convenience.
+// Pure calculations live in lib/calculations.ts and are re-exported here for convenience.
 import "server-only";
 import { cache } from "react";
 import { and, asc, desc, eq, gte, ilike, inArray, lt, lte, sql, type AnyColumn, type SQL } from "drizzle-orm";

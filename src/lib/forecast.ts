@@ -1,6 +1,6 @@
 // Savings forecast: what's likely left over each month, and when each goal will be reached at
 // the household's recent pace. Pure functions on plain data ("YYYY-MM-DD" strings and numbers),
-// so they're easy to unit-test. The queries that feed them live in lib/finance.js.
+// so they're easy to unit-test. The queries that feed them live in lib/finance.ts.
 import { formatMoney } from "@/lib/format";
 import { goalsTranslator } from "@/lib/goal-messages";
 import type { Translator } from "@/i18n/translate";
