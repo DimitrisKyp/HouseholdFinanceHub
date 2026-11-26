@@ -1,13 +1,14 @@
-import { acceptNextDialog, authFile, expect, test } from "./fixtures.mjs";
-import { dateMonthsAhead, formatDay } from "./helpers/dates.mjs";
-import { resetHousehold } from "./helpers/db.mjs";
+import type { Page } from "@playwright/test";
+import { acceptNextDialog, authFile, expect, test } from "./fixtures.ts";
+import { dateMonthsAhead, formatDay } from "./helpers/dates.ts";
+import { resetHousehold } from "./helpers/db.ts";
 
 test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
   await resetHousehold();
 });
 
-const card = (page, name) => page.locator("article", { has: page.getByRole("heading", { name, exact: true }) });
+const card = (page: Page, name: string) => page.locator("article", { has: page.getByRole("heading", { name, exact: true }) });
 
 test("owner adds goals, with validation and a monthly plan", async ({ page }) => {
   await page.goto("/goals");

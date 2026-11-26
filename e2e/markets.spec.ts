@@ -1,14 +1,15 @@
-import { MARKET_STUB_URL } from "./env.mjs";
-import { expect, test } from "./fixtures.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import type { Page } from "@playwright/test";
+import { MARKET_STUB_URL } from "./env.mts";
+import { expect, test } from "./fixtures.ts";
+import { resetHousehold, sql, type TestHousehold } from "./helpers/db.ts";
 
-// The dashboard's Markets & news panel, against the stand-in services (e2e/market-stub.mjs).
+// The dashboard's Markets & news panel, against the stand-in services (e2e/market-stub.mts).
 // The app caches their answers for 2 seconds in these tests (MARKET_CACHE_SECONDS).
-const setStub = mode => fetch(`${MARKET_STUB_URL}/__mode/${mode}`, { method: "POST" });
-const panel = page => page.getByRole("heading", { name: "Markets & news" }).locator("xpath=ancestor::section[1]");
-const waitForCacheToExpire = page => page.waitForTimeout(2_500);
+const setStub = (mode: "ok" | "empty" | "fail") => fetch(`${MARKET_STUB_URL}/__mode/${mode}`, { method: "POST" });
+const panel = (page: Page) => page.getByRole("heading", { name: "Markets & news" }).locator("xpath=ancestor::section[1]");
+const waitForCacheToExpire = (page: Page) => page.waitForTimeout(2_500);
 
-let household;
+let household: TestHousehold;
 test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
   household = await resetHousehold();

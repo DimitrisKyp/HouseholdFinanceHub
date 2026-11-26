@@ -1,6 +1,7 @@
-import { acceptNextDialog, authFile, expect, test } from "./fixtures.mjs";
-import { dayOf, formatDay, monthStart, parts, today } from "./helpers/dates.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import type { Page } from "@playwright/test";
+import { acceptNextDialog, authFile, expect, test } from "./fixtures.ts";
+import { dayOf, formatDay, monthStart, parts, today } from "./helpers/dates.ts";
+import { resetHousehold, sql } from "./helpers/db.ts";
 
 const thisMonth = monthStart(today());
 const lastMonth = monthStart(today(), -1);
@@ -35,8 +36,8 @@ test.beforeAll(async () => {
   }
 });
 
-const summary = page => page.locator("main [aria-live=polite]").filter({ hasText: "transaction" }).first();
-const rows = page => page.locator("tbody tr");
+const summary = (page: Page) => page.locator("main [aria-live=polite]").filter({ hasText: "transaction" }).first();
+const rows = (page: Page) => page.locator("tbody tr");
 
 test("lists this month newest first, 25 per page", async ({ page }) => {
   await page.goto("/");
@@ -108,7 +109,7 @@ test("date presets and a custom range", async ({ page }) => {
 
 test("ignores invalid filter values in the address", async ({ page }) => {
   const response = await page.goto("/transactions?from=garbage&category=nope&member=%27;drop&sort=evil&dir=x&page=-5");
-  expect(response.status()).toBe(200);
+  expect(response?.status()).toBe(200);
   await expect(summary(page)).toContainText("62 transactions");
 });
 

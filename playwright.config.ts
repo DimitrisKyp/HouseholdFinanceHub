@@ -1,7 +1,7 @@
 // Browser (end-to-end) tests: `npm run test:e2e`. Builds the app, starts it on port 3100 against
 // the test database, and drives it like a user. See "Tests" in README.md.
-import { defineConfig, devices } from "@playwright/test";
-import { BASE_URL, E2E_CRON_SECRET, E2E_PORT, MARKET_STUB_URL, testDatabaseUrl } from "./e2e/env.mjs";
+import { defineConfig, devices, type ReporterDescription } from "@playwright/test";
+import { BASE_URL, E2E_CRON_SECRET, E2E_PORT, MARKET_STUB_URL, testDatabaseUrl } from "./e2e/env.mts";
 
 const CI = Boolean(process.env.CI);
 
@@ -13,10 +13,10 @@ export default defineConfig({
   forbidOnly: CI,
   retries: CI ? 1 : 0,
   // In CI, the github reporter also annotates each failing test (with its error) on the run and PR.
-  reporter: [["list"], ["html", { open: "never" }], ...(CI ? [["github"]] : [])],
+  reporter: [["list"], ["html", { open: "never" }], ...(CI ? [["github"] satisfies ReporterDescription] : [])],
   timeout: 60_000,
   expect: { timeout: 10_000 },
-  globalSetup: "./e2e/global-setup.mjs",
+  globalSetup: "./e2e/global-setup.ts",
 
   use: {
     ...devices["Desktop Chrome"],
@@ -32,10 +32,10 @@ export default defineConfig({
 
   projects: [
     // Signs in once per role and saves the session for the tests.
-    { name: "setup", testMatch: /auth\.setup\.mjs/ },
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "chromium",
-      testMatch: /.*\.spec\.mjs/,
+      testMatch: /.*\.spec\.ts/,
       dependencies: ["setup"],
       use: { storageState: "e2e/.auth/owner.json" },
     },
@@ -44,7 +44,7 @@ export default defineConfig({
   webServer: [
     // Stand-in for the news feed and exchange-rate API, so tests never depend on the internet.
     {
-      command: "node e2e/market-stub.mjs",
+      command: "node e2e/market-stub.mts",
       url: `${MARKET_STUB_URL}/health`,
       reuseExistingServer: false,
       stdout: "ignore",

@@ -1,4 +1,12 @@
-import { expect, test } from "./fixtures.mjs";
+import { expect, test } from "./fixtures.ts";
+
+// What the page handed to navigator.sendBeacon, recorded by the init script below.
+type Beacon = { url: string; type?: string; message?: string; [field: string]: unknown };
+declare global {
+  interface Window {
+    __beacons: Beacon[];
+  }
+}
 
 // Files and signals a public deployment needs: search engines, share previews, "add to home
 // screen", and the self-hosted analytics / error monitoring endpoint.
@@ -19,7 +27,7 @@ test.describe("signed out", () => {
     await page.goto("/sign-in");
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/opengraph-image/);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /household budget/);
-    const image = await request.get(new URL(await page.locator('meta[property="og:image"]').getAttribute("content")).pathname);
+    const image = await request.get(new URL((await page.locator('meta[property="og:image"]').getAttribute("content")) ?? "").pathname);
     expect(image.headers()["content-type"]).toBe("image/png");
     const manifest = await (await request.get("/manifest.webmanifest")).json();
     expect(manifest).toMatchObject({ name: "Household Hub", display: "standalone" });
@@ -60,7 +68,8 @@ test("page views and browser errors are reported to our own server, without quer
     window.__beacons = [];
     const send = navigator.sendBeacon.bind(navigator);
     navigator.sendBeacon = (url, data) => {
-      data.text().then(text => window.__beacons.push({ url: String(url), ...JSON.parse(text) }));
+      // The app always sends a Blob (lib/telemetry-client.ts).
+      (data as Blob).text().then(text => window.__beacons.push({ url: String(url), ...JSON.parse(text) }));
       return send(url, data);
     };
   });

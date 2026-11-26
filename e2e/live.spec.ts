@@ -1,14 +1,15 @@
-import { authFile, expect, test } from "./fixtures.mjs";
-import { today } from "./helpers/dates.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import type { Browser, Page } from "@playwright/test";
+import { authFile, expect, test } from "./fixtures.ts";
+import { today } from "./helpers/dates.ts";
+import { resetHousehold, sql, type Role, type TestHousehold } from "./helpers/db.ts";
 
 // Two people in the same household, each in their own browser: the owner (the default page) and
 // another member who makes the changes. Nobody reloads; changes arrive over /api/events.
-const liveConnected = page => expect(page.locator('[data-live="open"]')).toHaveCount(1);
-const recentExpenses = page => page.getByRole("list", { name: "Recent expenses" });
-const alertsLink = page => page.getByRole("button", { name: /^Alerts/ });
+const liveConnected = (page: Page) => expect(page.locator('[data-live="open"]')).toHaveCount(1);
+const recentExpenses = (page: Page) => page.getByRole("list", { name: "Recent expenses" });
+const alertsLink = (page: Page) => page.getByRole("button", { name: /^Alerts/ });
 
-async function openAs(browser, role, path) {
+async function openAs(browser: Browser, role: Role, path: string) {
   const context = await browser.newContext({ storageState: authFile(role) });
   const page = await context.newPage();
   await page.goto(path);
@@ -16,7 +17,7 @@ async function openAs(browser, role, path) {
   return { context, page };
 }
 
-async function addExpense(page, { title, amount, category }) {
+async function addExpense(page: Page, { title, amount, category }: { title: string; amount: string; category: string }) {
   await page.fill("#expense-title", title);
   await page.fill("#expense-amount", amount);
   await page.selectOption("#expense-category", { label: category });
@@ -24,7 +25,7 @@ async function addExpense(page, { title, amount, category }) {
   await expect(page.getByText(`${title} (`)).toBeVisible();
 }
 
-let household;
+let household: TestHousehold;
 test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
   household = await resetHousehold();
@@ -82,8 +83,9 @@ test("budget changes reach other open pages", async ({ page, browser }) => {
 test("a new expense is listed while it's saved (optimistic)", async ({ page }) => {
   await page.goto("/");
   // Hold the Server Action (a POST to the page) for a moment, as on a slow connection.
-  let release;
-  const held = new Promise(resolve => (release = resolve));
+  // Replaced by the promise's resolve function straight away (the executor runs synchronously).
+  let release = () => {};
+  const held = new Promise<void>(resolve => (release = resolve));
   await page.route("**/*", async route => {
     if (route.request().method() === "POST" && route.request().headers()["next-action"]) await held;
     await route.continue();

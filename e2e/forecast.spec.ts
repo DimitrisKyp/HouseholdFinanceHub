@@ -1,13 +1,14 @@
-import { authFile, expect, test } from "./fixtures.mjs";
-import { dateMonthsAhead, formatMonth, monthStart, parts, today } from "./helpers/dates.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import type { Page } from "@playwright/test";
+import { authFile, expect, test } from "./fixtures.ts";
+import { dateMonthsAhead, formatMonth, monthStart, parts, today } from "./helpers/dates.ts";
+import { resetHousehold, sql, type TestHousehold } from "./helpers/db.ts";
 
-const month = offset => monthStart(today(), offset);
-const card = (page, name) => page.locator("article", { has: page.getByRole("heading", { name, exact: true }) });
+const month = (offset: number) => monthStart(today(), offset);
+const card = (page: Page, name: string) => page.locator("article", { has: page.getByRole("heading", { name, exact: true }) });
 // The panel is the nearest section around its heading.
-const forecastPanel = page => page.getByRole("heading", { name: "Savings forecast" }).locator("xpath=ancestor::section[1]");
+const forecastPanel = (page: Page) => page.getByRole("heading", { name: "Savings forecast" }).locator("xpath=ancestor::section[1]");
 
-let household;
+let household: TestHousehold;
 test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
   household = await resetHousehold();

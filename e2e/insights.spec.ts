@@ -1,10 +1,11 @@
-import { expect, test } from "./fixtures.mjs";
-import { formatMonth, monthStart, parts, shortMonthWithYear, today } from "./helpers/dates.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import type { Locator, Page } from "@playwright/test";
+import { expect, test } from "./fixtures.ts";
+import { formatMonth, monthStart, parts, shortMonthWithYear, today } from "./helpers/dates.ts";
+import { resetHousehold, sql } from "./helpers/db.ts";
 
 // Spending per month, oldest first, ending with the current month (12 months ago .. now).
 const SPENDING = [900, 2400, 1500, 1300, 1700, 1200, 1600, 2600, 1400, 1800, 1500, 1750, 640];
-const month = offset => monthStart(today(), offset);
+const month = (offset: number) => monthStart(today(), offset);
 
 test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
@@ -35,9 +36,9 @@ test.beforeAll(async () => {
   }
 });
 
-const spentChart = page => page.locator("figure").first();
-const netChart = page => page.locator("figure").nth(1);
-const columns = chart => chart.locator("rect[role=button]");
+const spentChart = (page: Page) => page.locator("figure").first();
+const netChart = (page: Page) => page.locator("figure").nth(1);
+const columns = (chart: Locator) => chart.locator("rect[role=button]");
 
 test("summarises the last 6 months", async ({ page }) => {
   await page.goto("/");
@@ -97,7 +98,8 @@ test("fits a phone screen without sideways scrolling", async ({ page }) => {
   await expect
     .poll(() =>
       page.evaluate(() => {
-        const scroller = document.querySelector("main").parentElement;
+        const scroller = document.querySelector("main")?.parentElement;
+        if (!scroller) throw new Error("No scroll container around <main>");
         return scroller.scrollWidth - scroller.clientWidth;
       }),
     )

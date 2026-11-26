@@ -1,14 +1,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker, { APP_MARKER } from "../../deploy/cloudflare-worker.js";
 
+// The worker stays plain JavaScript (it's pasted into Cloudflare's dashboard), so these types describe
+// how it calls fetch: the tunnel's URL and init with a Headers object.
+type ForwardedInit = RequestInit & { headers: Headers };
+type FetchMock = (target: URL | string, init: ForwardedInit) => Promise<Response>;
+
 const env = { TUNNEL_URL: "https://abc123-3000.euw.devtunnels.ms" };
-const fromApp = (body, init = {}) => new Response(body, { ...init, headers: { [APP_MARKER]: "1", ...init.headers } });
+const fromApp = (body: BodyInit | null, init: { status?: number; headers?: Record<string, string> } = {}) =>
+  new Response(body, { ...init, headers: { [APP_MARKER]: "1", ...init.headers } });
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Cloudflare Worker", () => {
   it("passes visits through to the app, with the public address and the visitor's IP", async () => {
-    const fetchMock = vi.fn(async () => fromApp("hello", { headers: { "content-type": "text/html" } }));
+    const fetchMock = vi.fn<FetchMock>(async () => fromApp("hello", { headers: { "content-type": "text/html" } }));
     vi.stubGlobal("fetch", fetchMock);
 
     const response = await worker.fetch(
@@ -29,7 +35,7 @@ describe("Cloudflare Worker", () => {
   });
 
   it("sends form posts through with their body", async () => {
-    const fetchMock = vi.fn(async (_target, init) => fromApp(await new Response(init.body).text()));
+    const fetchMock = vi.fn<FetchMock>(async (_target, init) => fromApp(await new Response(init.body).text()));
     vi.stubGlobal("fetch", fetchMock);
 
     const response = await worker.fetch(new Request("https://nestestia.com/sign-in", { method: "POST", body: "email=a%40b.c" }), env);

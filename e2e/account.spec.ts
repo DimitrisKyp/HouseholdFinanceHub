@@ -1,6 +1,6 @@
-import { authFile, expect, test } from "./fixtures.mjs";
-import { PASSWORD } from "./env.mjs";
-import { resetHousehold, sql, USERS } from "./helpers/db.mjs";
+import { authFile, expect, test } from "./fixtures.ts";
+import { PASSWORD } from "./env.mts";
+import { resetHousehold, sql, USERS } from "./helpers/db.ts";
 
 // The test accounts are shared with the other spec files: anything changed here is put back.
 test.describe.configure({ mode: "serial" });
@@ -78,7 +78,7 @@ test("fits a laptop screen without scrolling", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/account");
 
-  const overflow = el => el.scrollHeight - el.clientHeight;
+  const overflow = (el: Element) => el.scrollHeight - el.clientHeight;
   expect(await page.locator("#content > div").first().evaluate(overflow)).toBeLessThanOrEqual(1);
   await expect(page.getByRole("button", { name: "Save household settings" })).toBeInViewport();
   await expect(page.getByLabel("Repeat new password")).toBeInViewport();

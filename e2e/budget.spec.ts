@@ -1,8 +1,9 @@
-import { acceptNextDialog, authFile, expect, test } from "./fixtures.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import type { Page } from "@playwright/test";
+import { acceptNextDialog, authFile, expect, test } from "./fixtures.ts";
+import { resetHousehold, sql } from "./helpers/db.ts";
 
 // Category rows, inside the "Categories and monthly limits" panel (bill rows list category names too).
-const categoryRow = (page, name) =>
+const categoryRow = (page: Page, name: string) =>
   page
     .getByRole("heading", { name: "Categories and monthly limits" })
     .locator("xpath=ancestor::section[1]")

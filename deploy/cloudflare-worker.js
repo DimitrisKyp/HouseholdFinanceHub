@@ -5,7 +5,7 @@
 // isn't running, they see a small "offline" page instead.
 //
 // How it tells the app from anything else: the app marks every response with the header below
-// (see next.config.mjs). An error page from the tunnel service, or no answer at all, lacks it.
+// (see next.config.mts). An error page from the tunnel service, or no answer at all, lacks it.
 // Paste this whole file into the Worker's editor in the Cloudflare dashboard: see README, "Running the
 // app on nestestia.com from your PC".
 

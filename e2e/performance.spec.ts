@@ -1,5 +1,5 @@
-import { expect, test } from "./fixtures.mjs";
-import { resetHousehold } from "./helpers/db.mjs";
+import { expect, test } from "./fixtures.ts";
+import { resetHousehold } from "./helpers/db.ts";
 
 // Performance budget: the JavaScript each page downloads on a first visit (compressed, as sent over
 // the network), measured in the browser from the Resource Timing API. Printed as a table and
@@ -20,7 +20,9 @@ test("first-load JavaScript per page stays within budget", async ({ browser }, t
     await page.goto(path, { waitUntil: "networkidle" });
     const bytes = await page.evaluate(() =>
       performance
+        // Entries of type "resource" are PerformanceResourceTiming (with sizes and initiatorType).
         .getEntriesByType("resource")
+        .map(entry => entry as PerformanceResourceTiming)
         .filter(entry => entry.initiatorType === "script" || entry.name.endsWith(".js"))
         .reduce((sum, entry) => sum + (entry.encodedBodySize || entry.transferSize || 0), 0),
     );

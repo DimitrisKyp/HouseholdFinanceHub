@@ -1,5 +1,5 @@
-import { authFile, expect, test } from "./fixtures.mjs";
-import { resetHousehold } from "./helpers/db.mjs";
+import { authFile, expect, test } from "./fixtures.ts";
+import { resetHousehold } from "./helpers/db.ts";
 
 const PAGES = ["/", "/budget", "/categories", "/goals", "/transactions", "/insights", "/reminders", "/members", "/account"];
 
@@ -9,7 +9,7 @@ test.beforeAll(async () => {
 
 test("an unknown address shows the 404 page", async ({ page }) => {
   const response = await page.goto("/no-such-page");
-  expect(response.status()).toBe(404);
+  expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
 });
 
@@ -24,14 +24,14 @@ test.describe("signed out", () => {
   });
 });
 
-for (const role of ["owner", "editor", "viewer"]) {
+for (const role of ["owner", "editor", "viewer"] as const) {
   test.describe(role, () => {
     test.use({ storageState: authFile(role) });
 
     test("every page loads", async ({ page }) => {
       for (const path of PAGES) {
         const response = await page.goto(path);
-        expect(response.status(), path).toBe(200);
+        expect(response?.status(), path).toBe(200);
         await expect(page.locator("main"), path).toBeVisible();
       }
     });
@@ -49,7 +49,7 @@ test.describe("on a phone", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 
     const burger = page.getByRole("button", { name: "Menu", exact: true });
-    expect((await burger.boundingBox()).x).toBeLessThan(40);
+    expect((await burger.boundingBox())?.x).toBeLessThan(40);
     await burger.click();
     await expect(burger).toHaveAttribute("aria-expanded", "true");
     const nav = page.getByRole("dialog", { name: "Menu" }).getByRole("navigation", { name: "Main" });

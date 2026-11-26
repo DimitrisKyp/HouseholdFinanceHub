@@ -1,8 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
-import { BASE_URL } from "./env.mjs";
-import { expect, test } from "./fixtures.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
-import { today } from "./helpers/dates.mjs";
+import type { BrowserContext, Page } from "@playwright/test";
+import { BASE_URL } from "./env.mts";
+import { expect, test } from "./fixtures.ts";
+import { resetHousehold, sql } from "./helpers/db.ts";
+import { today } from "./helpers/dates.ts";
 
 // Automated WCAG 2.1 A/AA checks (axe-core) on every page, in both themes. axe finds about a third
 // of real accessibility problems (contrast, names, labels, landmarks, ARIA misuse); keyboard use
@@ -10,9 +11,9 @@ import { today } from "./helpers/dates.mjs";
 const APP_PAGES = ["/", "/budget", "/categories", "/transactions", "/insights", "/goals", "/reminders", "/members", "/account"];
 const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/forgot-password"];
 
-const setTheme = (context, theme) => context.addCookies([{ name: "theme", value: theme, url: BASE_URL }]);
+const setTheme = (context: BrowserContext, theme: string) => context.addCookies([{ name: "theme", value: theme, url: BASE_URL }]);
 
-async function violations(page) {
+async function violations(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   // Readable failure output: rule, impact and the first few offending elements.
   return results.violations.map(

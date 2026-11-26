@@ -1,8 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
-import { BASE_URL, PASSWORD } from "./env.mjs";
-import { expect, test } from "./fixtures.mjs";
-import { resetHousehold, sql, USERS } from "./helpers/db.mjs";
-import { today } from "./helpers/dates.mjs";
+import type { BrowserContext, Page } from "@playwright/test";
+import { BASE_URL, PASSWORD } from "./env.mts";
+import { expect, test } from "./fixtures.ts";
+import { resetHousehold, sql, USERS } from "./helpers/db.ts";
+import { today } from "./helpers/dates.ts";
 
 // English and Greek. The language is a per-user choice (Account page), kept in a cookie; visitors
 // who haven't chosen get their browser's preference.
@@ -13,9 +14,9 @@ const MISSING_MESSAGE =
   /\b(common|account|auth|email|dashboard|errors|budget|transactions|insights|goals|members|notifications)\.[a-z][\w.]*/;
 
 const signedOut = { cookies: [], origins: [] };
-const chooseGreek = context => context.addCookies([{ name: "locale", value: "el", url: BASE_URL }]);
+const chooseGreek = (context: BrowserContext) => context.addCookies([{ name: "locale", value: "el", url: BASE_URL }]);
 
-async function violations(page) {
+async function violations(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   return results.violations.map(
     v =>
@@ -27,7 +28,7 @@ async function violations(page) {
 }
 
 /** Checks the page is in Greek, with no untranslated message keys and no WCAG A/AA problems. */
-async function expectGreekPage(page, path) {
+async function expectGreekPage(page: Page, path: string) {
   await page.goto(path);
   await expect(page.locator("html")).toHaveAttribute("lang", "el");
   expect.soft(await page.locator("body").innerText(), `${path}: untranslated message`).not.toMatch(MISSING_MESSAGE);

@@ -1,16 +1,17 @@
-import { acceptNextDialog, authFile, expect, test } from "./fixtures.mjs";
-import { E2E_CRON_SECRET } from "./env.mjs";
-import { formatDay, today } from "./helpers/dates.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import { acceptNextDialog, authFile, expect, test } from "./fixtures.ts";
+import type { APIRequestContext } from "@playwright/test";
+import { E2E_CRON_SECRET } from "./env.mts";
+import { formatDay, today } from "./helpers/dates.ts";
+import { resetHousehold, sql, type TestHousehold } from "./helpers/db.ts";
 
 test.describe.configure({ mode: "serial" });
 
-const plusDays = (isoDate, days) => {
+const plusDays = (isoDate: string, days: number) => {
   const [year, month, day] = isoDate.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 };
 
-let ids;
+let ids: TestHousehold;
 test.beforeAll(async () => {
   // A monthly rent bill (€900, Housing) and an insurance bill without a category.
   ids = await resetHousehold();
@@ -24,7 +25,7 @@ test.beforeAll(async () => {
   ]);
 });
 
-const runJob = (request, secret = E2E_CRON_SECRET) =>
+const runJob = (request: APIRequestContext, secret: string | null = E2E_CRON_SECRET) =>
   request.get("/api/cron/reminders", { headers: secret ? { Authorization: `Bearer ${secret}` } : {} });
 
 test("owner adds tasks, finishes one and puts it back", async ({ page }) => {

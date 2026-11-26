@@ -29,9 +29,9 @@ const LOG_FILE = path.join(ROOT, "postgres.log");
 const SUPERUSER_PW_FILE = path.join(ROOT, "postgres-superuser-password.txt");
 const ENV_FILE = path.join(process.cwd(), ".env.local");
 
-const exe = name => path.join(PG_BIN, process.platform === "win32" ? `${name}.exe` : name);
+const exe = (name: string) => path.join(PG_BIN, process.platform === "win32" ? `${name}.exe` : name);
 
-function run(name, args, { quiet = false, env } = {}) {
+function run(name: string, args: string[], { quiet = false, env }: { quiet?: boolean; env?: Record<string, string | undefined> } = {}) {
   const result = spawnSync(exe(name), args, {
     // "ignore" matters for pg_ctl start: the server inherits stdio and would otherwise
     // keep our pipes open forever.
@@ -64,7 +64,7 @@ function stop() {
   console.log("Local PostgreSQL stopped.");
 }
 
-function readEnvValue(key) {
+function readEnvValue(key: string) {
   if (!fs.existsSync(ENV_FILE)) return null;
   const line = fs
     .readFileSync(ENV_FILE, "utf8")
@@ -73,7 +73,7 @@ function readEnvValue(key) {
   return line ? line.slice(key.length + 1) : null;
 }
 
-function writeEnvValue(key, value) {
+function writeEnvValue(key: string, value: string) {
   const lines = fs.existsSync(ENV_FILE) ? fs.readFileSync(ENV_FILE, "utf8").split(/\r?\n/) : [];
   const i = lines.findIndex(l => l.startsWith(`${key}=`));
   if (i >= 0) lines[i] = `${key}=${value}`;
@@ -115,7 +115,7 @@ function init() {
 
   start();
 
-  const asSuperuser = sql =>
+  const asSuperuser = (sql: string) =>
     run("psql", ["-h", "localhost", "-p", String(PORT), "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-q", "-c", sql], {
       env: { PGPASSWORD: superuserPassword },
     });
@@ -169,7 +169,7 @@ function initTest() {
   console.log(`Test database ${TEST_DB_NAME} is ready (TEST_DATABASE_URL in .env.local). Run: npm run test:e2e`);
 }
 
-const commands = {
+const commands: Record<string, () => void> = {
   init,
   "init-test": initTest,
   start,
@@ -177,9 +177,11 @@ const commands = {
   status: () => console.log(isRunning() ? `Running on port ${PORT} (${DATA_DIR})` : "Not running."),
 };
 
-const command = commands[process.argv[2]];
+// Object.hasOwn: only our own commands, not inherited names like "toString".
+const name = process.argv[2] ?? "";
+const command = Object.hasOwn(commands, name) ? commands[name] : undefined;
 if (!command) {
-  console.error(`Usage: node scripts/local-db.mjs <${Object.keys(commands).join("|")}>`);
+  console.error(`Usage: node scripts/local-db.mts <${Object.keys(commands).join("|")}>`);
   process.exit(1);
 }
 command();

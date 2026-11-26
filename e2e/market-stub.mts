@@ -1,7 +1,7 @@
 // Stand-in for the news feed and the exchange-rate API during browser tests, so the tests never
 // depend on the internet. `POST /__mode/<ok|empty|fail>` switches how it answers.
 import http from "node:http";
-import { MARKET_STUB_PORT } from "./env.mjs";
+import { MARKET_STUB_PORT } from "./env.mts";
 
 let mode = "ok";
 
@@ -14,10 +14,11 @@ const FEED = `<?xml version="1.0"?><rss version="2.0"><channel><title>Stub</titl
 const EMPTY_FEED = `<?xml version="1.0"?><rss version="2.0"><channel><title>Stub</title></channel></rss>`;
 
 // One unit of the base currency, as the Frankfurter API answers.
-const LATEST = { EUR: 1, USD: 1.0989, GBP: 0.83305, CHF: 0.9233, JPY: 175.05 };
-const WEEK_AGO = { EUR: 1, USD: 1.1127, GBP: 0.83618, CHF: 0.9233, JPY: 172.4 };
+type RateTable = Record<string, number>;
+const LATEST: RateTable = { EUR: 1, USD: 1.0989, GBP: 0.83305, CHF: 0.9233, JPY: 175.05 };
+const WEEK_AGO: RateTable = { EUR: 1, USD: 1.1127, GBP: 0.83618, CHF: 0.9233, JPY: 172.4 };
 
-function rates(table, base, symbols, date) {
+function rates(table: RateTable, base: string, symbols: string[], date: string) {
   const per = table[base];
   return {
     amount: 1,
@@ -28,8 +29,8 @@ function rates(table, base, symbols, date) {
 }
 
 const server = http.createServer((request, response) => {
-  const url = new URL(request.url, "http://stub");
-  const send = (status, type, body) => {
+  const url = new URL(request.url ?? "/", "http://stub");
+  const send = (status: number, type: string, body: string) => {
     response.writeHead(status, { "Content-Type": type });
     response.end(body);
   };
@@ -46,7 +47,7 @@ const server = http.createServer((request, response) => {
   const ratesPath = /^\/rates\/(latest|\d{4}-\d{2}-\d{2})$/.exec(url.pathname);
   if (ratesPath) {
     const base = url.searchParams.get("base");
-    if (!LATEST[base]) return send(404, "application/json", JSON.stringify({ message: "not found" }));
+    if (!base || !LATEST[base]) return send(404, "application/json", JSON.stringify({ message: "not found" }));
     const symbols = (url.searchParams.get("symbols") ?? "").split(",");
     const body = ratesPath[1] === "latest" ? rates(LATEST, base, symbols, "2026-11-17") : rates(WEEK_AGO, base, symbols, ratesPath[1]);
     return send(200, "application/json", JSON.stringify(body));

@@ -1,6 +1,6 @@
-import { acceptNextDialog, authFile, expect, test } from "./fixtures.mjs";
-import { dayOf, monthStart, today } from "./helpers/dates.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import { acceptNextDialog, authFile, expect, test } from "./fixtures.ts";
+import { dayOf, monthStart, today } from "./helpers/dates.ts";
+import { resetHousehold, sql } from "./helpers/db.ts";
 
 test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
@@ -126,7 +126,7 @@ test("fits a laptop screen without scrolling the page; long lists scroll inside 
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
 
-  const overflow = el => el.scrollHeight - el.clientHeight;
+  const overflow = (el: Element) => el.scrollHeight - el.clientHeight;
   expect(await page.locator("#content > div").first().evaluate(overflow)).toBeLessThanOrEqual(1);
   expect(await page.evaluate(() => document.documentElement.scrollHeight - document.documentElement.clientHeight)).toBeLessThanOrEqual(1);
 

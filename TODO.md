@@ -27,7 +27,7 @@ items below are for the move to a real server later (VPS + Coolify + own domain)
 
 - [ ] After the first deploy, check that Coolify's build log shows Node 26. If it doesn't, set
       the app's environment variable `NIXPACKS_NODE_VERSION=26` in Coolify.
-- [ ] `scripts/local-db.mjs` and the `db:init/start/stop/status` commands are for local
+- [ ] `scripts/local-db.mts` and the `db:init/start/stop/status` commands are for local
       development only. Don't use them on the server.
 
 - [ ] **Live updates need a direct database connection** for `LISTEN` (`src/lib/live.js`). If a
@@ -55,4 +55,4 @@ items below are for the move to a real server later (VPS + Coolify + own domain)
 - [ ] On the real server, schedule the daily reminders job (README, "Reminders"): a cron task in
       Coolify calling `/api/cron/reminders` with `CRON_SECRET`.
 - [ ] If profile pictures from other sites are allowed, add their hosts to `images.remotePatterns`
-      in `next.config.mjs` (otherwise `next/image` throws an error).
+      in `next.config.mts` (otherwise `next/image` throws an error).

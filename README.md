@@ -229,7 +229,7 @@ Close it with Ctrl+C (or close VS Code), and the site shows "Currently offline".
   address in `BETTER_AUTH_URL`. For everyday development keep using `npm run dev` and localhost.
 - **If the forwarded address changes** (VS Code gives a new one), update `TUNNEL_URL` in the Worker.
 - **How the Worker spots the app**: every app response carries the header `x-household-app`
-  (`next.config.mjs`). Anything else (no answer, or the tunnel's own error page) means offline.
+  (`next.config.mts`). Anything else (no answer, or the tunnel's own error page) means offline.
 - The tunnel address itself is public too, but hard to guess, and every page still needs a sign-in.
 - **Moving to a real server later**: delete the Worker's custom domains (or the Worker), point
   `nestestia.com` at the server, and delete `.env.production.local`.
@@ -282,7 +282,7 @@ The "Markets & news" panel uses public services that need no API key: ECB exchan
 [Frankfurter](https://frankfurter.dev) and the BBC News Business RSS feed. Answers are cached on the
 server for 15 minutes (`MARKET_CACHE_SECONDS`); if a refresh fails, the last good copy is shown and
 marked as not up to date. To use other sources, set `RATES_API_URL`, `NEWS_FEED_URL` and
-`NEWS_SOURCE_NAME`. The browser tests use a local stand-in (`e2e/market-stub.mjs`) instead.
+`NEWS_SOURCE_NAME`. The browser tests use a local stand-in (`e2e/market-stub.mts`) instead.
 
 On a network that inspects HTTPS with its own certificate (common on company networks), Node.js
 rejects the connection and the panel says it couldn't load. Node has to be told to trust Windows'
@@ -321,7 +321,7 @@ npm run db:start      # if it isn't running
 npm run db:init-test  # once: creates the test database and adds TEST_DATABASE_URL to .env.local
 ```
 
-- Tests live in `e2e/`. Each file starts from a fresh test household (`e2e/helpers/db.mjs`).
+- Tests live in `e2e/`. Each file starts from a fresh test household (`e2e/helpers/db.ts`).
 - Locally they run in Microsoft Edge. To use Playwright's own Chromium instead, run
   `npx playwright install chromium` and set `E2E_BROWSER_CHANNEL=chromium`.
 - After a failure, `npx playwright show-report` opens the report with screenshots and a

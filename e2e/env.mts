@@ -1,14 +1,16 @@
-// Settings shared by playwright.config.mjs, the global setup and the test helpers.
+// Settings shared by playwright.config.ts, the global setup and the test helpers.
 // The browser tests wipe their database, so they only ever run against TEST_DATABASE_URL
 // (from the environment, or from .env.local: see `npm run db:init-test`), never DATABASE_URL.
 import * as nextEnv from "@next/env";
 
 // @next/env is CommonJS: depending on the loader its exports appear directly or under `default`.
-const loadEnvConfig = nextEnv.loadEnvConfig ?? nextEnv.default.loadEnvConfig;
+// Its types only describe the first case, so the second is added here.
+const loadEnvConfig = nextEnv.loadEnvConfig ?? (nextEnv as typeof nextEnv & { default?: typeof nextEnv }).default?.loadEnvConfig;
+if (!loadEnvConfig) throw new Error("@next/env has no loadEnvConfig");
 loadEnvConfig(process.cwd(), true, { info: () => {}, error: console.error });
 
 export const E2E_PORT = 3100;
-/** The stand-in for the news feed and exchange-rate API (e2e/market-stub.mjs). */
+/** The stand-in for the news feed and exchange-rate API (e2e/market-stub.mts). */
 export const MARKET_STUB_PORT = 3101;
 export const MARKET_STUB_URL = `http://localhost:${MARKET_STUB_PORT}`;
 export const BASE_URL = `http://localhost:${E2E_PORT}`;
@@ -29,5 +31,5 @@ export function testDatabaseUrl() {
   return url;
 }
 
-/** The daily reminders job's secret on the test server (see playwright.config.mjs). */
+/** The daily reminders job's secret on the test server (see playwright.config.ts). */
 export const E2E_CRON_SECRET = "e2e-cron-secret-not-used-anywhere-else";

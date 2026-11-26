@@ -1,21 +1,25 @@
 import { createHash, randomBytes } from "node:crypto";
-import { authFile, expect, test } from "./fixtures.mjs";
-import { PASSWORD } from "./env.mjs";
-import { dayOf, formatMonth, monthStart, today } from "./helpers/dates.mjs";
-import { resetHousehold, sql } from "./helpers/db.mjs";
+import type { Page } from "@playwright/test";
+import { authFile, expect, test } from "./fixtures.ts";
+import { PASSWORD } from "./env.mts";
+import { dayOf, formatMonth, monthStart, today } from "./helpers/dates.ts";
+import { resetHousehold, sql, type TestHousehold } from "./helpers/db.ts";
 
 // The "Alerts" bell on the dashboard, next to the profile; its name includes the unread count
 // ("Alerts, 2 unread"). It opens the notifications pop-up.
-const alertsLink = page => page.getByRole("button", { name: /^Alerts/ });
-const notificationList = page => page.getByRole("dialog", { name: "Notifications" });
+const alertsLink = (page: Page) => page.getByRole("button", { name: /^Alerts/ });
+const notificationList = (page: Page) => page.getByRole("dialog", { name: "Notifications" });
 
-async function openAlerts(page) {
+async function openAlerts(page: Page) {
   await page.goto("/");
   await alertsLink(page).click();
   return notificationList(page);
 }
 
-async function addExpense(page, { title, amount, category, date }) {
+async function addExpense(
+  page: Page,
+  { title, amount, category, date }: { title: string; amount: string; category: string; date?: string },
+) {
   await page.goto("/");
   await page.fill("#expense-title", title);
   await page.fill("#expense-amount", amount);
@@ -25,7 +29,7 @@ async function addExpense(page, { title, amount, category, date }) {
   await expect(page.getByText(`${title} (`)).toBeVisible();
 }
 
-let household;
+let household: TestHousehold;
 test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
   household = await resetHousehold();

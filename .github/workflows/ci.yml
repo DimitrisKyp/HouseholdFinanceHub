@@ -81,7 +81,7 @@ jobs:
 
       - run: npm ci
 
-      # The full Chromium (channel "chromium" in playwright.config.mjs), not the headless shell.
+      # The full Chromium (channel "chromium" in playwright.config.ts), not the headless shell.
       - name: Install Chromium
         run: npx playwright install --with-deps --no-shell chromium
 
